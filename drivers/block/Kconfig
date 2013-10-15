@@ -403,6 +403,15 @@ config BLK_DEV_XIP
 	  will prevent RAM block device backing store memory from being
 	  allocated from highmem (only a problem for highmem systems).
 
+config BLK_DEV_SYSTEMSIM
+	#depends on PPC_SYSTEMSIM
+	depends on PPC
+	tristate "IBM Full System Simulator Bogus Disk Support"
+	default y
+	help
+	  Provides quick access to disk images in the simulator without
+	  simulating a full IDE or SCSI device.
+
 config CDROM_PKTCDVD
 	tristate "Packet writing on CD/DVD media"
 	depends on !UML
