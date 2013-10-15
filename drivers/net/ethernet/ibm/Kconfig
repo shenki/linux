@@ -28,6 +28,13 @@ config IBMVETH
 	  To compile this driver as a module, choose M here. The module will
 	  be called ibmveth.
 
+config SYSTEMSIM_NET
+	tristate "IBM Full System Simulator Bogus Network Support"
+	default y
+	help
+	  Provides quick access to a raw ethernet device in the simulator
+	  without simulating any specific network device hardware.
+
 source "drivers/net/ethernet/ibm/emac/Kconfig"
 
 config EHEA
