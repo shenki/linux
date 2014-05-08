@@ -103,6 +103,7 @@ static int ehea_probe_adapter(struct platform_device *dev);
 
 static int ehea_remove(struct platform_device *dev);
 
+#ifdef MODULE
 static struct of_device_id ehea_module_device_table[] = {
 	{
 		.name = "lhea",
@@ -115,6 +116,7 @@ static struct of_device_id ehea_module_device_table[] = {
 	{},
 };
 MODULE_DEVICE_TABLE(of, ehea_module_device_table);
+#endif
 
 static struct of_device_id ehea_device_table[] = {
 	{
