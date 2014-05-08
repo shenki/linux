@@ -280,7 +280,7 @@ static unsigned long get_stubs_size(const Elf64_Ehdr *hdr,
 	for (i = 1; i < hdr->e_shnum; i++) {
 		if (sechdrs[i].sh_type == SHT_RELA) {
 			DEBUGP("Found relocations in section %u\n", i);
-			DEBUGP("Ptr: %p.  Number: %lu\n",
+			DEBUGP("Ptr: %p.  Number: %llu\n",
 			       (void *)sechdrs[i].sh_addr,
 			       sechdrs[i].sh_size / sizeof(Elf64_Rela));
 
