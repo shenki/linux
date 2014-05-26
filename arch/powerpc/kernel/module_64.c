@@ -103,12 +103,14 @@ static unsigned int local_entry_offset(const Elf64_Sym *sym)
    jump, actually, to reset r2 (TOC+0x8000). */
 struct ppc64_stub_entry
 {
-	/* 28 byte jump instruction sequence (7 instructions). We only
-	 * need 6 instructions on ABIv2 but we always allocate 7 so
-	 * so we don't have to modify the trampoline load instruction. */
-	u32 jump[7];
+	/* Jump instruction sequence. */
+#if defined(_CALL_ELF) && _CALL_ELF == 2
+	u32 jump[4];
+#else
+	u32 jump[5];
 	u32 unused;
-	/* Data for the above code */
+#endif
+	/* Unique identifier for the stub. */
 	func_desc_t funcdata;
 };
 
@@ -121,20 +123,18 @@ struct ppc64_stub_entry
  * new r2, but for both we need to save the old r2.
  *
  * We could simply patch the new r2 value and function pointer into
- * the stub, but it's significantly shorter to put these values at the
- * end of the stub code, and patch the stub address (32-bits relative
- * to the TOC ptr, r2) into the stub.
+ * the stub, but it's significantly shorter to put these values into
+ * the toc, and patch the toc entry offset (16-bits relative to the TOC
+ * ptr, r2) into the stub.
  */
-
 static u32 ppc64_stub_insns[] = {
-	0x3d620000,			/* addis   r11,r2, <high> */
-	0x396b0000,			/* addi    r11,r11, <low> */
 	/* Save current r2 value in magic place on the stack. */
 	0xf8410000|R2_STACK_OFFSET,	/* std     r2,R2_STACK_OFFSET(r1) */
-	0xe98b0020,			/* ld      r12,32(r11) */
+        /* Instruction will be patched to load r12 from the toc. */
+	0xe9820000,			/* ld      r12,addr(r2) */
 #if !defined(_CALL_ELF) || _CALL_ELF != 2
-	/* Set up new r2 from function descriptor */
-	0xe84b0028,			/* ld      r2,40(r11) */
+	/* Set up new r2 from the toc. */
+	0xe8420000,			/* ld      r2,addr(r2) */
 #endif
 	0x7d8903a6,			/* mtctr   r12 */
 	0x4e800420			/* bctr */
@@ -143,12 +143,10 @@ static u32 ppc64_stub_insns[] = {
 #ifdef CONFIG_DYNAMIC_FTRACE
 
 static u32 ppc64_stub_mask[] = {
-	0xffff0000,
-	0xffff0000,
 	0xffffffff,
-	0xffffffff,
+	0xffff0000,
 #if !defined(_CALL_ELF) || _CALL_ELF != 2
-	0xffffffff,
+	0xffff0000,
 #endif
 	0xffffffff,
 	0xffffffff
@@ -180,24 +178,19 @@ int module_trampoline_target(struct module *mod, u32 *trampoline,
 			     unsigned long *target)
 {
 	u32 buf[2];
-	u16 upper, lower;
-	long offset;
+	s16 offset;
 	void *toc_entry;
 
 	if (probe_kernel_read(buf, trampoline, sizeof(buf)))
 		return -EFAULT;
 
-	upper = buf[0] & 0xffff;
-	lower = buf[1] & 0xffff;
-
-	/* perform the addis/addi, both signed */
-	offset = ((short)upper << 16) + (short)lower;
+	offset = (s16)buf[1];
 
 	/*
-	 * Now get the address this trampoline jumps to. This
-	 * is always 32 bytes into our trampoline stub.
+	 * Now get the address this trampoline jumps to
+	 * from the toc.
 	 */
-	toc_entry = (void *)mod->arch.toc + offset + 32;
+	toc_entry = (void *)mod->arch.toc + offset;
 
 	if (probe_kernel_read(target, toc_entry, sizeof(*target)))
 		return -EFAULT;
@@ -457,12 +450,18 @@ static inline unsigned long my_r2(Elf64_Shdr *sechdrs, struct module *me)
 	return sechdrs[me->arch.toc_section].sh_addr + 0x8000;
 }
 
-/* Both low and high 16 bits are added as SIGNED additions, so if low
-   16 bits has high bit set, high 16 bits must be adjusted.  These
-   macros do that (stolen from binutils). */
-#define PPC_LO(v) ((v) & 0xffff)
-#define PPC_HI(v) (((v) >> 16) & 0xffff)
-#define PPC_HA(v) PPC_HI ((v) + 0x8000)
+static void *get_toc_space(Elf64_Shdr *sechdrs, struct module *me, size_t len)
+{
+	Elf64_Shdr *toc = &sechdrs[me->arch.toc_section];
+	unsigned long new = toc->sh_addr + toc->sh_size;
+
+	if (toc->sh_size + len > 0x10000)
+		return NULL;
+
+	toc->sh_size += len;
+
+	return (void *)new;
+}
 
 /* Patch stub to reference function and correct r2 value. */
 static inline int create_stub(Elf64_Shdr *sechdrs,
@@ -470,22 +469,28 @@ static inline int create_stub(Elf64_Shdr *sechdrs,
 			      unsigned long addr,
 			      struct module *me)
 {
-	long reladdr;
+	func_desc_t *tocentry;
+	u16 offset;
 
 	memcpy(entry->jump, ppc64_stub_insns, sizeof(ppc64_stub_insns));
 
-	/* Stub uses address relative to r2. */
-	reladdr = (unsigned long)entry - my_r2(sechdrs, me);
-	if (reladdr > 0x7FFFFFFF || reladdr < -(0x80000000L)) {
-		printk("%s: Address %p of stub out of range of %p.\n",
-		       me->name, (void *)reladdr, (void *)my_r2);
+	tocentry = get_toc_space(sechdrs, me, sizeof(*tocentry));
+	if (!tocentry)
 		return 0;
-	}
-	DEBUGP("Stub %p get data from reladdr %li\n", entry, reladdr);
 
-	entry->jump[0] |= PPC_HA(reladdr);
-	entry->jump[1] |= PPC_LO(reladdr);
+	*tocentry = func_desc(addr);
+
+	offset = (unsigned long)tocentry - my_r2(sechdrs, me);
+
+	entry->jump[1] |= (u16)offset;
+#if !defined(_CALL_ELF) || _CALL_ELF != 2
+	entry->jump[2] |= offset + sizeof(unsigned long);
+#endif
+	/* FIXME: Not used by the stub as in previous versions of the module
+	 * loader.  Keep this around to uniquely identify a stub in
+	 * stub_for_addr. */
 	entry->funcdata = func_desc(addr);
+
 	return 1;
 }
 
