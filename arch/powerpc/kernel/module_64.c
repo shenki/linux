@@ -351,18 +351,31 @@ static Elf64_Sym *find_dot_toc(Elf64_Shdr *sechdrs,
 	return NULL;
 }
 
+static void swap_secheader(Elf64_Shdr *sechdrs, int src, int dst)
+{
+        Elf64_Shdr tmp;
+
+        tmp = sechdrs[dst];
+        sechdrs[dst] = sechdrs[src];
+        sechdrs[src] = tmp;
+}
+
 int module_frob_arch_sections(Elf64_Ehdr *hdr,
 			      Elf64_Shdr *sechdrs,
 			      char *secstrings,
 			      struct module *me)
 {
 	unsigned int i;
+	int tocbss = 0;
+	int stubs_count;
 
 	/* Find .toc and .stubs sections, symtab and strtab */
 	for (i = 1; i < hdr->e_shnum; i++) {
 		char *p;
 		if (strcmp(secstrings + sechdrs[i].sh_name, ".stubs") == 0)
 			me->arch.stubs_section = i;
+		else if (strcmp(secstrings + sechdrs[i].sh_name, ".tocbss") == 0)
+			tocbss = i;
 		else if (strcmp(secstrings + sechdrs[i].sh_name, ".toc") == 0)
 			me->arch.toc_section = i;
 		else if (strcmp(secstrings+sechdrs[i].sh_name,"__versions")==0)
@@ -392,9 +405,43 @@ int module_frob_arch_sections(Elf64_Ehdr *hdr,
 	if (!me->arch.toc_section)
 		me->arch.toc_section = me->arch.stubs_section;
 
+	if (!tocbss) {
+		printk("%s: doesn't contain a tocbss.\n", me->name);
+		return -ENOEXEC;
+	}
+
+	stubs_count = get_stubs_count(hdr, sechdrs);
+
+	/* Maximum number of new toc entires is the number of stubs. */
+	sechdrs[tocbss].sh_size = stubs_count * sizeof(func_desc_t);
+
+	if (sechdrs[tocbss].sh_size + sechdrs[me->arch.toc_section].sh_size >
+			0x10000) {
+		printk("%s: could not expand toc to required size\n", me->name);
+		return -ENOEXEC;
+	}
+
+	/* To ensure these stay adjacent after layout_sections give them the
+	   same flags. */
+	sechdrs[tocbss].sh_flags = sechdrs[me->arch.toc_section].sh_flags;
+
+	/* In practice toc_section should never be the last section. If it
+	   is, swap toc_section into tocbss first. */
+	if (me->arch.toc_section == hdr->e_shnum) {
+		swap_secheader(sechdrs, tocbss, me->arch.toc_section);
+		me->arch.toc_section = tocbss;
+		tocbss = hdr->e_shnum;
+	}
+
+	swap_secheader(sechdrs, tocbss, me->arch.toc_section+1);
+
+	/* Fix up the index incase we just moved stubs. */
+	if (me->arch.toc_section+1 == me->arch.stubs_section)
+		me->arch.stubs_section = tocbss;
+
 	/* Override the stubs size */
 	sechdrs[me->arch.stubs_section].sh_size =
-		get_stubs_count(hdr, sechdrs) * sizeof(struct ppc64_stub_entry);
+		stubs_count * sizeof(struct ppc64_stub_entry);
 
 	/* TODO: Set these in the linker script. */
 	sechdrs[me->arch.stubs_section].sh_flags = SHF_EXECINSTR | SHF_ALLOC;
