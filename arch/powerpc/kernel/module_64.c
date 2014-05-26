@@ -268,8 +268,8 @@ static void relaswap(void *_x, void *_y, int size)
 	}
 }
 
-/* Get size of potential trampolines required. */
-static unsigned long get_stubs_size(const Elf64_Ehdr *hdr,
+/* Get number of potential trampolines required. */
+static unsigned long get_stubs_count(const Elf64_Ehdr *hdr,
 				    const Elf64_Shdr *sechdrs)
 {
 	/* One extra reloc so it's always 0-funcaddr terminated */
@@ -305,7 +305,7 @@ static unsigned long get_stubs_size(const Elf64_Ehdr *hdr,
 #endif
 
 	DEBUGP("Looks like a total of %lu stubs, max\n", relocs);
-	return relocs * sizeof(struct ppc64_stub_entry);
+	return relocs;
 }
 
 /* Still needed for ELFv2, for .TOC. */
@@ -393,10 +393,12 @@ int module_frob_arch_sections(Elf64_Ehdr *hdr,
 		me->arch.toc_section = me->arch.stubs_section;
 
 	/* Override the stubs size */
-	sechdrs[me->arch.stubs_section].sh_size = get_stubs_size(hdr, sechdrs);
+	sechdrs[me->arch.stubs_section].sh_size =
+		get_stubs_count(hdr, sechdrs) * sizeof(struct ppc64_stub_entry);
 
 	/* TODO: Set these in the linker script. */
 	sechdrs[me->arch.stubs_section].sh_flags = SHF_EXECINSTR | SHF_ALLOC;
+
 	return 0;
 }
 
