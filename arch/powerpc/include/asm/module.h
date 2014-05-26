@@ -61,21 +61,14 @@ struct mod_arch_specific {
  * Make empty section for module_frob_arch_sections to expand.
  */
 
-#ifdef __powerpc64__
-#    ifdef MODULE
-	asm(".section .stubs,\"ax\",@nobits; .align 3; .previous");
-#    endif
-#else
-#    ifdef MODULE
+#ifndef __powerpc64__
+#  ifdef MODULE
 	asm(".section .plt,\"ax\",@nobits; .align 3; .previous");
 	asm(".section .init.plt,\"ax\",@nobits; .align 3; .previous");
-#    endif	/* MODULE */
-#endif
-
-#ifdef CONFIG_DYNAMIC_FTRACE
-#    ifdef MODULE
+#    ifdef CONFIG_DYNAMIC_FTRACE
 	asm(".section .ftrace.tramp,\"ax\",@nobits; .align 3; .previous");
-#    endif	/* MODULE */
+#    endif	/* CONFIG_DYNAMIC_FTRACE*/
+#  endif	/* MODULE */
 #endif
 
 bool is_module_trampoline(u32 *insns);

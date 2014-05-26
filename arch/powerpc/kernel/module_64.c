@@ -394,6 +394,9 @@ int module_frob_arch_sections(Elf64_Ehdr *hdr,
 
 	/* Override the stubs size */
 	sechdrs[me->arch.stubs_section].sh_size = get_stubs_size(hdr, sechdrs);
+
+	/* TODO: Set these in the linker script. */
+	sechdrs[me->arch.stubs_section].sh_flags = SHF_EXECINSTR | SHF_ALLOC;
 	return 0;
 }
 
