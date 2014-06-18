@@ -143,12 +143,14 @@ static void do_systemsim_bd_request(struct request_queue * q)
 		switch (rq_data_dir(req)) {
 		case READ:
 			result = systemsim_disk_read(minor,
-						     req->buffer, blk_rq_pos(req),
+						     bio_data(req->bio),
+						     blk_rq_pos(req),
 						     blk_rq_cur_sectors(req));
 			break;
 		case WRITE:
 			result = systemsim_disk_write(minor,
-						      req->buffer, blk_rq_pos(req),
+						      bio_data(req->bio),
+						      blk_rq_pos(req),
 						      blk_rq_cur_sectors(req));
 		};
 	done:
@@ -157,16 +159,16 @@ static void do_systemsim_bd_request(struct request_queue * q)
 	}
 }
 
-static int systemsim_bd_release(struct gendisk *disk, fmode_t mode)
+static void systemsim_bd_release(struct gendisk *disk, fmode_t mode)
 {
 	struct systemsim_bd_device *lo;
 	int dev;
 
 	if (!disk)
-		return -ENODEV;
+		return;
 	dev = disk->first_minor;
 	if (dev >= MAX_SYSTEMSIM_BD)
-		return -ENODEV;
+		return;
 	if (systemsim_disk_info(BD_INFO_SYNC, dev) < 0) {
 		printk(KERN_ALERT "systemsim_bd_release: unable to sync\n");
 	}
@@ -175,7 +177,6 @@ static int systemsim_bd_release(struct gendisk *disk, fmode_t mode)
 		printk(KERN_ALERT "systemsim_bd_release: refcount(%d) <= 0\n",
 		       lo->refcnt);
 	lo->refcnt--;
-	return 0;
 }
 
 static int systemsim_bd_revalidate(struct gendisk *disk)
