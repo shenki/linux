@@ -2,6 +2,8 @@
 
 #include "aspeed-g4.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+
 / {
 	model = "Palmetto BMC";
 	compatible = "tyan,palmetto-bmc", "aspeed,ast2400";
@@ -17,6 +19,23 @@
 
 	memory {
 		reg = <0x40000000 0x10000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		heartbeat {
+			gpios = <&gpio 140 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			gpios = <&gpio 141 GPIO_ACTIVE_LOW>;
+		};
+
+		identify {
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
 	};
 };
 
