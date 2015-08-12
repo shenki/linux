@@ -9,6 +9,8 @@ menuconfig ARCH_ASPEED
 	select CLKSRC_MMIO
 	select GENERIC_IRQ_CHIP
 	select ARCH_REQUIRE_GPIOLIB
+	select I2C
+	select I2C_ASPEED
 	select PHYLIB if NETDEVICES
 	select MFD_SYSCON
 	select RTC_CLASS
