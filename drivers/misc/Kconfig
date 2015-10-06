@@ -804,6 +804,11 @@ config PANEL_BOOT_MESSAGE
 	  An empty message will only clear the display at driver init time. Any other
 	  printf()-formatted message is valid with newline and escape codes.
 
+config ASPEED_BT_IPMI_HOST
+	tristate "BT IPMI host driver"
+	help
+	  Support for the Aspeed BT ipmi host.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
