@@ -1,7 +1,7 @@
 VERSION = 4
 PATCHLEVEL = 2
 SUBLEVEL = 6
-EXTRAVERSION =
+EXTRAVERSION = -openpower1
 NAME = Hurr durr I'ma sheep
 
 # *DOCUMENTATION*
