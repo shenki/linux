@@ -59,6 +59,7 @@ obj-$(CONFIG_USB_SERIAL_WWAN)			+= usb_wwan.o
 obj-$(CONFIG_USB_SERIAL_TI)			+= ti_usb_3410_5052.o
 obj-$(CONFIG_USB_SERIAL_UPD78F0730)		+= upd78f0730.o
 obj-$(CONFIG_USB_SERIAL_VISOR)			+= visor.o
+obj-$(CONFIG_USB_SERIAL_VIZZINI)		+= vizzini.o
 obj-$(CONFIG_USB_SERIAL_WISHBONE)		+= wishbone-serial.o
 obj-$(CONFIG_USB_SERIAL_WHITEHEAT)		+= whiteheat.o
 obj-$(CONFIG_USB_SERIAL_XIRCOM)			+= keyspan_pda.o
