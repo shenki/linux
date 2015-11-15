@@ -294,6 +294,32 @@ static void vizzini_set_termios(struct tty_struct *tty,
         vizzini_enable(port);
 }
 
+static int vizzini_probe(struct usb_serial *serial,
+			 const struct usb_device_id *id)
+{
+	struct usb_host_interface *iface_desc = serial->interface->
+								cur_altsetting;
+	struct usb_endpoint_descriptor *endpoint;
+	int num_bulk_out = 0;
+	int i;
+
+	for (i = 0; i < iface_desc->desc.bNumEndpoints; i++) {
+		endpoint = &iface_desc->endpoint[i].desc;
+		if (usb_endpoint_is_bulk_out(endpoint)) {
+			dev_dbg(&serial->dev->dev,
+				"found bulk out on endpoint %d\n", i);
+			++num_bulk_out;
+		}
+	}
+
+	if (num_bulk_out == 0) {
+		dev_dbg(&serial->dev->dev, "Invalid interface, discarding\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 static const struct usb_device_id id_table[] = {
 	{ USB_DEVICE(0x04e2, 0x1410), },
 	{ USB_DEVICE(0x04e2, 0x1412), },
@@ -314,6 +340,7 @@ static struct usb_serial_driver vizzini_1410_device = {
 	.id_table =		vizzini_1410_id_table,
 	.num_ports =		1,
 	.set_termios =		vizzini_set_termios,
+	.probe =		vizzini_probe,
 };
 
 static const struct usb_device_id vizzini_1412_id_table[] = {
