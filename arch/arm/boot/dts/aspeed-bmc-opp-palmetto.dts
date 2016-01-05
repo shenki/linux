@@ -95,3 +95,13 @@
 		reg = <0x4c>;
 	};
 };
+
+&i2c3 {
+	status = "okay";
+
+	occ@50 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x50>;
+	};
+};
+
