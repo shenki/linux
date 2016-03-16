@@ -411,4 +411,10 @@ config CLKSRC_ST_LPC
 	  Enable this option to use the Low Power controller timer
 	  as clocksource.
 
+config MOXART_TIMER
+	def_bool ARCH_MOXART || ARCH_ASPEED
+	depends on ARM && OF
+	select CLKSRC_OF
+	select CLKSRC_MMIO
+
 endmenu
