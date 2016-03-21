@@ -22,6 +22,7 @@
 #include <linux/slab.h>
 #include <linux/i2c.h>
 #include <linux/bitops.h>
+#include <linux/of.h>
 #include "pmbus.h"
 
 enum chips { adm1075, adm1275, adm1276, adm1278, adm1293, adm1294 };
@@ -344,6 +345,19 @@ static const struct i2c_device_id adm1275_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, adm1275_id);
 
+#ifdef CONFIG_OF
+static const struct of_device_id adm1275_of_match[] = {
+	{ .compatible = "adi,adm1075" },
+	{ .compatible = "adi,adm1275" },
+	{ .compatible = "adi,adm1276" },
+	{ .compatible = "adi,adm1278" },
+	{ .compatible = "adi,adm1293" },
+	{ .compatible = "adi,adm1294" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, adm1275_of_match);
+#endif
+
 static int adm1275_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
@@ -598,6 +612,7 @@ static int adm1275_probe(struct i2c_client *client,
 static struct i2c_driver adm1275_driver = {
 	.driver = {
 		   .name = "adm1275",
+		   .of_match_table = of_match_ptr(adm1275_of_match),
 		   },
 	.probe = adm1275_probe,
 	.remove = pmbus_do_remove,
