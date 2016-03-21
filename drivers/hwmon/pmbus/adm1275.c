@@ -364,6 +364,7 @@ static int adm1275_probe(struct i2c_client *client,
 	u8 block_buffer[I2C_SMBUS_BLOCK_MAX + 1];
 	int config, device_config;
 	int ret;
+	u32 r_sense = 1;
 	struct pmbus_driver_info *info;
 	struct adm1275_data *data;
 	const struct i2c_device_id *mid;
@@ -417,6 +418,12 @@ static int adm1275_probe(struct i2c_client *client,
 			    GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
+
+	ret = of_property_read_u32(client->dev.of_node, "sense-resistor",
+			&r_sense);
+	if (!ret)
+		dev_notice(&client->dev, "using r_sense from dt %d\n",
+				r_sense);
 
 	data->id = mid->driver_data;
 
@@ -591,12 +598,12 @@ static int adm1275_probe(struct i2c_client *client,
 		info->R[PSC_VOLTAGE_OUT] = coefficients[voindex].R;
 	}
 	if (cindex >= 0) {
-		info->m[PSC_CURRENT_OUT] = coefficients[cindex].m;
+		info->m[PSC_CURRENT_OUT] = coefficients[cindex].m * r_sense;
 		info->b[PSC_CURRENT_OUT] = coefficients[cindex].b;
 		info->R[PSC_CURRENT_OUT] = coefficients[cindex].R;
 	}
 	if (pindex >= 0) {
-		info->m[PSC_POWER] = coefficients[pindex].m;
+		info->m[PSC_POWER] = coefficients[pindex].m * r_sense;
 		info->b[PSC_POWER] = coefficients[pindex].b;
 		info->R[PSC_POWER] = coefficients[pindex].R;
 	}

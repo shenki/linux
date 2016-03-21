@@ -1,0 +1,19 @@
+adm1275 temperature sensor
+--------------------------
+
+Required property:
+
+ - compatible: "adi,adm1278"
+ - reg: i2c device address 
+
+Optional property:
+
+- sense-resistor: external sense resistor value in milliOhms
+
+Example:
+
+sensor { 
+	reg = <0x11>;
+	compatible = "adi,adm1278";
+	sense-resistor = < 100 >
+}
