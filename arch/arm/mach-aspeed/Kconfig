@@ -15,6 +15,7 @@ config MACH_ASPEED_G4
 	bool "Aspeed SoC 4th Generation"
 	depends on ARCH_MULTI_V5
 	select CPU_ARM926T
+	select PINCTRL_ASPEED_G4
 	help
 	 Say yes if you intend to run on an Aspeed ast2400 or similar
 	 fourth generation BMCs, such as those used by OpenPower Power8
