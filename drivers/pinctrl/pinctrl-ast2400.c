@@ -1,0 +1,773 @@
+/*
+ * Copyright (C) 2016 IBM Corp.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation version 2.
+ *
+ * This program is distributed "as is" WITHOUT ANY WARRANTY of any
+ * kind, whether express or implied; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+#include <linux/bitops.h>
+#include <linux/io.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/pinctrl/pinctrl.h>
+#include <linux/pinctrl/pinmux.h>
+#include <linux/pinctrl/pinconf.h>
+#include <linux/pinctrl/pinconf-generic.h>
+#include <linux/string.h>
+#include <linux/types.h>
+
+#include "core.h"
+#include "pinctrl-utils.h"
+#include "pinctrl-aspeed.h"
+
+#define SCU3C 0x3C
+#define SCU80 0x80
+#define SCU84 0x84
+#define SCU88 0x88
+#define SCU8C 0x8C
+#define SCU90 0x90
+#define SCU94 0x94
+#define SCUA4 0xA4
+
+/* Use undefined macros for symbol naming and references, eg GPIOA0, MAC1LINK,
+ * TIMER3 etc.
+ */
+
+/* Pins are defined in GPIO bank order:
+ *
+ * GPIOA0: 0
+ * ...
+ * GPIOA7: 7
+ * ...
+ * GPIOB0: 8
+ * ...
+ * GPIOZ7: 207
+ * GPIOAA0: 208
+ * ...
+ * GPIOAB3: 219
+ *
+ * Not all pins have their signals defined.
+ */
+
+#define A4 2
+SSSF_PIN_DECL(A4, GPIOA2, TIMER3, FUNC_DESC_SET(SCU80, 2));
+
+FUNC_EXPR_DECL_SINGLE(SD1, FUNC_DESC_SET(SCU90, 0));
+
+FUNC_EXPR_DECL_SINGLE(I2C10, FUNC_DESC_SET(SCU90, 23));
+
+#define C4 16
+MS_PIN_DECL(C4, GPIOC0, SD1, I2C10);
+#define B3 17
+MS_PIN_DECL(B3, GPIOC1, SD1, I2C10);
+
+FUNC_GROUP_DECL(I2C10, C4, B3);
+
+FUNC_EXPR_DECL_SINGLE(I2C11, FUNC_DESC_SET(SCU90, 24));
+
+#define A2 18
+MS_PIN_DECL(A2, GPIOC2, SD1, I2C11);
+#define E5 19
+MS_PIN_DECL(E5, GPIOC3, SD1, I2C11);
+
+FUNC_GROUP_DECL(I2C11, A2, E5);
+
+FUNC_EXPR_DECL_SINGLE(I2C12, FUNC_DESC_SET(SCU90, 25));
+
+#define D4 20
+MS_PIN_DECL(D4, GPIOC4, SD1, I2C12);
+#define C3 21
+MS_PIN_DECL(C3, GPIOC5, SD1, I2C12);
+
+FUNC_GROUP_DECL(I2C12, D4, C3);
+
+FUNC_EXPR_DECL_SINGLE(I2C13, FUNC_DESC_SET(SCU90, 26));
+
+#define B2 22
+MS_PIN_DECL(B2, GPIOC6, SD1, I2C13);
+#define A1 23
+MS_PIN_DECL(A1, GPIOC7, SD1, I2C13);
+
+FUNC_GROUP_DECL(I2C13, B2, A1);
+FUNC_GROUP_DECL(SD1, C4, B3, A2, E5, D4, C3, B2, A1);
+
+#define D18 40
+SSSF_PIN_DECL(D18, GPIOF0, NCTS4, FUNC_DESC_SET(SCU80, 24));
+
+FUNC_EXPR_DECL(ACPI, FUNC_DESC_BIT(STRAP, 19, 0));
+
+#define B19 41
+FUNC_EXPR_DECL(NDCD4, FUNC_DESC_SET(SCU80, 25));
+FUNC_EXPR_LIST_DECL_SINGLE(NDCD4);
+FUNC_EXPR_DECL(SIOPBI, FUNC_DESC_SET(SCUA4, 12));
+FUNC_EXPR_LIST_DECL(SIOPBI, FUNC_EXPR_PTR(SIOPBI), FUNC_EXPR_PTR(ACPI), NULL);
+MS_PIN_DECL(B19, GPIOF1, NDCD4, SIOPBI);
+FUNC_GROUP_DECL(NDCD4, B19);
+FUNC_GROUP_DECL(SIOPBI, B19);
+
+#define D17 43
+FUNC_EXPR_DECL(NRI4, FUNC_DESC_SET(SCU80, 27));
+FUNC_EXPR_LIST_DECL_SINGLE(NRI4);
+FUNC_EXPR_DECL(SIOPBO, FUNC_DESC_SET(SCUA4, 14));
+FUNC_EXPR_LIST_DECL(SIOPBO, FUNC_EXPR_PTR(SIOPBO), FUNC_EXPR_PTR(ACPI), NULL);
+MS_PIN_DECL(D17, GPIOF3, NRI4, SIOPBO);
+FUNC_GROUP_DECL(NRI4, D17);
+FUNC_GROUP_DECL(SIOPBO, D17);
+
+FUNC_GROUP_DECL(ACPI, B19, D17);
+
+#define E16 46
+SSSF_PIN_DECL(E16, GPIOF6, TXD4, FUNC_DESC_SET(SCU80, 30));
+
+#define C17 47
+SSSF_PIN_DECL(C17, GPIOF7, RXD4, FUNC_DESC_SET(SCU80, 31));
+
+#define AA22 54
+SSSF_PIN_DECL(AA22, GPIOG6, FLBUSY, FUNC_DESC_SET(SCU84, 6));
+
+#define U18 55
+SSSF_PIN_DECL(U18, GPIOG7, FLWP, FUNC_DESC_SET(SCU84, 7));
+
+/* The following descriptors describe incomplete list of signals for VPO/ROM,
+ * enough to cover the pins which we need to configure in the OpenPOWER
+ * Palmetto BMC. Some functions require separate functions be disabled, so
+ * we're describing masks for those separate functions and setting the enabled
+ * value to the disabled value. Also, GENMASK() is used to require a range of
+ * set bits, where each signal has its own activation bit rather than all being
+ * activated by a single bit.
+ */
+#define VPOOFF0_DESC { SCU94, GENMASK(1, 0), 0, 0 }
+#define ROMEN_0_DESC \
+	{ SCU88, GENMASK(29, 24), GENMASK(5, 0), 0 }
+#define ROMEN_1_DESC \
+	{ SCU8C, GENMASK(7, 0), GENMASK(7, 0), 0 }
+#define ROMEN_2_DESC { SCU94, BIT_MASK(1), 0, 0 }
+#define ROMEN_3_DESC \
+	{ STRAP, GENMASK(1, 0), 0, 0 }
+
+FUNC_EXPR_DECL(ROM8,
+		VPOOFF0_DESC,
+		ROMEN_0_DESC,
+		ROMEN_1_DESC,
+		ROMEN_2_DESC);
+
+/* ROM16 enabled by SCU90 */
+FUNC_EXPR_DECL(ROM16,
+		VPOOFF0_DESC,
+		ROMEN_0_DESC,
+		ROMEN_1_DESC,
+		ROMEN_2_DESC,
+		FUNC_DESC_SET(SCU90, 6));
+
+/* ROM16 enabled by strapping register */
+FUNC_EXPR_DECL(ROM16S,
+		VPOOFF0_DESC,
+		ROMEN_0_DESC,
+		ROMEN_1_DESC,
+		ROMEN_2_DESC,
+		FUNC_DESC_SET(STRAP, 4),
+		ROMEN_3_DESC);
+
+FUNC_EXPR_LIST_DECL(ROM16,
+		FUNC_EXPR_PTR(ROM16),
+		FUNC_EXPR_PTR(ROM16S),
+		NULL);
+
+FUNC_EXPR_DECL_SINGLE(UART6, FUNC_DESC_SET(SCU90, 7));
+
+#define A8 56
+MS_PIN_DECL(A8, GPIOH0, ROM16, UART6);
+
+#define C7 57
+MS_PIN_DECL(C7, GPIOH1, ROM16, UART6);
+
+#define B7 58
+MS_PIN_DECL(B7, GPIOH2, ROM16, UART6);
+
+#define A7 59
+MS_PIN_DECL(A7, GPIOH3, ROM16, UART6);
+
+#define D7 60
+MS_PIN_DECL(D7, GPIOH4, ROM16, UART6);
+
+#define B6 61
+MS_PIN_DECL(B6, GPIOH5, ROM16, UART6);
+
+#define A6 62
+MS_PIN_DECL(A6, GPIOH6, ROM16, UART6);
+
+#define E7 63
+MS_PIN_DECL(E7, GPIOH7, ROM16, UART6);
+
+FUNC_GROUP_DECL(UART6, A8, C7, B7, A7, D7, B6, A6, E7);
+
+#define T4 76
+SSSF_PIN_DECL(T4, GPIOJ4, VGAHS, FUNC_DESC_SET(SCU84, 12));
+
+#define U2 77
+SSSF_PIN_DECL(U2, GPIOJ5, VGAVS, FUNC_DESC_SET(SCU84, 13));
+
+#define T2 78
+SSSF_PIN_DECL(T2, GPIOJ6, DDCCLK, FUNC_DESC_SET(SCU84, 14));
+
+#define T1 79
+SSSF_PIN_DECL(T1, GPIOJ7, DDCDAT, FUNC_DESC_SET(SCU84, 15));
+
+FUNC_EXPR_DECL_SINGLE(I2C5, FUNC_DESC_SET(SCU90, 18));
+
+#define E3 80
+SS_PIN_DECL(E3, GPIOK0, I2C5);
+
+#define D2 81
+SS_PIN_DECL(D2, GPIOK1, I2C5);
+
+FUNC_GROUP_DECL(I2C5, E3, D2);
+
+FUNC_EXPR_DECL_SINGLE(I2C6, FUNC_DESC_SET(SCU90, 19));
+
+#define C1 82
+SS_PIN_DECL(C1, GPIOK2, I2C6);
+
+#define F4 83
+SS_PIN_DECL(F4, GPIOK3, I2C6);
+
+FUNC_GROUP_DECL(I2C6, C1, F4);
+
+FUNC_EXPR_DECL_SINGLE(I2C7, FUNC_DESC_SET(SCU90, 20));
+
+#define E2 84
+SS_PIN_DECL(E2, GPIOK4, I2C7);
+
+#define D1 85
+SS_PIN_DECL(D1, GPIOK5, I2C7);
+
+FUNC_GROUP_DECL(I2C7, E2, D1);
+
+FUNC_EXPR_DECL_SINGLE(I2C8, FUNC_DESC_SET(SCU90, 21));
+
+#define G5 86
+SS_PIN_DECL(G5, GPIOK6, I2C8);
+
+#define F3 87
+SS_PIN_DECL(F3, GPIOK7, I2C8);
+
+FUNC_GROUP_DECL(I2C8, G5, F3);
+
+#define U1 88
+SSSF_PIN_DECL(U1, GPIOL0, NCTS1, FUNC_DESC_SET(SCU84, 16));
+
+#define VPI18_DESC { SCU84, GENMASK(5, 4), 1, 0 }
+#define VPI24_DESC { SCU84, GENMASK(5, 4), 2, 0 }
+#define VPI30_DESC { SCU84, GENMASK(5, 4), 3, 0 }
+
+#define VPIEN_0_DESC \
+	{ SCU84, GENMASK(21, 17), GENMASK(4, 0), 0 }
+#define VPIEN_1_DESC \
+	{ SCU84, GENMASK(23, 22), GENMASK(1, 0), 0 }
+#define VPIEN_2_DESC \
+	{ SCU88, GENMASK(1, 0), GENMASK(1, 0), 0 }
+#define VPIEN_3_DESC \
+	{ SCU88, GENMASK(5, 2), GENMASK(3, 0), 0 }
+#define VPIEN_4_DESC \
+	{ SCU88, GENMASK(7, 6), GENMASK(1, 0), 0 }
+
+FUNC_EXPR_DECL(VPI18,
+		VPI18_DESC,
+		VPIEN_0_DESC,
+		VPIEN_3_DESC);
+
+FUNC_EXPR_DECL(VPI24,
+		VPI24_DESC,
+		VPIEN_0_DESC,
+		VPIEN_3_DESC,
+		VPIEN_4_DESC);
+
+FUNC_EXPR_DECL(VPI30,
+		VPI30_DESC,
+		VPIEN_0_DESC,
+		VPIEN_1_DESC,
+		VPIEN_2_DESC,
+		VPIEN_3_DESC);
+
+FUNC_EXPR_LIST_DECL(VPI,
+		FUNC_EXPR_PTR(VPI18),
+		FUNC_EXPR_PTR(VPI24),
+		FUNC_EXPR_PTR(VPI30),
+		NULL);
+
+#define T5 89
+FUNC_EXPR_DECL_SINGLE(NDCD1, FUNC_DESC_SET(SCU84, 17));
+MS_PIN_DECL(T5, GPIOL1, VPI, NDCD1);
+FUNC_GROUP_DECL(NDCD1, T5);
+
+#define U3 90
+FUNC_EXPR_DECL_SINGLE(NDSR1, FUNC_DESC_SET(SCU84, 18));
+MS_PIN_DECL(U3, GPIOL2, VPI, NDSR1);
+FUNC_GROUP_DECL(NDSR1, U3);
+
+#define V1 91
+FUNC_EXPR_DECL_SINGLE(NRI1, FUNC_DESC_SET(SCU84, 19));
+MS_PIN_DECL(V1, GPIOL3, VPI, NRI1);
+FUNC_GROUP_DECL(NRI1, V1);
+
+#define U4 92
+FUNC_EXPR_DECL_SINGLE(NDTR1, FUNC_DESC_SET(SCU84, 20));
+MS_PIN_DECL(U4, GPIOL4, VPI, NDTR1);
+FUNC_GROUP_DECL(NDTR1, U4);
+
+#define V2 93
+FUNC_EXPR_DECL_SINGLE(NRTS1, FUNC_DESC_SET(SCU84, 21));
+MS_PIN_DECL(V2, GPIOL5, VPI, NRTS1);
+FUNC_GROUP_DECL(NRTS1, V2);
+
+#define W1 94
+FUNC_EXPR_DECL_SINGLE(TXD1, FUNC_DESC_SET(SCU84, 22));
+MS_PIN_DECL(W1, GPIOL6, VPI, TXD1);
+FUNC_GROUP_DECL(TXD1, W1);
+
+#define U5 95
+FUNC_EXPR_DECL_SINGLE(RXD1, FUNC_DESC_SET(SCU84, 23));
+MS_PIN_DECL(U5, GPIOL7, VPI, RXD1);
+FUNC_GROUP_DECL(RXD1, U5);
+
+#define W4 104
+FUNC_EXPR_DECL_SINGLE(PWM0, FUNC_DESC_SET(SCU88, 0));
+MS_PIN_DECL(W4, GPION0, VPI, PWM0);
+FUNC_GROUP_DECL(PWM0, W4);
+
+#define Y3 105
+FUNC_EXPR_DECL_SINGLE(PWM1, FUNC_DESC_SET(SCU88, 1));
+MS_PIN_DECL(Y3, GPION1, VPI, PWM1);
+FUNC_GROUP_DECL(PWM1, Y3);
+
+#define AA2 106
+FUNC_EXPR_DECL_SINGLE(PWM2, FUNC_DESC_SET(SCU88, 2));
+MS_PIN_DECL(AA2, GPION2, VPI, PWM2);
+FUNC_GROUP_DECL(PWM2, AA2);
+
+#define AB1 107
+FUNC_EXPR_DECL_SINGLE(PWM3, FUNC_DESC_SET(SCU88, 3));
+MS_PIN_DECL(AB1, GPION3, VPI, PWM3);
+FUNC_GROUP_DECL(PWM3, AB1);
+
+#define W5 108
+FUNC_EXPR_DECL_SINGLE(PWM4, FUNC_DESC_SET(SCU88, 4));
+MS_PIN_DECL(W5, GPION4, VPI, PWM4);
+FUNC_GROUP_DECL(PWM4, W5);
+
+#define Y4 109
+FUNC_EXPR_DECL_SINGLE(PWM5, FUNC_DESC_SET(SCU88, 5));
+MS_PIN_DECL(Y4, GPION5, VPI, PWM5);
+FUNC_GROUP_DECL(PWM5, Y4);
+
+#define AA3 110
+FUNC_EXPR_DECL_SINGLE(PWM6, FUNC_DESC_SET(SCU88, 6));
+MS_PIN_DECL(AA3, GPION6, VPI, PWM6);
+FUNC_GROUP_DECL(PWM6, AA3);
+
+#define AB2 111
+FUNC_EXPR_DECL_SINGLE(PWM7, FUNC_DESC_SET(SCU88, 7));
+MS_PIN_DECL(AB2, GPION7, VPI, PWM7);
+FUNC_GROUP_DECL(PWM7, AB2);
+
+FUNC_GROUP_DECL(VPI18, T5, U3, V1, U4, V2, AA22, W5, Y4, AA3, AB2);
+FUNC_GROUP_DECL(VPI24, T5, U3, V1, U4, V2, AA22, W5, Y4, AA3, AB2);
+FUNC_GROUP_DECL(VPI30, T5, U3, V1, U4, V2, W1, U5, W4, Y3, AA22, W5, Y4, AA3,
+		AB2);
+
+#define AA7 126
+SSSF_PIN_DECL(AA7, GPIOP6, BMCINT, FUNC_DESC_SET(SCU88, 22));
+
+#define AB7 127
+SSSF_PIN_DECL(AB7, GPIOP7, FLACK, FUNC_DESC_SET(SCU88, 23));
+
+FUNC_EXPR_DECL(I2C3, FUNC_DESC_SET(SCU90, 16));
+FUNC_EXPR_LIST_DECL_SINGLE(I2C3);
+
+#define D3 128
+SS_PIN_DECL(D3, GPIOQ0, I2C3);
+
+#define C2 129
+SS_PIN_DECL(C2, GPIOQ1, I2C3);
+
+FUNC_GROUP_DECL(I2C3, D3, C2);
+
+FUNC_EXPR_DECL_SINGLE(I2C4, FUNC_DESC_SET(SCU90, 17));
+
+#define B1 130
+SS_PIN_DECL(B1, GPIOQ2, I2C4);
+
+#define F5 131
+SS_PIN_DECL(F5, GPIOQ3, I2C4);
+
+FUNC_GROUP_DECL(I2C4, B1, F5);
+
+#define VPOOFF1_DESC { SCU94, GENMASK(1, 0), 3, 0 }
+#define VPO12_DESC { SCU94, GENMASK(1, 0), 1, 0 }
+#define VPO24_DESC { SCU94, GENMASK(1, 0), 2, 0 }
+
+/* Enables an incomplete list of signals, only enough to cover the pins that we
+ * need to describe at the moment
+ */
+#define VPOEN_0_DESC \
+	{ SCU88, GENMASK(29, 28), GENMASK(1, 0), 0 }
+#define VPOEN_1_DESC \
+	{ SCU8C, GENMASK(3, 0), GENMASK(3, 0), 0 }
+#define VPOEN_2_DESC \
+	{ SCU8C, GENMASK(7, 6), GENMASK(1, 0), 0 }
+
+FUNC_EXPR_LIST_DECL(ROM,
+		FUNC_EXPR_PTR(ROM8),
+		FUNC_EXPR_PTR(ROM16),
+		FUNC_EXPR_PTR(ROM16S),
+		NULL);
+
+#define V20 136
+MS_PIN_DECL_(V20, GPIOR0, FUNC_EXPR_LIST_PTR(ROM), NULL);
+
+FUNC_EXPR_DECL(VPO12,
+		VPO12_DESC,
+		VPOEN_0_DESC,
+		VPOEN_1_DESC,
+		VPOEN_2_DESC);
+
+FUNC_EXPR_DECL(VPO24,
+		VPO24_DESC,
+		VPOEN_0_DESC,
+		VPOEN_1_DESC,
+		VPOEN_2_DESC);
+
+FUNC_EXPR_DECL(VPOOFF1,
+		VPOOFF1_DESC,
+		VPOEN_0_DESC,
+		VPOEN_1_DESC,
+		VPOEN_2_DESC);
+
+FUNC_EXPR_LIST_DECL(VPO,
+		FUNC_EXPR_PTR(VPO12),
+		FUNC_EXPR_PTR(VPO24),
+		FUNC_EXPR_PTR(VPOOFF1),
+		NULL);
+
+#define U21 144
+MS_PIN_DECL(U21, GPIOS0, ROM, VPO);
+
+#define T19 145
+MS_PIN_DECL(T19, GPIOS1, ROM, VPO);
+
+#define V22 146
+MS_PIN_DECL(V22, GPIOS2, ROM, VPO);
+
+#define U20 147
+MS_PIN_DECL(U20, GPIOS3, ROM, VPO);
+
+#define R18 148
+MS_PIN_DECL_(R18, GPIOS4, FUNC_EXPR_LIST_PTR(ROM), NULL);
+
+#define N21 149
+MS_PIN_DECL_(N21, GPIOS5, FUNC_EXPR_LIST_PTR(ROM), NULL);
+
+#define L22 150
+MS_PIN_DECL(L22, GPIOS6, ROM, VPO);
+
+#define K18 151
+MS_PIN_DECL(K18, GPIOS7, ROM, VPO);
+
+FUNC_GROUP_DECL(ROM8, V20, U21, T19, V22, U20, R18, N21, L22, K18);
+FUNC_GROUP_DECL(ROM16, V20, U21, T19, V22, U20, R18, N21, L22, K18,
+		A8, C7, B7, A7, D7, B6, A6, E7);
+FUNC_GROUP_DECL(VPO12, U21, T19, V22, U20);
+FUNC_GROUP_DECL(VPO24, U21, T19, V22, U20, L22, K18);
+
+/* Note we account for GPIOY4-GPIOY7 even though they're not valid, thus 216
+ * pins becomes 220.
+ */
+#define AST2400_NR_GPIOS 220
+
+static struct pinctrl_pin_desc ast2400_pins[AST2400_NR_GPIOS] = {
+	ASPEED_PINCTRL_PIN(A4),
+	ASPEED_PINCTRL_PIN(C4),
+	ASPEED_PINCTRL_PIN(B3),
+	ASPEED_PINCTRL_PIN(A2),
+	ASPEED_PINCTRL_PIN(E5),
+	ASPEED_PINCTRL_PIN(D4),
+	ASPEED_PINCTRL_PIN(C3),
+	ASPEED_PINCTRL_PIN(B2),
+	ASPEED_PINCTRL_PIN(A1),
+	ASPEED_PINCTRL_PIN(D18),
+	ASPEED_PINCTRL_PIN(B19),
+	ASPEED_PINCTRL_PIN(D17),
+	ASPEED_PINCTRL_PIN(E16),
+	ASPEED_PINCTRL_PIN(C17),
+	ASPEED_PINCTRL_PIN(AA22),
+	ASPEED_PINCTRL_PIN(U18),
+	ASPEED_PINCTRL_PIN(A8),
+	ASPEED_PINCTRL_PIN(C7),
+	ASPEED_PINCTRL_PIN(B7),
+	ASPEED_PINCTRL_PIN(A7),
+	ASPEED_PINCTRL_PIN(D7),
+	ASPEED_PINCTRL_PIN(B6),
+	ASPEED_PINCTRL_PIN(A6),
+	ASPEED_PINCTRL_PIN(E7),
+	ASPEED_PINCTRL_PIN(T4),
+	ASPEED_PINCTRL_PIN(U2),
+	ASPEED_PINCTRL_PIN(T2),
+	ASPEED_PINCTRL_PIN(T1),
+	ASPEED_PINCTRL_PIN(E3),
+	ASPEED_PINCTRL_PIN(D2),
+	ASPEED_PINCTRL_PIN(C1),
+	ASPEED_PINCTRL_PIN(F4),
+	ASPEED_PINCTRL_PIN(E2),
+	ASPEED_PINCTRL_PIN(D1),
+	ASPEED_PINCTRL_PIN(G5),
+	ASPEED_PINCTRL_PIN(F3),
+	ASPEED_PINCTRL_PIN(U1),
+	ASPEED_PINCTRL_PIN(T5),
+	ASPEED_PINCTRL_PIN(U3),
+	ASPEED_PINCTRL_PIN(V1),
+	ASPEED_PINCTRL_PIN(U4),
+	ASPEED_PINCTRL_PIN(V2),
+	ASPEED_PINCTRL_PIN(W1),
+	ASPEED_PINCTRL_PIN(U5),
+	ASPEED_PINCTRL_PIN(W4),
+	ASPEED_PINCTRL_PIN(Y3),
+	ASPEED_PINCTRL_PIN(AA2),
+	ASPEED_PINCTRL_PIN(AB1),
+	ASPEED_PINCTRL_PIN(W5),
+	ASPEED_PINCTRL_PIN(Y4),
+	ASPEED_PINCTRL_PIN(AA3),
+	ASPEED_PINCTRL_PIN(AB2),
+	ASPEED_PINCTRL_PIN(AA7),
+	ASPEED_PINCTRL_PIN(AB7),
+	ASPEED_PINCTRL_PIN(D3),
+	ASPEED_PINCTRL_PIN(C2),
+	ASPEED_PINCTRL_PIN(B1),
+	ASPEED_PINCTRL_PIN(F5),
+	ASPEED_PINCTRL_PIN(V20),
+	ASPEED_PINCTRL_PIN(U21),
+	ASPEED_PINCTRL_PIN(T19),
+	ASPEED_PINCTRL_PIN(V22),
+	ASPEED_PINCTRL_PIN(U20),
+	ASPEED_PINCTRL_PIN(R18),
+	ASPEED_PINCTRL_PIN(N21),
+	ASPEED_PINCTRL_PIN(L22),
+	ASPEED_PINCTRL_PIN(K18),
+};
+
+static const struct aspeed_pin_group ast2400_groups[] = {
+	ASPEED_PINCTRL_GROUP(TIMER3),
+	ASPEED_PINCTRL_GROUP(SD1),
+	ASPEED_PINCTRL_GROUP(I2C10),
+	ASPEED_PINCTRL_GROUP(I2C11),
+	ASPEED_PINCTRL_GROUP(I2C12),
+	ASPEED_PINCTRL_GROUP(I2C13),
+	ASPEED_PINCTRL_GROUP(NCTS4),
+	ASPEED_PINCTRL_GROUP(ACPI),
+	ASPEED_PINCTRL_GROUP(NDCD4),
+	ASPEED_PINCTRL_GROUP(SIOPBI),
+	ASPEED_PINCTRL_GROUP(NRI4),
+	ASPEED_PINCTRL_GROUP(SIOPBO),
+	ASPEED_PINCTRL_GROUP(TXD4),
+	ASPEED_PINCTRL_GROUP(RXD4),
+	ASPEED_PINCTRL_GROUP(FLBUSY),
+	ASPEED_PINCTRL_GROUP(FLWP),
+	ASPEED_PINCTRL_GROUP(UART6),
+	ASPEED_PINCTRL_GROUP(VGAHS),
+	ASPEED_PINCTRL_GROUP(VGAVS),
+	ASPEED_PINCTRL_GROUP(DDCCLK),
+	ASPEED_PINCTRL_GROUP(DDCDAT),
+	ASPEED_PINCTRL_GROUP(I2C5),
+	ASPEED_PINCTRL_GROUP(I2C6),
+	ASPEED_PINCTRL_GROUP(I2C7),
+	ASPEED_PINCTRL_GROUP(I2C8),
+	ASPEED_PINCTRL_GROUP(NCTS1),
+	ASPEED_PINCTRL_GROUP(NDCD1),
+	ASPEED_PINCTRL_GROUP(NDSR1),
+	ASPEED_PINCTRL_GROUP(NRI1),
+	ASPEED_PINCTRL_GROUP(NDTR1),
+	ASPEED_PINCTRL_GROUP(NRTS1),
+	ASPEED_PINCTRL_GROUP(TXD1),
+	ASPEED_PINCTRL_GROUP(RXD1),
+	ASPEED_PINCTRL_GROUP(PWM0),
+	ASPEED_PINCTRL_GROUP(PWM1),
+	ASPEED_PINCTRL_GROUP(PWM2),
+	ASPEED_PINCTRL_GROUP(PWM3),
+	ASPEED_PINCTRL_GROUP(PWM4),
+	ASPEED_PINCTRL_GROUP(PWM5),
+	ASPEED_PINCTRL_GROUP(PWM6),
+	ASPEED_PINCTRL_GROUP(PWM7),
+	ASPEED_PINCTRL_GROUP(VPI18),
+	ASPEED_PINCTRL_GROUP(VPI24),
+	ASPEED_PINCTRL_GROUP(VPI30),
+	ASPEED_PINCTRL_GROUP(BMCINT),
+	ASPEED_PINCTRL_GROUP(FLACK),
+	ASPEED_PINCTRL_GROUP(I2C3),
+	ASPEED_PINCTRL_GROUP(I2C4),
+	ASPEED_PINCTRL_GROUP(ROM8),
+	ASPEED_PINCTRL_GROUP(ROM16),
+	ASPEED_PINCTRL_GROUP(VPO12),
+	ASPEED_PINCTRL_GROUP(VPO24),
+};
+
+static const struct aspeed_pin_function ast2400_functions[] = {
+	ASPEED_PINCTRL_FUNC(TIMER3),
+	ASPEED_PINCTRL_FUNC(SD1),
+	ASPEED_PINCTRL_FUNC(I2C10),
+	ASPEED_PINCTRL_FUNC(I2C11),
+	ASPEED_PINCTRL_FUNC(I2C12),
+	ASPEED_PINCTRL_FUNC(I2C13),
+	ASPEED_PINCTRL_FUNC(NCTS4),
+	ASPEED_PINCTRL_FUNC(ACPI),
+	ASPEED_PINCTRL_FUNC(NDCD4),
+	ASPEED_PINCTRL_FUNC(SIOPBI),
+	ASPEED_PINCTRL_FUNC(NRI4),
+	ASPEED_PINCTRL_FUNC(SIOPBO),
+	ASPEED_PINCTRL_FUNC(TXD4),
+	ASPEED_PINCTRL_FUNC(RXD4),
+	ASPEED_PINCTRL_FUNC(FLBUSY),
+	ASPEED_PINCTRL_FUNC(FLWP),
+	ASPEED_PINCTRL_FUNC(UART6),
+	ASPEED_PINCTRL_FUNC(VGAHS),
+	ASPEED_PINCTRL_FUNC(VGAVS),
+	ASPEED_PINCTRL_FUNC(DDCCLK),
+	ASPEED_PINCTRL_FUNC(DDCDAT),
+	ASPEED_PINCTRL_FUNC(I2C5),
+	ASPEED_PINCTRL_FUNC(I2C6),
+	ASPEED_PINCTRL_FUNC(I2C7),
+	ASPEED_PINCTRL_FUNC(I2C8),
+	ASPEED_PINCTRL_FUNC(NCTS1),
+	ASPEED_PINCTRL_FUNC(NDCD1),
+	ASPEED_PINCTRL_FUNC(NDSR1),
+	ASPEED_PINCTRL_FUNC(NRI1),
+	ASPEED_PINCTRL_FUNC(NDTR1),
+	ASPEED_PINCTRL_FUNC(NRTS1),
+	ASPEED_PINCTRL_FUNC(TXD1),
+	ASPEED_PINCTRL_FUNC(RXD1),
+	ASPEED_PINCTRL_FUNC(PWM0),
+	ASPEED_PINCTRL_FUNC(PWM1),
+	ASPEED_PINCTRL_FUNC(PWM2),
+	ASPEED_PINCTRL_FUNC(PWM3),
+	ASPEED_PINCTRL_FUNC(PWM4),
+	ASPEED_PINCTRL_FUNC(PWM5),
+	ASPEED_PINCTRL_FUNC(PWM6),
+	ASPEED_PINCTRL_FUNC(PWM7),
+	ASPEED_PINCTRL_FUNC(VPI18),
+	ASPEED_PINCTRL_FUNC(VPI24),
+	ASPEED_PINCTRL_FUNC(VPI30),
+	ASPEED_PINCTRL_FUNC(BMCINT),
+	ASPEED_PINCTRL_FUNC(FLACK),
+	ASPEED_PINCTRL_FUNC(I2C3),
+	ASPEED_PINCTRL_FUNC(I2C4),
+	ASPEED_PINCTRL_FUNC(ROM8),
+	ASPEED_PINCTRL_FUNC(ROM16),
+	ASPEED_PINCTRL_FUNC(VPO12),
+	ASPEED_PINCTRL_FUNC(VPO24),
+};
+
+static struct aspeed_pinctrl_data ast2400_pinctrl = {
+	.pins = ast2400_pins,
+	.npins = ARRAY_SIZE(ast2400_pins),
+	.groups = ast2400_groups,
+	.ngroups = ARRAY_SIZE(ast2400_groups),
+	.functions = ast2400_functions,
+	.nfunctions = ARRAY_SIZE(ast2400_functions),
+};
+
+static struct pinmux_ops ast2400_pinmux_ops = {
+	.get_functions_count = aspeed_pinmux_get_fn_count,
+	.get_function_name = aspeed_pinmux_get_fn_name,
+	.get_function_groups = aspeed_pinmux_get_fn_groups,
+	.set_mux = aspeed_pinmux_set_mux,
+	.gpio_request_enable = aspeed_gpio_request_enable,
+	.strict = true,
+};
+
+static struct pinctrl_ops ast2400_pinctrl_ops = {
+	.get_groups_count = aspeed_pinctrl_get_groups_count,
+	.get_group_name = aspeed_pinctrl_get_group_name,
+	.get_group_pins = aspeed_pinctrl_get_group_pins,
+	.pin_dbg_show = aspeed_pinctrl_pin_dbg_show,
+	.dt_node_to_map = pinconf_generic_dt_node_to_map_pin,
+	.dt_free_map = pinctrl_utils_free_map,
+};
+
+static struct pinconf_ops ast2400_pinconf_ops = {
+	.pin_config_get = aspeed_pin_config_get,
+	.pin_config_set = aspeed_pin_config_set,
+};
+
+static struct pinctrl_desc ast2400_pinctrl_desc = {
+	.name = "pinctrl-ast2400",
+	.pins = ast2400_pins,
+	.npins = ARRAY_SIZE(ast2400_pins),
+	.pctlops = &ast2400_pinctrl_ops,
+	.pmxops = &ast2400_pinmux_ops,
+	.confops = &ast2400_pinconf_ops,
+	.owner = THIS_MODULE,
+};
+
+static struct pinctrl_gpio_range ast2400_gpios = {
+	.name = "ast2400-pctrl-gpio-range",
+	.npins = ARRAY_SIZE(ast2400_pins),
+};
+
+static int __init ast2400_pinctrl_probe(struct platform_device *pdev)
+{
+	struct aspeed_pinctrl_data *pdata = &ast2400_pinctrl;
+	struct resource *res;
+	struct pinctrl_dev *pctl;
+	int i;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	pdata->reg_base = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(pdata->reg_base))
+		return PTR_ERR(pdata->reg_base);
+
+	/* We allocated space for all pins, make sure we initialise all pin
+	 * numbers. Those pins we haven't defined won't yet have had their
+	 * number initialised, and it's effectively a no-op for those which
+	 * have.
+	 */
+	for (i = 0; i < ARRAY_SIZE(ast2400_pins); i++)
+		ast2400_pins[i].number = i;
+
+	pctl = pinctrl_register(&ast2400_pinctrl_desc, &pdev->dev, pdata);
+
+	if (IS_ERR(pctl)) {
+		dev_err(&pdev->dev, "Failed to register pinctrl\n");
+		return PTR_ERR(pctl);
+	}
+
+	platform_set_drvdata(pdev, pdata);
+
+	/* grange.name = "exynos5440-pctrl-gpio-range"; */
+	pinctrl_add_gpio_range(pctl, &ast2400_gpios);
+
+	return 0;
+}
+
+static const struct of_device_id ast2400_pinctrl_of_match[] = {
+	{ .compatible = "aspeed,ast2400-pinctrl", },
+	{ },
+};
+
+static struct platform_driver ast2400_pinctrl_driver = {
+	.driver = {
+		.name = "pinctrl-ast2400",
+		.of_match_table = ast2400_pinctrl_of_match,
+	},
+};
+
+module_platform_driver_probe(ast2400_pinctrl_driver, ast2400_pinctrl_probe);
+
+MODULE_AUTHOR("Andrew Jeffery <andrew@aj.id.au>");
+MODULE_DESCRIPTION("ASPEED AST2400 pinctrl driver");
+MODULE_LICENSE("GPL v2");
