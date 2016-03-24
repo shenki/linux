@@ -5,6 +5,7 @@ menuconfig ARCH_ASPEED
 	select WATCHDOG
 	select ASPEED_WATCHDOG
 	select MOXART_TIMER
+	select PINCTRL
 	help
 	  Say Y here if you want to run your kernel on an ASpeed BMC SoC.
 
