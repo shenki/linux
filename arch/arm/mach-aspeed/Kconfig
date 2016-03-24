@@ -17,7 +17,8 @@ menuconfig ARCH_ASPEED
 	select RTC_DRV_ASPEED
 	select ASPEED_GPIO
 	select GPIO_SYSFS
-
+	select PINCTRL
+	select PINCTRL_ASPEED
 	help
 	  Say Y here if you want to run your kernel on an ASpeed BMC SoC.
 
