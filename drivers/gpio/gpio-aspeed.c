@@ -16,6 +16,7 @@
 #include <linux/spinlock.h>
 #include <linux/platform_device.h>
 #include <linux/gpio/driver.h>
+#include <linux/pinctrl/consumer.h>
 
 struct aspeed_gpio {
 	struct gpio_chip chip;
@@ -366,6 +367,15 @@ static void aspeed_gpio_setup_irqs(struct aspeed_gpio *gpio,
 			aspeed_gpio_irq_handler, gpio);
 }
 
+static int aspeed_gpio_request(struct gpio_chip *chip, unsigned offset)
+{
+	return pinctrl_request_gpio(offset);
+}
+
+static void aspeed_gpio_free(struct gpio_chip *chip, unsigned offset)
+{
+	pinctrl_free_gpio(offset);
+}
 
 static int __init aspeed_gpio_probe(struct platform_device *pdev)
 {
@@ -392,6 +402,8 @@ static int __init aspeed_gpio_probe(struct platform_device *pdev)
 	gpio->chip.parent = &pdev->dev;
 	gpio->chip.direction_input = aspeed_gpio_dir_in;
 	gpio->chip.direction_output = aspeed_gpio_dir_out;
+	gpio->chip.request = aspeed_gpio_request;
+	gpio->chip.free = aspeed_gpio_free;
 	gpio->chip.get = aspeed_gpio_get;
 	gpio->chip.set = aspeed_gpio_set;
 	gpio->chip.to_irq = aspeed_gpio_to_irq;
