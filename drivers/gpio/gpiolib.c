@@ -47,7 +47,11 @@
  */
 DEFINE_SPINLOCK(gpio_lock);
 
+#ifdef CONFIG_ARCH_ASPEED
+static struct gpio_desc gpio_desc[ARCH_NR_GPIOS + ARCH_NR_SGPIOS];
+#else
 static struct gpio_desc gpio_desc[ARCH_NR_GPIOS];
+#endif
 
 #define GPIO_OFFSET_VALID(chip, offset) (offset >= 0 && offset < chip->ngpio)
 
