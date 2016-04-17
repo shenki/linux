@@ -1,0 +1,21 @@
+/dts-v1/;
+
+#include "aspeed-g5.dtsi"
+
+/ {
+	model = "AST2500 EVB";
+	compatible = "aspeed,ast2500";
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,115200";
+	};
+
+	memory {
+		reg = < 0x80000000 0x10000000 >;
+	};
+};
+
+&uart5 {
+	status = "okay";
+};
