@@ -2,9 +2,65 @@
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/io.h>
+#include <linux/pinctrl/machine.h>
+#include <linux/pinctrl/consumer.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
+
+// XXX TEMP HACKERY
+//
+// To be replaced by proper clock, pinmux and syscon drivers operating
+// from DT parameters
+static struct pinctrl_map mapping[] __initdata = {
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-3", "1e6e2000.pinmux", NULL, "I2C3"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-4", "1e6e2000.pinmux", NULL, "I2C4"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-5", "1e6e2000.pinmux", NULL, "I2C5"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-6", "1e6e2000.pinmux", NULL, "I2C6"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-7", "1e6e2000.pinmux", NULL, "I2C7"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-8", "1e6e2000.pinmux", NULL, "I2C8"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NCTS4"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NDCD4"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NRI4"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "TXD4"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "RXD4"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "FLBUSY"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "FLWP"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "VGAHS"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "VGAVS"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "DDCCLK"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "DDCDAT"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NCTS1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NDCD1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NDSR1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NRI1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NDTR1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "NRTS1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "TXD1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "RXD1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM0"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM1"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM2"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM3"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM4"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM5"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM6"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "PWM7"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "BMCINT"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "FLACK"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "ROM8"),
+};
+
+static void __init aspeed_dt_init(void)
+{
+	int ret;
+
+	ret = pinctrl_register_mappings(mapping, ARRAY_SIZE(mapping));
+	if (ret)
+		printk("Failed to register mappings with pinmux :(\n");
+
+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+}
 
 #define AST_IO_VA	0xf0000000
 #define AST_IO_PA	0x1e600000
@@ -46,7 +102,7 @@ static void __init do_common_setup(void)
 	 */
 	writel(0x01C000FF, AST_IO(AST_BASE_SCU | 0x88));
 	writel(0xC1C000FF, AST_IO(AST_BASE_SCU | 0x8c));
-	writel(0x003FA008, AST_IO(AST_BASE_SCU | 0x90));
+	writel(0x0000A008, AST_IO(AST_BASE_SCU | 0x90));
 
 	/* Setup scratch registers */
 	writel(0x00000042, AST_IO(AST_BASE_LPC | 0x170));
@@ -126,7 +182,9 @@ static void __init aspeed_init_early(void)
 {
 	// XXX UART stuff to fix to pinmux & co
 	writel(0x02010023, AST_IO(AST_BASE_LPC | 0x9c));
-	writel(SCU_PASSWORD, AST_IO(AST_BASE_SCU)); // UNLOCK SCU
+
+	/* Unlock SCU */
+	writel(SCU_PASSWORD, AST_IO(AST_BASE_SCU));
 
 	/* Enable UART4 RXD4, TXD4, NRI4, NDCD4, NCTS4 */
 	writel(0xcb000000, AST_IO(AST_BASE_SCU | 0x80));
@@ -178,4 +236,5 @@ DT_MACHINE_START(aspeed_dt, "ASpeed SoC")
 	.init_early	= aspeed_init_early,
 	.dt_compat	= aspeed_dt_match,
 	.map_io		= aspeed_map_io,
+	.init_machine	= aspeed_dt_init,
 MACHINE_END
