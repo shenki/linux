@@ -67,6 +67,14 @@
 	};
 };
 
+&mac0 {
+	status = "okay";
+
+	use-nc-si;
+	no-hw-checksum;
+};
+
+
 &uart5 {
 	status = "okay";
 };
