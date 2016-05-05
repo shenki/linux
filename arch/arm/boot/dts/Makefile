@@ -892,6 +892,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
 dtb-$(CONFIG_ARCH_ZX) += zx296702-ad1.dtb
 dtb-$(CONFIG_ARCH_ASPEED) += aspeed-bmc-opp-palmetto.dtb \
 	aspeed-bmc-opp-barreleye.dtb \
+	aspeed-bmc-opp-firestone.dtb \
 	aspeed-ast2500-evb.dtb
 endif
 
