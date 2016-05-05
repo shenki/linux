@@ -596,7 +596,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.phy_id		= PHY_ID_BCM54210E,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM54210E",
-	.features	= PHY_GBIT_FEATURES |
+	.features	= PHY_BASIC_FEATURES |
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
 	.config_init	= bcm54xx_config_init,
