@@ -411,4 +411,13 @@ config CLKSRC_ST_LPC
 	  Enable this option to use the Low Power controller timer
 	  as clocksource.
 
+config MOXART_TIMER
+	bool "Moxart timer" if COMPILE_TEST
+	depends on GENERIC_CLOCKEVENTS && HAS_IOMEM
+	select CLKSRC_OF
+	select CLKSRC_MMIO
+	help
+	  Enables the support for the timer used in the Moxart and Aspeed
+	  system on chips.
+
 endmenu
