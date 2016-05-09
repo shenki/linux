@@ -1,0 +1,14 @@
+Aspeed Watchdog Timer
+
+Required properties:
+ - compatible: must be "aspeed,wdt"
+ - reg: physical base address of the controller and length of memory mapped
+   region
+
+Example:
+
+	wdt1: wdt@1e785000 {
+		compatible = "aspeed,wdt";
+		reg = <0x1e785000 0x1c>;
+		interrupts = <27>;
+	};
