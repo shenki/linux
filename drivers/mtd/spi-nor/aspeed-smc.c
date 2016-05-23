@@ -415,7 +415,6 @@ static int aspeed_smc_probe(struct platform_device *dev)
 	/* XXX handshake to enable access to SMC (bios) controller w/ host? */
 
 	for_each_available_child_of_node(dev->dev.of_node, child) {
-		struct mtd_part_parser_data ppdata;
 		struct platform_device *cdev;
 		struct aspeed_smc_chip *chip;
 		u32 reg;
@@ -504,7 +503,7 @@ static int aspeed_smc_probe(struct platform_device *dev)
 
 		chip->nor.dev = &cdev->dev;
 		chip->nor.priv = chip;
-		chip->nor.flash_node = child;
+		spi_nor_set_flash_node(&chip->nor, child);
 		chip->nor.mtd.name = of_get_property(child, "label", NULL);
 		chip->nor.erase = aspeed_smc_erase;
 		chip->nor.read = aspeed_smc_read_user;
@@ -528,9 +527,7 @@ static int aspeed_smc_probe(struct platform_device *dev)
 		/* XXX enable fast read here */
 		/* XXX check if resource size big enough for chip */
 
-		memset(&ppdata, 0, sizeof(ppdata));
-		ppdata.of_node = cdev->dev.of_node;
-		err = mtd_device_parse_register(&chip->nor.mtd, NULL, &ppdata, NULL, 0);
+		err = mtd_device_register(&chip->nor.mtd, NULL, 0);
 		if (err)
 			continue;
 		controller->chips[n] = chip;
