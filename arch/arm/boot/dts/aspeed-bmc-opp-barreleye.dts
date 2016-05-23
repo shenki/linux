@@ -1,0 +1,163 @@
+/dts-v1/;
+
+#include "aspeed-g4.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Barrelye BMC";
+	compatible = "rackspace,barreleye-bmc", "aspeed,ast2400";
+
+	aliases {
+		serial4 = &uart5;
+	};
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,38400 earlyprintk";
+	};
+
+	memory {
+		reg = <0x40000000 0x10000000>;
+	};
+
+	ahb {
+		bmc_pnor: fmc@1e620000 {
+			reg = < 0x1e620000 0x94
+				0x20000000 0x02000000 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "aspeed,fmc";
+			flash@0 {
+				reg = < 0 >;
+				compatible = "jedec,spi-nor" ;
+#include "aspeed-bmc-opp-flash-layout.dtsi"
+			};
+		};
+
+		host_pnor: spi@1e630000 {
+			reg = < 0x1e630000 0x18
+				0x30000000 0x02000000 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "aspeed,smc";
+			flash {
+				reg = < 0 >;
+				compatible = "jedec,spi-nor" ;
+				label = "pnor";
+			};
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		heartbeat {
+			gpios = <&gpio 140 GPIO_ACTIVE_HIGH>;
+		};
+
+		identify {
+			gpios = <&gpio 58 GPIO_ACTIVE_LOW>;
+		};
+
+		beep {
+			gpios = <&gpio 111 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+
+};
+
+&mac0 {
+	status = "okay";
+
+	use-nc-si;
+};
+
+&i2c0 {
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c256";
+		reg = <0x50>;
+		pagesize = <64>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds3231";
+		reg = <0x68>;
+	};
+
+	lm75@4a {
+		compatible = "national,lm75";
+		reg = <0x4a>;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+
+	occ@50 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x50>;
+	};
+
+	occ@51 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x51>;
+	};
+};
+
+&i2c4 {
+	status = "okay";
+
+	adm1278@10 {
+		// P12V_a for CPU0
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+		sense-resistor = <500>;
+	};
+
+	eeprom@54 {
+		compatible = "atmel,24c256";
+		reg = <0x54>;
+		pagesize = <64>;
+	};
+};
+
+&i2c5 {
+	status = "okay";
+
+	adm1278@10 {
+		// P12V_b for CPU1
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+		sense-resistor = <500>;
+	};
+};
+
+&i2c6 {
+	status = "okay";
+
+	nct7904@2d {
+		compatible = "nuvoton,nct7904";
+		reg = <0x2d>;
+	};
+
+	nct7904@2e {
+		compatible = "nuvoton,nct7904";
+		reg = <0x2e>;
+	};
+
+	eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <8>;
+	};
+
+	eeprom@55 {
+		compatible = "atmel,24c02";
+		reg = <0x55>;
+		pagesize = <8>;
+	};
+};
