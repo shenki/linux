@@ -42,3 +42,28 @@
 &uart5 {
 	status = "okay";
 };
+
+&i2c0 {
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c256";
+		reg = <0x50>;
+		pagesize = <64>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds3231";
+		reg = <0x68>;
+		// interrupts = <GPIOF0>
+	};
+};
+
+&i2c2 {
+	status = "okay";
+
+	tmp423@4c {
+		compatible = "ti,tmp423";
+		reg = <0x4c>;
+	};
+};
