@@ -389,7 +389,7 @@ static int __init aspeed_gpio_probe(struct platform_device *pdev)
 
 	gpio->chip.ngpio = ARRAY_SIZE(aspeed_gpio_banks) * 32;
 
-	gpio->chip.dev = &pdev->dev;
+	gpio->chip.parent = &pdev->dev;
 	gpio->chip.direction_input = aspeed_gpio_dir_in;
 	gpio->chip.direction_output = aspeed_gpio_dir_out;
 	gpio->chip.get = aspeed_gpio_get;
