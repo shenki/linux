@@ -36,6 +36,7 @@ obj-$(CONFIG_PINCTRL_ST) 	+= pinctrl-st.o
 obj-$(CONFIG_PINCTRL_ZYNQ)	+= pinctrl-zynq.o
 obj-$(CONFIG_PINCTRL_ASPEED)	+= pinctrl-aspeed.o
 obj-$(CONFIG_PINCTRL_ASPEED)	+= pinctrl-ast2400.o
+obj-$(CONFIG_PINCTRL_ASPEED)	+= pinctrl-ast2500.o
 
 obj-$(CONFIG_ARCH_BCM)		+= bcm/
 obj-$(CONFIG_PINCTRL_BERLIN)	+= berlin/
