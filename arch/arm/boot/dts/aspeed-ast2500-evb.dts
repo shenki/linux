@@ -23,3 +23,11 @@
 &uart5 {
 	status = "okay";
 };
+
+&mac0 {
+	status = "okay";
+};
+
+&mac1 {
+	status = "okay";
+};
