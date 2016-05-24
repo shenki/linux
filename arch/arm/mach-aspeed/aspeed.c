@@ -116,6 +116,10 @@ static void __init do_garrison_setup(void)
 	writel(0xd7000000, AST_IO(AST_BASE_SCU | 0x88));
 }
 
+static void __init do_ast2500evb_setup(void)
+{
+}
+
 #define SCU_PASSWORD	0x1688A8A8
 
 static void __init aspeed_init_early(void)
@@ -123,8 +127,18 @@ static void __init aspeed_init_early(void)
 	// XXX UART stuff to fix to pinmux & co
 	writel(0x02010023, AST_IO(AST_BASE_LPC | 0x9c));
 	writel(SCU_PASSWORD, AST_IO(AST_BASE_SCU)); // UNLOCK SCU
+
+	/* Enable UART4 RXD4, TXD4, NRI4, NDCD4, NCTS4 */
 	writel(0xcb000000, AST_IO(AST_BASE_SCU | 0x80));
+
+	/* Enable
+	 *  - UART1 RXD1, RXD1, NRTS1, NDTR1, NRI1, NDSR1, NDCD1, NCTS1.
+	 *  - VGA DDCDAT, DDCCLK, VGAVS, VGAHS.
+	 *  - NAND flash FLWP#, FLBUSY#
+	 */
 	writel(0x00fff0c0, AST_IO(AST_BASE_SCU | 0x84));
+
+	/* Enables all the clocks except D2CLK, USB1.1 Host, USB1.1, LHCLK */
 	writel(0x10CC5E80, AST_IO(AST_BASE_SCU | 0x0c));
 
 	/*
@@ -141,9 +155,27 @@ static void __init aspeed_init_early(void)
 		do_palmetto_setup();
 	if (of_machine_is_compatible("ibm,garrison-bmc"))
 		do_garrison_setup();
+	if (of_machine_is_compatible("aspeed,ast2500-evb"))
+		do_ast2500evb_setup();
 
 }
 
+static void __init aspeed_map_io(void)
+{
+	iotable_init(aspeed_io_desc, ARRAY_SIZE(aspeed_io_desc));
+	debug_ll_io_init();
+
+	printk("SOC Rev: %08x\n", readl(AST_IO(AST_BASE_SCU | 0x7c)));
+}
+
+static const char *const aspeed_dt_match[] __initconst = {
+		"aspeed,ast2400",
+		"aspeed,ast2500",
+		NULL,
+};
+
 DT_MACHINE_START(aspeed_dt, "ASpeed SoC")
 	.init_early	= aspeed_init_early,
+	.dt_compat	= aspeed_dt_match,
+	.map_io		= aspeed_map_io,
 MACHINE_END
