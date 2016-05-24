@@ -12,7 +12,7 @@
 //
 // To be replaced by proper clock, pinmux and syscon drivers operating
 // from DT parameters
-static struct pinctrl_map mapping[] __initdata = {
+static struct pinctrl_map palmetto_mapping[] __initdata = {
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-3", "1e6e2000.pinmux", NULL, "I2C3"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-4", "1e6e2000.pinmux", NULL, "I2C4"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-5", "1e6e2000.pinmux", NULL, "I2C5"),
@@ -51,11 +51,21 @@ static struct pinctrl_map mapping[] __initdata = {
 	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "ROM8"),
 };
 
+static struct pinctrl_map ast2500_mapping[] __initdata = {
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-4", "1e6e2000.pinmux", NULL, "I2C4"),
+};
+
 static void __init aspeed_dt_init(void)
 {
-	int ret;
+	int ret = 0;
 
-	ret = pinctrl_register_mappings(mapping, ARRAY_SIZE(mapping));
+	if (of_machine_is_compatible("tyan,palmetto-bmc"))
+		ret = pinctrl_register_mappings(palmetto_mapping,
+				ARRAY_SIZE(palmetto_mapping));
+
+	if (of_machine_is_compatible("aspeed,ast2500-evb"))
+		ret = pinctrl_register_mappings(ast2500_mapping,
+				ARRAY_SIZE(ast2500_mapping));
 	if (ret)
 		printk("Failed to register mappings with pinmux :(\n");
 
