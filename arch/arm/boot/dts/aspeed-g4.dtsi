@@ -184,6 +184,11 @@
 				status = "disabled";
 			};
 
+			pinmux: pinmux@1e6e2000 {
+				reg = <0x1e6e2000 0x1a8>;
+				compatible = "aspeed,ast2400-pinctrl";
+			};
+
 			i2c: i2c@1e78a040 {
 				#address-cells = <1>;
 				#size-cells = <1>;
