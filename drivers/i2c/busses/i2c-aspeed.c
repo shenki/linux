@@ -216,12 +216,11 @@
 /* Fast Mode = 400 kHz, Standard = 100 kHz */
 //static int clock = 100; /* Default: 100 kHz */
 
+/* bitmask of commands that we wait for, in the cmd_pending mask */
 #define AST_I2CD_CMDS	(AST_I2CD_BUS_RECOVER_CMD_EN | \
 			 AST_I2CD_M_STOP_CMD | \
-			 AST_I2CD_M_S_RX_CMD_LAST | \
 			 AST_I2CD_M_RX_CMD | \
-			 AST_I2CD_M_TX_CMD | \
-			 AST_I2CD_M_START_CMD)
+			 AST_I2CD_M_TX_CMD)
 
 static const int ast_i2c_n_busses = 14;
 
@@ -338,7 +337,8 @@ static void ast_i2c_issue_cmd(struct ast_i2c_bus *bus, u32 cmd)
 {
 	dev_dbg(bus->dev, "issuing cmd: %x\n", cmd);
 	bus->cmd_err = 0;
-	bus->cmd_sent = bus->cmd_pending = cmd & AST_I2CD_CMDS;
+	bus->cmd_sent = cmd;
+	bus->cmd_pending = cmd & AST_I2CD_CMDS;
 	ast_i2c_write(bus, cmd, I2C_CMD_REG);
 }
 
@@ -554,18 +554,40 @@ static irqreturn_t ast_i2c_bus_irq(int irq, void *dev_id)
 	ast_i2c_write(bus, sts, I2C_INTR_STS_REG);
 
 	bus->cmd_err |= sts & errs;
-	bus->cmd_pending = cmd & AST_I2CD_CMDS;
+
+	/**
+	 * Mask-out pending commands that this interrupt has indicated are
+	 * complete. These checks need to cover all of the possible bits set
+	 * in the AST_I2CD_CMDS bitmask.
+	 */
+	if (sts & AST_I2CD_INTR_TX_ACK)
+		bus->cmd_pending &= ~AST_I2CD_M_TX_CMD;
+
+	if (sts & AST_I2CD_INTR_RX_DONE)
+		bus->cmd_pending &= ~AST_I2CD_M_RX_CMD;
+
+	if (sts & AST_I2CD_INTR_NORMAL_STOP)
+		bus->cmd_pending &= ~AST_I2CD_M_STOP_CMD;
+
+	if (sts & AST_I2CD_INTR_BUS_RECOVER_DONE)
+		bus->cmd_pending &= ~AST_I2CD_BUS_RECOVER_CMD_EN;
 
 	/* if we've seen an error, notify our waiter */
 	if (bus->cmd_err) {
 		complete(&bus->cmd_complete);
 
-	/* We have a transfer in progress */
-	} else if (bus->msg && !bus->cmd_pending) {
+	/* still have work to do? We'll wait for the corresponding IRQ(s) for
+	 * that to complete. */
+	} else if (bus->cmd_pending) {
+		dev_dbg(bus->dev, "cmds pending: 0x%x\n", bus->cmd_pending);
+
+	/* message transfer complete */
+	} else if (bus->msg) {
 		ast_i2c_master_xfer_done(bus);
 
-	/* Other message queued: recovery, error stop. Notify waiters. */
-	} else if (bus->cmd_sent && !bus->cmd_pending) {
+	/* other (non-message) command complete: recovery, error stop. Notify
+	 * waiters. */
+	} else if (bus->cmd_sent) {
 		complete(&bus->cmd_complete);
 
 	} else {
