@@ -165,7 +165,7 @@ static void __init aspeed_of_apb_clk_init(struct device_node *node)
 		pr_err("%s: of_iomap failed\n", node->full_name);
 		return;
 	}
-	reg = readl(base) >> 23 & 0x3;
+	reg = readl(base) >> 23 & 0x7;
 	iounmap(base);
 
 	hpll_clk = of_clk_get(node, 0);
