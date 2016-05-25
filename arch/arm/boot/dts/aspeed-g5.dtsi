@@ -24,6 +24,11 @@
 		#size-cells = <1>;
 		ranges;
 
+		pinmux: pinmux@1e6e2000 {
+			reg= <0x1e6e2000 0x1000>;
+			compatible = "aspeed,ast2500-pinctrl";
+		};
+
 		vic: interrupt-controller@1e6c0080 {
 			compatible = "aspeed,ast2400-vic";
 			interrupt-controller;
