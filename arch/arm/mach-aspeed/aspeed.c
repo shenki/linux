@@ -52,7 +52,9 @@ static struct pinctrl_map palmetto_mapping[] __initdata = {
 };
 
 static struct pinctrl_map ast2500_mapping[] __initdata = {
-	PIN_MAP_MUX_GROUP_DEFAULT("i2c-4", "1e6e2000.pinmux", NULL, "I2C4"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-8", "1e6e2000.pinmux", NULL, "I2C9"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-3", "1e6e2000.pinmux", NULL, "I2C4"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-2", "1e6e2000.pinmux", NULL, "I2C3"),
 };
 
 static void __init aspeed_dt_init(void)
