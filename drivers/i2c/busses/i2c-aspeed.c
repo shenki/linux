@@ -695,7 +695,7 @@ static int ast_i2c_probe_bus(struct platform_device *pdev)
 
 	bus->pclk = devm_clk_get(&pdev->dev, NULL);
 	if (IS_ERR(bus->pclk)) {
-		dev_dbg(&pdev->dev, "clk_get failed\n");
+		dev_err(&pdev->dev, "clk_get failed\n");
 		return PTR_ERR(bus->pclk);
 	}
 
