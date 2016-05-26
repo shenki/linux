@@ -369,12 +369,12 @@ static void aspeed_gpio_setup_irqs(struct aspeed_gpio *gpio,
 
 static int aspeed_gpio_request(struct gpio_chip *chip, unsigned offset)
 {
-	return pinctrl_request_gpio(offset);
+	return pinctrl_request_gpio(chip->base + offset);
 }
 
 static void aspeed_gpio_free(struct gpio_chip *chip, unsigned offset)
 {
-	pinctrl_free_gpio(offset);
+	pinctrl_free_gpio(chip->base + offset);
 }
 
 static int __init aspeed_gpio_probe(struct platform_device *pdev)
