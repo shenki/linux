@@ -141,6 +141,10 @@ static struct pinctrl_desc ast2500_pinctrl_desc = {
 
 static struct pinctrl_gpio_range ast2500_gpios = {
 	.name = "ast2500-pctrl-gpio-range",
+	/* HACK: this is even auto-assigned by the GPIO subsystem, so there are
+	 * no guarantees. BUT. It seems to pick 320 consistently.
+	 */
+	.base = 320,
 	.npins = ARRAY_SIZE(ast2500_pins),
 };
 

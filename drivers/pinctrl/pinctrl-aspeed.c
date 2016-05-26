@@ -221,7 +221,7 @@ int aspeed_gpio_request_enable(struct pinctrl_dev *pctldev,
 		struct pinctrl_gpio_range *range,
 		unsigned offset)
 {
-	unsigned pin = range->base + offset;
+	unsigned pin = offset;
 	const struct aspeed_pinctrl_data *pdata =
 		pinctrl_dev_get_drvdata(pctldev);
 	const struct aspeed_pin_prio *pprio =
