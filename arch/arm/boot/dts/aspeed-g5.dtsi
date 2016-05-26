@@ -199,7 +199,7 @@
 				status = "disabled";
 			};
 
-			i2c: i2c@1e78a040 {
+			i2c: i2c@1e78a000 {
 				#address-cells = <1>;
 				#size-cells = <1>;
 				#interrupt-cells = <1>;
