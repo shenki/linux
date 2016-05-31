@@ -186,6 +186,8 @@ static void __init do_garrison_setup(void)
 
 static void __init do_ast2500evb_setup(void)
 {
+	/* Reset AHB bridges */
+	writel(0x02, AST_IO(AST_BASE_SCU | 0x04));
 }
 
 #define SCU_PASSWORD	0x1688A8A8
