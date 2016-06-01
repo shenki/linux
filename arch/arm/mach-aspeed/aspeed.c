@@ -82,6 +82,7 @@ static void __init aspeed_dt_init(void)
 
 #define AST_BASE_LPC		0x1E789000 /* LPC Controller */
 #define AST_BASE_SPI		0x1E630000 /* SPI Memory Controller */
+#define AST_BASE_MAC0		0X1E660000 /* MAC 1 */
 #define AST_BASE_SCU		0x1E6E2000 /* System Control Unit (SCU) */
 #define AST_BASE_GPIO		0x1E780000 /* GPIO Controller */
 
@@ -186,8 +187,15 @@ static void __init do_garrison_setup(void)
 
 static void __init do_ast2500evb_setup(void)
 {
+	unsigned long reg;
+
 	/* Reset AHB bridges */
 	writel(0x02, AST_IO(AST_BASE_SCU | 0x04));
+
+	/* Set old MDIO interface */
+	reg = readl(AST_IO(AST_BASE_MAC0 | 0x40));
+	reg &= ~0x80000000;
+	writel(reg, AST_IO(AST_BASE_MAC0 | 0x40));
 }
 
 #define SCU_PASSWORD	0x1688A8A8
