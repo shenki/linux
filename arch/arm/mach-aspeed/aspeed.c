@@ -51,11 +51,20 @@ static struct pinctrl_map palmetto_mapping[] __initdata = {
 	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "ROM8"),
 };
 
-static struct pinctrl_map ast2500_mapping[] __initdata = {
+static struct pinctrl_map ast2500evb_mapping[] __initdata = {
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-11", "1e6e2000.pinmux", NULL, "I2C12"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-8", "1e6e2000.pinmux", NULL, "I2C9"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-3", "1e6e2000.pinmux", NULL, "I2C4"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-2", "1e6e2000.pinmux", NULL, "I2C3"),
+};
+
+
+static struct pinctrl_map witherspoon_mapping[] __initdata = {
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-11", "1e6e2000.pinmux", NULL, "I2C12"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-8", "1e6e2000.pinmux", NULL, "I2C9"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-3", "1e6e2000.pinmux", NULL, "I2C4"),
+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-2", "1e6e2000.pinmux", NULL, "I2C3"),
+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "RMII1"),
 };
 
 static void __init aspeed_dt_init(void)
@@ -66,9 +75,13 @@ static void __init aspeed_dt_init(void)
 		ret = pinctrl_register_mappings(palmetto_mapping,
 				ARRAY_SIZE(palmetto_mapping));
 
-	if (of_machine_is_compatible("aspeed,ast2500-evb"))
-		ret = pinctrl_register_mappings(ast2500_mapping,
-				ARRAY_SIZE(ast2500_mapping));
+	if (of_machine_is_compatible("ibm,witherspoon"))
+		ret = pinctrl_register_mappings(witherspoon_mapping,
+				ARRAY_SIZE(witherspoon_mapping));
+
+	if (of_machine_is_compatible("aspeed,ast2500evb"))
+		ret = pinctrl_register_mappings(ast2500evb_mapping,
+				ARRAY_SIZE(ast2500evb_mapping));
 	if (ret)
 		printk("Failed to register mappings with pinmux :(\n");
 
@@ -236,7 +249,8 @@ static void __init aspeed_init_early(void)
 		do_palmetto_setup();
 	if (of_machine_is_compatible("ibm,garrison-bmc"))
 		do_garrison_setup();
-	if (of_machine_is_compatible("aspeed,ast2500-evb"))
+
+	if (of_machine_is_compatible("aspeed,ast2500"))
 		do_ast2500evb_setup();
 
 }
