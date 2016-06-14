@@ -321,7 +321,6 @@ static void ast_i2c_dev_init(struct ast_i2c_bus *bus)
 	/* Set interrupt generation of I2C controller */
 	ast_i2c_write(bus, AST_I2CD_INTR_SDA_DL_TIMEOUT |
 			AST_I2CD_INTR_BUS_RECOVER_DONE |
-			AST_I2CD_INTR_SMBUS_ALERT |
 			AST_I2CD_INTR_SCL_TIMEOUT |
 			AST_I2CD_INTR_ABNORMAL |
 			AST_I2CD_INTR_NORMAL_STOP |
