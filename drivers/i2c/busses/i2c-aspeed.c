@@ -546,7 +546,7 @@ static irqreturn_t ast_i2c_bus_irq(int irq, void *dev_id)
 
 	dev_dbg(bus->dev, "irq! status 0x%08x, cmd 0x%08x\n", sts, cmd);
 
-	sts &= 0x7fff;
+	sts &= 0xffff;
 	bus->state = cmd >> 19 & 0xf;
 
 	/* ack everything */
