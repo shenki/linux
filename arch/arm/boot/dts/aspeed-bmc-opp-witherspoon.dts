@@ -5,7 +5,7 @@
 
 / {
 	model = "Witherspoon BMC";
-	compatible = "ibm,witherspoon-bmc", "aspeed,ast2500";
+	compatible = "ibm,witherspoon", "aspeed,ast2500";
 
 	aliases {
 		serial4 = &uart5;
