@@ -64,7 +64,6 @@ static struct pinctrl_map witherspoon_mapping[] __initdata = {
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-8", "1e6e2000.pinmux", NULL, "I2C9"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-3", "1e6e2000.pinmux", NULL, "I2C4"),
 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-2", "1e6e2000.pinmux", NULL, "I2C3"),
-	PIN_MAP_MUX_GROUP_HOG_DEFAULT("1e6e2000.pinmux", NULL, "RMII1"),
 };
 
 static void __init aspeed_dt_init(void)
