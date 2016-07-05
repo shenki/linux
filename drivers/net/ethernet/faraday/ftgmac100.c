@@ -74,6 +74,7 @@ struct ftgmac100 {
 
 	struct mii_bus *mii_bus;
 	int old_speed;
+	uint32_t int_mask_all;
 
 	uint32_t rxdes0_edorr_mask;
 	uint32_t txdes0_edotr_mask;
@@ -85,14 +86,6 @@ static int ftgmac100_alloc_rx_page(struct ftgmac100 *priv,
 /******************************************************************************
  * internal functions (hardware register access)
  *****************************************************************************/
-#define INT_MASK_ALL_ENABLED	(FTGMAC100_INT_RPKT_LOST	| \
-				 FTGMAC100_INT_XPKT_ETH		| \
-				 FTGMAC100_INT_XPKT_LOST	| \
-				 FTGMAC100_INT_AHB_ERR		| \
-				 FTGMAC100_INT_PHYSTS_CHG	| \
-				 FTGMAC100_INT_RPKT_BUF		| \
-				 FTGMAC100_INT_NO_RXBUF)
-
 static void ftgmac100_set_rx_ring_base(struct ftgmac100 *priv, dma_addr_t addr)
 {
 	iowrite32(addr, priv->base + FTGMAC100_OFFSET_RXR_BADR);
@@ -1021,8 +1014,9 @@ static int ftgmac100_poll(struct napi_struct *napi, int budget)
 		ftgmac100_tx_complete(priv);
 	}
 
-	if (status & (FTGMAC100_INT_NO_RXBUF | FTGMAC100_INT_RPKT_LOST |
-		      FTGMAC100_INT_AHB_ERR | FTGMAC100_INT_PHYSTS_CHG)) {
+	if (status & priv->int_mask_all & (FTGMAC100_INT_NO_RXBUF |
+			FTGMAC100_INT_RPKT_LOST | FTGMAC100_INT_AHB_ERR |
+			FTGMAC100_INT_PHYSTS_CHG)) {
 		if (net_ratelimit())
 			netdev_info(netdev, "[ISR] = 0x%x: %s%s%s%s\n", status,
 				    status & FTGMAC100_INT_NO_RXBUF ? "NO_RXBUF " : "",
@@ -1045,7 +1039,8 @@ static int ftgmac100_poll(struct napi_struct *napi, int budget)
 		napi_complete(napi);
 
 		/* enable all interrupts */
-		iowrite32(INT_MASK_ALL_ENABLED, priv->base + FTGMAC100_OFFSET_IER);
+		iowrite32(priv->int_mask_all,
+			  priv->base + FTGMAC100_OFFSET_IER);
 	}
 
 	return rx;
@@ -1089,7 +1084,7 @@ static int ftgmac100_open(struct net_device *netdev)
 	netif_start_queue(netdev);
 
 	/* enable all interrupts */
-	iowrite32(INT_MASK_ALL_ENABLED, priv->base + FTGMAC100_OFFSET_IER);
+	iowrite32(priv->int_mask_all, priv->base + FTGMAC100_OFFSET_IER);
 	return 0;
 
 err_hw:
@@ -1205,10 +1200,19 @@ static int ftgmac100_probe(struct platform_device *pdev)
 	priv->netdev = netdev;
 	priv->dev = &pdev->dev;
 
+	priv->int_mask_all = (FTGMAC100_INT_RPKT_LOST |
+			      FTGMAC100_INT_XPKT_ETH |
+			      FTGMAC100_INT_XPKT_LOST |
+			      FTGMAC100_INT_AHB_ERR |
+			      FTGMAC100_INT_PHYSTS_CHG |
+			      FTGMAC100_INT_RPKT_BUF |
+			      FTGMAC100_INT_NO_RXBUF);
+
 	if (of_machine_is_compatible("aspeed,ast2400") ||
 	    of_machine_is_compatible("aspeed,ast2500")) {
 		priv->rxdes0_edorr_mask = BIT(30);
 		priv->txdes0_edotr_mask = BIT(30);
+		priv->int_mask_all &= ~FTGMAC100_INT_PHYSTS_CHG;
 	} else {
 		priv->rxdes0_edorr_mask = BIT(15);
 		priv->txdes0_edotr_mask = BIT(15);
