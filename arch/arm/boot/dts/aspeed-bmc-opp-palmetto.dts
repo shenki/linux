@@ -20,6 +20,34 @@
 	};
 };
 
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flbusy_default &pinctrl_flwp_default
+			&pinctrl_vgahs_default &pinctrl_vgavs_default
+			&pinctrl_ddcclk_default &pinctrl_ddcdat_default
+			&pinctrl_pwm0_default &pinctrl_pwm1_default
+			&pinctrl_pwm2_default &pinctrl_pwm3_default
+			&pinctrl_pwm4_default &pinctrl_pwm5_default
+			&pinctrl_pwm6_default &pinctrl_pwm7_default
+			&pinctrl_bmcint_default &pinctrl_flack_default
+			&pinctrl_rom8_default>;
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ncts1_default &pinctrl_ndcd1_default
+			&pinctrl_nri1_default &pinctrl_ndtr1_default
+			&pinctrl_nrts1_default &pinctrl_txd1_default
+			&pinctrl_rxd1_default>;
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ncts4_default &pinctrl_ndcd4_default
+			&pinctrl_nri4_default &pinctrl_txd4_default
+			&pinctrl_rxd4_default>;
+};
+
 &uart5 {
 	status = "okay";
 };
