@@ -4,8 +4,8 @@
 #include <dt-bindings/gpio/aspeed-gpio.h>
 
 / {
-	model = "Palmetto BMC";
-	compatible = "tyan,palmetto-bmc", "aspeed,ast2400";
+	model = "Barrelye BMC";
+	compatible = "rackspace,barreleye-bmc", "aspeed,ast2400";
 
 	aliases {
 		serial4 = &uart5;
@@ -19,22 +19,6 @@
 	memory {
 		reg = <0x40000000 0x10000000>;
 	};
-
-        leds {
-                compatible = "gpio-leds";
-
-                heartbeat {
-                        gpios = <&gpio ASPEED_GPIO(R, 4) GPIO_ACTIVE_LOW>;
-                };
-
-                power {
-                        gpios = <&gpio ASPEED_GPIO(R, 5) GPIO_ACTIVE_LOW>;
-                };
-
-                identify {
-                        gpios = <&gpio ASPEED_GPIO(A, 2) GPIO_ACTIVE_LOW>;
-                };
-        };
 
 	ahb {
 		bmc_pnor: fmc@1e620000 {
@@ -63,20 +47,29 @@
 			};
 		};
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		heartbeat {
+			gpios = <&gpio ASPEED_GPIO(R, 17) GPIO_ACTIVE_HIGH>;
+		};
+
+		identify {
+			gpios = <&gpio ASPEED_GPIO(R, 2) GPIO_ACTIVE_LOW>;
+		};
+
+		beep {
+			gpios = <&gpio ASPEED_GPIO(N, 7) GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &pinctrl {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flbusy_default &pinctrl_flwp_default
-
 			&pinctrl_vgahs_default &pinctrl_vgavs_default
 			&pinctrl_ddcclk_default &pinctrl_ddcdat_default
-
-			&pinctrl_pwm1_default &pinctrl_pwm2_default
-			&pinctrl_pwm3_default &pinctrl_pwm4_default
-			&pinctrl_pwm5_default &pinctrl_pwm6_default
-			&pinctrl_pwm7_default
-
 			&pinctrl_bmcint_default &pinctrl_flack_default>;
 };
 
@@ -92,6 +85,7 @@
 	status = "okay";
 };
 
+
 &i2c0 {
 	status = "okay";
 
@@ -104,20 +98,11 @@
 	rtc@68 {
 		compatible = "dallas,ds3231";
 		reg = <0x68>;
-		// interrupts = <GPIOF0>
 	};
-};
 
-&i2c1 {
-	status = "okay";
-};
-
-&i2c2 {
-	status = "okay";
-
-	tmp423@4c {
-		compatible = "ti,tmp423";
-		reg = <0x4c>;
+	lm75@4a {
+		compatible = "national,lm75";
+		reg = <0x4a>;
 	};
 };
 
@@ -128,44 +113,64 @@
 		compatible = "ibm,occ-i2c";
 		reg = <0x50>;
 	};
+
+	occ@51 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x51>;
+	};
 };
 
 &i2c4 {
 	status = "okay";
+
+	adm1278@10 {
+		// P12V_a for CPU0
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+		sense-resistor = <500>;
+	};
+
+	eeprom@54 {
+		compatible = "atmel,24c256";
+		reg = <0x54>;
+		pagesize = <64>;
+	};
 };
 
 &i2c5 {
 	status = "okay";
+
+	adm1278@10 {
+		// P12V_b for CPU1
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+		sense-resistor = <500>;
+	};
 };
 
 &i2c6 {
 	status = "okay";
-};
 
-&i2c7 {
-	status = "okay";
-};
-
-&gpio {
-	pin_func_mode0 {
-		gpio-hog;
-		gpios = <ASPEED_GPIO(C, 4) GPIO_ACTIVE_HIGH>;
-		output-low;
-		line-name = "func_mode0";
+	nct7904@2d {
+		compatible = "nuvoton,nct7904";
+		reg = <0x2d>;
 	};
 
-	pin_func_mode1 {
-		gpio-hog;
-		gpios = <ASPEED_GPIO(C, 5)  GPIO_ACTIVE_HIGH>;
-		output-low;
-		line-name = "func_mode1";
+	nct7904@2e {
+		compatible = "nuvoton,nct7904";
+		reg = <0x2e>;
 	};
 
-	pin_func_mode2 {
-		gpio-hog;
-		gpios = <ASPEED_GPIO(C, 6) GPIO_ACTIVE_HIGH>;
-		output-low;
-		line-name = "func_mode2";
+	eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <8>;
+	};
+
+	eeprom@55 {
+		compatible = "atmel,24c02";
+		reg = <0x55>;
+		pagesize = <8>;
 	};
 };
 
