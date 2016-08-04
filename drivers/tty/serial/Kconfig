@@ -1116,6 +1116,16 @@ config SERIAL_NETX_CONSOLE
 	  If you have enabled the serial port on the Hilscher NetX SoC
 	  you can make it the console by answering Y to this option.
 
+config SERIAL_ASPEED_VUART
+	tristate "Aspeed Virtual UART"
+	depends on OF
+	depends on SERIAL_8250
+	help
+	  If you want to use the virtual UART (VUART) device on Aspeed
+	  BMC platforms, enable this option. This enables the 16550A-
+	  compatible device on the local LPC bus, giving a UART device
+	  with no physical RS232 connections.
+
 config SERIAL_OMAP
 	tristate "OMAP serial port support"
 	depends on ARCH_OMAP2PLUS
