@@ -61,7 +61,7 @@ static void __init do_common_setup(void)
 
 	/* Setup scratch registers */
 	writel(0x00000042, AST_IO(AST_BASE_LPC | 0x170));
-	writel(0x00004000, AST_IO(AST_BASE_LPC | 0x174));
+	writel(0x00008000, AST_IO(AST_BASE_LPC | 0x174));
 }
 
 static void __init do_barreleye_setup(void)
