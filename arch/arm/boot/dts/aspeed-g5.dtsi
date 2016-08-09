@@ -314,11 +314,11 @@
 				status = "disabled";
 			};
 
-			uart6: serial@1e787000 {
-				compatible = "ns16550a";
+			vuart: vuart@1e787000 {
+				compatible = "aspeed,vuart";
 				reg = <0x1e787000 0x1000>;
 				reg-shift = <2>;
-				interrupts = <10>;
+				interrupts = <8>;
 				clocks = <&clk_uart>;
 				no-loopback-test;
 				status = "disabled";
