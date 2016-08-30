@@ -9,6 +9,7 @@
 
 	aliases {
 		serial4 = &uart5;
+		serial5 = &vuart;
 	};
 
 	chosen {
