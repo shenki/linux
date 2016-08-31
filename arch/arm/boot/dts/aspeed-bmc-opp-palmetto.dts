@@ -88,6 +88,9 @@
 	no-hw-checksum;
 };
 
+&rng {
+	status = "okay";
+};
 
 &uart5 {
 	status = "okay";
