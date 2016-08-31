@@ -70,6 +70,13 @@
 				clocks = <&clk_clkin>;
 			};
 
+			rng: hw_random@1e6e2074 {
+				compatible = "aspeed,ast2400-rng";
+
+				reg = <0x1e6e2074 0x8>;
+				status = "disabled";
+			};
+
 			syscon: syscon@1e6e2000 {
 				compatible = "aspeed,g4-scu", "syscon", "simple-mfd";
 				reg = <0x1e6e2000 0x1a8>;
