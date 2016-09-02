@@ -384,6 +384,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <2>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c3_default>;
 				};
 
 				i2c3: i2c-bus@100 {
@@ -395,6 +397,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <3>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c4_default>;
 				};
 
 				i2c4: i2c-bus@140 {
@@ -406,6 +410,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <4>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c5_default>;
 				};
 
 				i2c5: i2c-bus@180 {
@@ -417,6 +423,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <5>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c6_default>;
 				};
 
 				i2c6: i2c-bus@1c0 {
@@ -428,6 +436,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <6>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c7_default>;
 				};
 
 				i2c7: i2c-bus@300 {
@@ -439,6 +449,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <7>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c8_default>;
 				};
 
 				i2c8: i2c-bus@340 {
@@ -450,6 +462,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <8>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c9_default>;
 				};
 
 				i2c9: i2c-bus@380 {
@@ -461,6 +475,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <9>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c10_default>;
 				};
 
 				i2c10: i2c-bus@3c0 {
@@ -472,6 +488,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <10>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c11_default>;
 				};
 
 				i2c11: i2c-bus@400 {
@@ -483,6 +501,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <11>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c12_default>;
 				};
 
 				i2c12: i2c-bus@440 {
@@ -494,6 +514,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <12>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c13_default>;
 				};
 
 				i2c13: i2c-bus@480 {
@@ -505,6 +527,8 @@
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <13>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_i2c14_default>;
 				};
 
 			};
