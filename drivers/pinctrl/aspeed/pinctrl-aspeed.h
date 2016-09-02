@@ -242,6 +242,7 @@
  * further and references registers in the graphics IP block, but that isn't
  * handled yet.
  */
+#define SCU2C           0x2C /* Misc. Control Register */
 #define SCU3C           0x3C /* System Reset Control/Status Register */
 #define SCU48           0x48 /* MAC Interface Clock Delay Setting */
 #define HW_STRAP1       0x70 /* AST2400 strapping is 33 bits, is split */
