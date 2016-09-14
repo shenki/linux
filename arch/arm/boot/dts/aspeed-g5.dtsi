@@ -201,6 +201,17 @@
 						function = "RMII2";
 						groups = "RMII2";
 					};
+
+					pinctrl_spi1_master_default: spi1_master_default {
+						function = "SPI1_MASTER";
+						groups = "SPI1_MASTER";
+					};
+
+					pinctrl_spi1_passthru_default: spi1_passthru_default {
+						function = "SPI1_PASSTHRU";
+						groups = "SPI1_PASSTHRU";
+					};
+
 				};
 			};
 
