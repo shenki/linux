@@ -35,6 +35,11 @@
 	};
 };
 
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_master_default>;
+};
+
 &uart5 {
 	status = "okay";
 };
