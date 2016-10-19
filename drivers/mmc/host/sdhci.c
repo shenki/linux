@@ -918,6 +918,14 @@ static void sdhci_set_transfer_mode(struct sdhci_host *host,
 	if (host->flags & SDHCI_REQ_USE_DMA)
 		mode |= SDHCI_TRNS_DMA;
 
+#ifdef CONFIG_WO_CD
+	if(sdhci_readl(host, SDHCI_AST_EXT) & SDHCI_EXT_CD_INFO) {
+		sdhci_writel(host, 
+					sdhci_readl(host, SDHCI_AST_EXT) | SDHCI_EXT_CD_DIS(host->slot),
+					SDHCI_AST_EXT);
+	}
+#endif
+
 	sdhci_writew(host, mode, SDHCI_TRANSFER_MODE);
 }
 
@@ -926,6 +934,14 @@ static void sdhci_finish_data(struct sdhci_host *host)
 	struct mmc_data *data;
 
 	BUG_ON(!host->data);
+
+#ifdef CONFIG_WO_CD
+	if(sdhci_readl(host, SDHCI_AST_EXT) & SDHCI_EXT_CD_INFO) {
+		sdhci_writel(host, 
+					sdhci_readl(host, SDHCI_AST_EXT) & ~(SDHCI_EXT_CD_DIS(host->slot)),
+					SDHCI_AST_EXT);
+	}
+#endif
 
 	data = host->data;
 	host->data = NULL;
@@ -2809,6 +2825,16 @@ int sdhci_add_host(struct sdhci_host *host)
 
 	sdhci_do_reset(host, SDHCI_RESET_ALL);
 
+#ifdef CONFIG_WO_CD
+	if(sdhci_readl(host, SDHCI_AST_EXT) & SDHCI_EXT_CD_INFO) {
+		printk("Without Card Detection \n");
+		sdhci_writel(host, 
+					sdhci_readl(host, SDHCI_AST_EXT) | SDHCI_EXT_CD_MODE_EN(host->slot),
+					SDHCI_AST_EXT);
+	}
+#endif
+		
+
 	host->version = sdhci_readw(host, SDHCI_HOST_VERSION);
 	host->version = (host->version & SDHCI_SPEC_VER_MASK)
 				>> SDHCI_SPEC_VER_SHIFT;
@@ -2848,6 +2874,11 @@ int sdhci_add_host(struct sdhci_host *host)
 		DBG("Disabling ADMA as it is marked broken\n");
 		host->flags &= ~SDHCI_USE_ADMA;
 	}
+
+#if defined(CONFIG_USB_UHCI_HCD) || defined(CONFIG_USB_UHCI_HCD_MODULE)
+	//AST SOC Issue : DMA con-current with UHCI dma, so force to PIO mode
+	host->flags &= ~(SDHCI_USE_ADMA | SDHCI_USE_SDMA);
+#endif
 
 	if (host->flags & (SDHCI_USE_SDMA | SDHCI_USE_ADMA)) {
 		if (host->ops->enable_dma) {
@@ -2999,8 +3030,13 @@ int sdhci_add_host(struct sdhci_host *host)
 	 * their platform code before calling sdhci_add_host(), and we
 	 * won't assume 8-bit width for hosts without that CAP.
 	 */
+#ifdef CONFIG_8BIT_MODE
+	if (!(host->quirks & SDHCI_QUIRK_FORCE_1_BIT_DATA))
+		mmc->caps |= MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA;
+#else
 	if (!(host->quirks & SDHCI_QUIRK_FORCE_1_BIT_DATA))
 		mmc->caps |= MMC_CAP_4_BIT_DATA;
+#endif	 
 
 	if (host->quirks2 & SDHCI_QUIRK2_HOST_NO_CMD23)
 		mmc->caps &= ~MMC_CAP_CMD23;
