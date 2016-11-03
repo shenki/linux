@@ -813,6 +813,15 @@ config ASPEED_MBOX
 	  (AST2400 and AST2500). This driver provides a device for aspeed
 	  mbox registers
 
+config ASPEED_LPC_CTRL
+	depends on ARCH_ASPEED || COMPILE_TEST
+	bool "Build a driver to control the BMC to HOST LPC bus"
+	default "n"
+	---help---
+	  Provides a driver to control BMC to HOST LPC mappings through
+	  ioctl()s, the driver aso provides a read/write interface to a BMC ram
+	  region where host LPC can be buffered.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

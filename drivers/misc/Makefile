@@ -58,3 +58,4 @@ obj-$(CONFIG_VEXPRESS_SYSCFG)	+= vexpress-syscfg.o
 obj-$(CONFIG_CXL_BASE)		+= cxl/
 obj-$(CONFIG_PANEL)             += panel.o
 obj-$(CONFIG_ASPEED_MBOX)		+= mbox-host.o
+obj-$(CONFIG_ASPEED_LPC_CTRL)		+= lpc-ctrl.o
