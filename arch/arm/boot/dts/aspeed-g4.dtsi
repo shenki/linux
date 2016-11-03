@@ -870,6 +870,12 @@
 				interrupts = <8>;
 			};
 
+			mbox: mbox@1e789200 {
+				compatible = "aspeed,ast2400-mbox";
+				reg = <0x1e789200 0x5c>;
+				interrupts = <46>;
+			};
+
 			wdt1: wdt@1e785000 {
 				compatible = "aspeed,ast2400-wdt";
 				reg = <0x1e785000 0x1c>;

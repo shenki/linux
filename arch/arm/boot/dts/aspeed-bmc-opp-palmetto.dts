@@ -29,6 +29,18 @@
 			no-map;
 			reg = <0x5f000000 0x01000000>; /* 16M */
 		};
+
+		flash_memory: region@54000000 {
+			compatible = "aspeed,ast2400-lpc-ctrl";
+			no-map;
+			reg = <0x54000000 0x04000000>; /* 64M */
+		};
+	};
+
+	flash_buffer@1e789000 {
+		compatible = "aspeed,ast2400-lpc-ctrl";
+		memory-region = <&flash_memory>;
+		reg = <0x1e789000 0x8>;
 	};
 
         leds {
