@@ -7,6 +7,23 @@
 	#size-cells = <1>;
 	interrupt-parent = <&vic>;
 
+	aliases {
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
+		i2c10 = &i2c10;
+		i2c11 = &i2c11;
+		i2c12 = &i2c12;
+		i2c13 = &i2c13;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -960,7 +977,6 @@
 					#size-cells = <0>;
 					reg = <0x40 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <0>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <0>;
@@ -973,7 +989,6 @@
 					#size-cells = <0>;
 					reg = <0x80 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <1>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <1>;
@@ -985,7 +1000,6 @@
 					#size-cells = <0>;
 					reg = <0xC0 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <2>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <2>;
@@ -998,7 +1012,6 @@
 					#size-cells = <0>;
 					reg = <0x100 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <3>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <3>;
@@ -1011,7 +1024,6 @@
 					#size-cells = <0>;
 					reg = <0x140 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <4>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <4>;
@@ -1024,7 +1036,6 @@
 					#size-cells = <0>;
 					reg = <0x180 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <5>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <5>;
@@ -1037,7 +1048,6 @@
 					#size-cells = <0>;
 					reg = <0x1C0 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <6>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <6>;
@@ -1050,7 +1060,6 @@
 					#size-cells = <0>;
 					reg = <0x300 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <7>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <7>;
@@ -1063,7 +1072,6 @@
 					#size-cells = <0>;
 					reg = <0x340 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <8>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <8>;
@@ -1076,7 +1084,6 @@
 					#size-cells = <0>;
 					reg = <0x380 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <9>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <9>;
@@ -1089,7 +1096,6 @@
 					#size-cells = <0>;
 					reg = <0x3c0 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <10>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <10>;
@@ -1102,7 +1108,6 @@
 					#size-cells = <0>;
 					reg = <0x400 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <11>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <11>;
@@ -1115,7 +1120,6 @@
 					#size-cells = <0>;
 					reg = <0x440 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <12>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <12>;
@@ -1128,7 +1132,6 @@
 					#size-cells = <0>;
 					reg = <0x480 0x40>;
 					compatible = "aspeed,ast2400-i2c-bus";
-					bus = <13>;
 					clock-frequency = <100000>;
 					status = "disabled";
 					interrupts = <13>;
