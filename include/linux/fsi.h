@@ -18,6 +18,7 @@
 #include <linux/device.h>
 
 struct fsi_device {
+	struct list_head	link;	/* for slave's list */
 	struct device		dev;
 	u8			engine_type;
 	u8			version;

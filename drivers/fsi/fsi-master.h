@@ -20,6 +20,8 @@
 #include <linux/device.h>
 
 struct fsi_master {
+	struct list_head my_slaves;
+	bool		slave_list;
 	struct device	*dev;
 	int		idx;
 	int		n_links;
