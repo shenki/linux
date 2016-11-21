@@ -29,6 +29,13 @@ config FSI_SCOM
 	depends on FSI
 	---help---
 	This option enables an FSI based SCOM device driver.
+
+config FSI_MBX
+	tristate "Mailbox FSI client device driver"
+	depends on FSI
+	---help---
+	This option enables an FSI based Mailbox device driver.
+
 endif
 
 endmenu
