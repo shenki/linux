@@ -23,6 +23,12 @@ config FSI_MASTER_GPIO
 	depends on FSI
 	---help---
 	This option enables a FSI master driver using GPIO lines.
+
+config FSI_SCOM
+	tristate "SCOM FSI client device driver"
+	depends on FSI
+	---help---
+	This option enables an FSI based SCOM device driver.
 endif
 
 endmenu
