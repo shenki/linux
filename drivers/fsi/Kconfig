@@ -17,6 +17,12 @@ config FSI_MASTER_FAKE
 	depends on FSI
 	---help---
 	This option enables a fake FSI master driver for debugging.
+
+config FSI_MASTER_GPIO
+	tristate "GPIO-based FSI master"
+	depends on FSI
+	---help---
+	This option enables a FSI master driver using GPIO lines.
 endif
 
 endmenu

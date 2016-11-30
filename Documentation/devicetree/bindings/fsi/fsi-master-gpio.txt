@@ -1,0 +1,21 @@
+Device-tree bindings for gpio-based FSI master driver
+-----------------------------------------------------
+
+Required properties:
+	- compatible = "ibm,fsi-master-gpio";
+	- clk-gpios;
+	- data-gpios;
+
+Optional properties:
+	- enable-gpios;
+	- trans-gpios;
+	- mux-gpios;
+
+fsi-master {
+	compatible = "ibm,fsi-master", "ibm,fsi-master-gpio";
+	clk-gpios = <&gpio 0 &gpio 6>;
+	data-gpios = <&gpio 1 &gpio 7>;
+	enable-gpios = <&gpio 2 &gpio 8>;	/* Enable FSI data in/out */
+	trans-gpios = <&gpio 3 &gpio 9>;	/* Volts translator direction */
+	mux-gpios = <&gpio 4> &gpio 10>;	/* Multiplexer for FSI pins */
+}

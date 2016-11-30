@@ -65,6 +65,16 @@
 			};
 		};
 	};
+
+	fsi-master {
+		compatible = "ibm,fsi-master", "ibm,fsi-master-gpio";
+
+		clock-gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		mux-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+		trans-gpios = <&gpio 62 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &pinctrl {
