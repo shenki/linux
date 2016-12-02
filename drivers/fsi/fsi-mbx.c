@@ -49,9 +49,22 @@ static int mbx_probe(struct device *);
 static ssize_t mbx_read(struct file *filep, char __user *buf, size_t len,
 			loff_t *offset)
 {
-	int rc = 0;
+	int rc;
+	u32 value;
+	u32 pos = *offset;
 
-	return rc ? rc : len;
+	if (!mbx_offset_valid(pos))
+		return -ERANGE;
+
+	rc = fsi_device_read(mbx->fsi_dev, pos, &value, sizeof(value));
+	if (rc)
+		return -EIO;
+
+	rc = copy_to_user(buf, &value, sizeof(value));
+	if (rc)
+		return -EFAULT;
+
+	return 0;
 }
 
 static ssize_t mbx_write(struct file *filep, const char __user *buf,
