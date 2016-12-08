@@ -804,6 +804,15 @@ config PANEL_BOOT_MESSAGE
 	  An empty message will only clear the display at driver init time. Any other
 	  printf()-formatted message is valid with newline and escape codes.
 
+config ASPEED_MBOX
+	depends on ARCH_ASPEED || COMPILE_TEST
+	bool "Build MBOX driver for BMC to HOST communication"
+	default "y"
+	---help---
+	  Provides a driver for the MBOX regsiters found on Aspeed SOCs
+	  (AST2400 and AST2500). This driver provides a device for aspeed
+	  mbox registers
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
