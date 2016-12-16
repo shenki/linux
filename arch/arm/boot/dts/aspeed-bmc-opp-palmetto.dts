@@ -37,11 +37,6 @@
 		};
 	};
 
-	flash_buffer@1e789000 {
-		compatible = "aspeed,ast2400-lpc-ctrl";
-		memory-region = <&flash_memory>;
-		reg = <0x1e789000 0x8>;
-	};
 
         leds {
                 compatible = "gpio-leds";

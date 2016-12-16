@@ -29,6 +29,12 @@
 			no-map;
 			reg = <0x5f000000 0x01000000>; /* 16MB */
 		};
+
+		flash_memory: region@54000000 {
+			compatible = "aspeed,ast2400-lpc-ctrl";
+			no-map;
+			reg = <0x54000000 0x04000000>; /* 64M */
+		};
 	};
 
 	ahb {
