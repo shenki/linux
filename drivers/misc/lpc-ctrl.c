@@ -175,7 +175,6 @@ static int lpc_ctrl_probe(struct platform_device *pdev)
 	struct lpc_ctrl *lpc_ctrl;
 	struct device *dev;
 	struct device_node *node;
-	struct resource *res;
 	struct resource resm;
 	struct mtd_info *mtd;
 	int rc, i;
@@ -190,13 +189,6 @@ static int lpc_ctrl_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	dev_set_drvdata(&pdev->dev, lpc_ctrl);
-
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res) {
-		dev_err(dev, "Unable to find resources\n");
-		rc = -ENXIO;
-		goto out;
-	}
 
 	node = of_parse_phandle(dev->of_node, "memory-region", 0);
 	if (!node) {
