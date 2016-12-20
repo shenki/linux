@@ -182,6 +182,13 @@ static int lpc_ctrl_probe(struct platform_device *pdev)
 	if (!pdev || !pdev->dev.of_node)
 		return -ENODEV;
 
+	/* Find the size of the pnor */
+	mtd = get_mtd_device_nm("1e630000.spi:pnor@0");
+	if (IS_ERR(mtd)) {
+		dev_err(&pdev->dev, "couldn't find pnor\n");
+		return -EPROBE_DEFER;
+	}
+
 	dev = &pdev->dev;
 
 	lpc_ctrl = devm_kzalloc(dev, sizeof(*lpc_ctrl), GFP_KERNEL);
@@ -189,6 +196,16 @@ static int lpc_ctrl_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	dev_set_drvdata(&pdev->dev, lpc_ctrl);
+
+	node = of_get_parent(mtd_get_of_node(mtd));
+
+	lpc_ctrl->pnor_size = mtd->size;
+	rc = of_property_read_u32_index(node, "reg", 2, &lpc_ctrl->pnor_base);
+	if (rc)
+		return rc;
+
+	dev_info(dev, "Host PNOR base: 0x%08x size: 0x%08x\n",
+			lpc_ctrl->pnor_base, lpc_ctrl->pnor_size);
 
 	node = of_parse_phandle(dev->of_node, "memory-region", 0);
 	if (!node) {
@@ -219,32 +236,6 @@ static int lpc_ctrl_probe(struct platform_device *pdev)
 	rc = misc_register(&lpc_ctrl->miscdev);
 	if (rc) {
 		dev_err(dev, "Unable to register device\n");
-		goto out;
-	}
-
-	/* Find the size of the pnor */
-	i = 0;
-	mtd = get_mtd_device(NULL, i);
-	while (!IS_ERR(mtd)) {
-		struct device_node *node = mtd_get_of_node(mtd);
-
-		if (mtd->name && strstr(mtd->name, "pnor") && node) {
-			lpc_ctrl->pnor_size = mtd->size;
-			rc = of_property_read_u32_index(node, "reg", 2,
-					&lpc_ctrl->pnor_base);
-			if (rc)
-				mtd = ERR_PTR(rc);
-			else
-				dev_info(dev, "Host PNOR base: 0x%08x size: 0x%08x\n",
-					lpc_ctrl->pnor_base, lpc_ctrl->pnor_size);
-			break;
-		}
-
-		mtd = get_mtd_device(NULL, ++i);
-	}
-	if (IS_ERR(mtd)) {
-		dev_err(dev, "Couldn't locate MTD PNOR partition\n");
-		rc = -ENODEV;
 		goto out;
 	}
 
