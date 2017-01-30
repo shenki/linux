@@ -74,4 +74,19 @@ extern struct bus_type fsi_bus_type;
 extern int fsi_enable_irq(struct fsi_device *dev);
 extern void fsi_disable_irq(struct fsi_device *dev);
 
+#ifdef CONFIG_FSI_SCOM
+extern int fsi_scom_write(struct fsi_device *fsi, u64 value, u32 addr);
+extern int fsi_scom_read(struct fsi_device *fsi, u64 *value, u32 addr);
+#else
+static inline int fsi_scom_write(struct fsi_device *fsi, u64 value,
+				 uint32_t addr)
+{
+	return -ENODEV;
+}
+static inline int fsi_scom_write(struct fsi_device *fsi, u64 value, u32 addr)
+{
+	return -ENODEV;
+}
+#endif
+
 #endif /* LINUX_FSI_H */

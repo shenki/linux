@@ -48,54 +48,46 @@ struct scom_device {
 static struct list_head scom_devices;
 static atomic_t scom_idx = ATOMIC_INIT(0);
 
-static int put_scom(struct scom_device *scom_dev, uint64_t value,
-			uint32_t addr)
+int fsi_scom_write(struct fsi_device *fsi, u64 value, u32 addr)
 {
 	int rc;
-	uint32_t data = SCOM_RESET_CMD;
+	u32 data = SCOM_RESET_CMD;
 
-	rc = fsi_device_write(scom_dev->fsi_dev, SCOM_RESET_REG, &data,
-				sizeof(uint32_t));
+	rc = fsi_device_write(fsi, SCOM_RESET_REG, &data, sizeof(u32));
 	if (rc)
 		return rc;
 
 	data = (value >> 32) & 0xffffffff;
-	rc = fsi_device_write(scom_dev->fsi_dev, SCOM_DATA0_REG, &data,
-				sizeof(uint32_t));
+	rc = fsi_device_write(fsi, SCOM_DATA0_REG, &data, sizeof(u32));
 	if (rc)
 		return rc;
 
 	data = value & 0xffffffff;
-	rc = fsi_device_write(scom_dev->fsi_dev, SCOM_DATA1_REG, &data,
-				sizeof(uint32_t));
+	rc = fsi_device_write(fsi, SCOM_DATA1_REG, &data, sizeof(u32));
 	if (rc)
 		return rc;
 
 	data = SCOM_WRITE_CMD | addr;
-	return fsi_device_write(scom_dev->fsi_dev, SCOM_CMD_REG, &data,
-				sizeof(uint32_t));
+	return fsi_device_write(fsi, SCOM_CMD_REG, &data, sizeof(u32));
 }
+EXPORT_SYMBOL_GPL(fsi_scom_write);
 
-static int get_scom(struct scom_device *scom_dev, uint64_t *value,
-			uint32_t addr)
+int fsi_scom_read(struct fsi_device *fsi, u64 *value, u32 addr)
 {
-	uint32_t result, data;
+	u32 result, data;
 	int rc;
 
 	data = addr;
-	rc = fsi_device_write(scom_dev->fsi_dev, SCOM_CMD_REG, &data,
-				sizeof(uint32_t));
+	rc = fsi_device_write(fsi, SCOM_CMD_REG, &data, sizeof(u32));
 	if (rc)
 		return rc;
 
-	rc = fsi_device_read(scom_dev->fsi_dev, SCOM_DATA0_REG, &result,
-				sizeof(uint32_t));
+	rc = fsi_device_read(fsi, SCOM_DATA0_REG, &result, sizeof(u32));
 	if (rc)
 		return rc;
 
-	*value |= (uint64_t) result << 32;
-	rc = fsi_device_read(scom_dev->fsi_dev, SCOM_DATA1_REG, &result,
-				sizeof(uint32_t));
+	*value |= (u64) result << 32;
+	rc = fsi_device_read(fsi, SCOM_DATA1_REG, &result, sizeof(u32));
 	if (rc)
 		return rc;
 
@@ -103,6 +95,7 @@ static int get_scom(struct scom_device *scom_dev, uint64_t *value,
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(fsi_scom_read);
 
 static ssize_t scom_read(struct file *filep, char __user *buf, size_t len,
 			loff_t *offset)
@@ -117,17 +110,17 @@ static ssize_t scom_read(struct file *filep, char __user *buf, size_t len,
 	if (len != sizeof(uint64_t))
 		return -EINVAL;
 
-	rc = get_scom(scom, &val, *offset);
+	rc = fsi_scom_read(scom->fsi_dev, &val, *offset);
 	if (rc) {
-		dev_dbg(dev, "get_scom fail:%d\n", rc);
+		dev_dbg(dev, "%s failed: %d\n", __func__, rc);
 		return rc;
 	}
 
 	rc = copy_to_user(buf, &val, len);
 	if (rc)
-		dev_dbg(dev, "copy to user failed:%d\n", rc);
+		return rc;
 
-	return rc ? rc : len;
+	return len;
 }
 
 static ssize_t scom_write(struct file *filep, const char __user *buf,
@@ -144,14 +137,12 @@ static ssize_t scom_write(struct file *filep, const char __user *buf,
 		return -EINVAL;
 
 	rc = copy_from_user(&val, buf, len);
-	if (rc) {
-		dev_dbg(dev, "copy from user failed:%d\n", rc);
-		return -EINVAL;
-	}
-
-	rc = put_scom(scom, val, *offset);
 	if (rc)
-		dev_dbg(dev, "put_scom failed with:%d\n", rc);
+		return -EINVAL;
+
+	rc = fsi_scom_write(scom->fsi_dev, val, *offset);
+	if (rc)
+		dev_dbg(dev, "%s failed: %d\n", __func__, rc);
 
 	return rc;
 }
