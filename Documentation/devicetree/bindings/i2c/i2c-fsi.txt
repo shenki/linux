@@ -1,0 +1,67 @@
+IBM FSI-attached I2C master
+=========================
+
+IBM Power8 and Power9 server CPUs have I2C masters inside their CFAM pervasive
+logic. This same hardware is present in the Power8 Centaur SDRAM buffer chips,
+but this is not yet described by this binding.
+
+These can be accessed over the FSI bus using CFAM operations. This binding
+describes the I2C masters on the FSI bus.
+
+The I2C master is a child of the fsi slave, a bus internal to the Power CPU:
+
+ - compatible: must be one of
+                - ibm,power8-i2cm
+                - ibm,power9-i2cm
+ - address cells: must be 1
+ - size-cells: must be 0
+ - bus-frequency: the I2C master's input clock frequency in Hz
+ - reg: two cells, the first containing the offset in the SCOM engine for the
+   i2c master.
+
+The I2C bus is a child of a I2C master:
+
+ - compatible: must be one of
+                - ibm,power8-i2c-port
+                - ibm,power9-i2c-port
+ - address cells: must be 0
+ - size-cells: must be 0
+ - clock-frequency: the i2c clock rate
+ - reg: one cell, showing the number of this bus. Commonly there is only one,
+   so this is zero.
+
+Children of the I2C bus is described by the i2c binding.
+
+Example:
+
+fsi_clock {
+        #clock-cells = <0>;
+        compatible = "fixed-clock";
+        clock-frequency = <125000000>;
+}
+
+fsi-slave-engine@0 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        compatible = "ibm,fsi", "ibm,power8-fsi";
+        reg = <0x0>;
+
+        i2cm@a0000 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        compatible = "ibm,power8-i2cm";
+                        reg = <0x000a0000>;
+                        clocks = <&fsi_clock>;
+
+                        i2c-bus@0 {
+                                #address-cells = <0x1>;
+                                #size-cells = <0x0>;
+                                clock-frequency = <400000>;
+                                compatible = "ibm,power8-i2c-port";
+
+                                reg = <0x0>;
+                        };
+                };
+        };
+}
+
