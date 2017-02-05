@@ -124,6 +124,8 @@ static iic_eng_ops_t eng_ops = {
 int iic_boe_set_speed(iic_bus_t* bus, int i2c_hz)
 {
 	_clock_divider = i2c_hz;
+
+	return 0;
 }
 
 int iic_boe_get_speed(iic_bus_t* bus)
@@ -1220,7 +1222,7 @@ int iic_boe_rescue_timeout(iic_eng_t *eng, iic_xfr_t* xfr)
 
 
 	if((fifo_cnt = stat & IIC_BOE_FIFO_COUNT) > 0) {
-		IFLDi(1, "fifo_cnt[%d]\n", fifo_cnt);
+		IFLDi(1, "fifo_cnt[%lu]\n", fifo_cnt);
 
 		if(test_bit(IIC_XFR_RD, &xfr->flags))
 		{	/* read operation */

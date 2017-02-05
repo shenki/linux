@@ -131,27 +131,6 @@ struct file_operations iic_fops = {
 	.mmap = iic_mmap,
 };
 
-static iic_bus_t * iic_get_bus(unsigned long port, unsigned long type)
-{
-	iic_bus_type_t* iterator;
-	int found = 0;
-
-	IENTER();
-
-	list_for_each_entry(iterator, &iic_bus_type_list, list)
-	{
-		if((iterator->type == type) && (iterator->bus->port == port))
-		{
-			found = 1;
-			break;
-		}
-	}
-
-	IEXIT(0);
-	return (found == 1)? iterator->bus: NULL;
-}
-
-
 int iic_common_open(iic_client_t ** o_client, iic_bus_t * bus, int engine_num)
 {
 	int ret = 0;
@@ -298,9 +277,6 @@ EXPORT_SYMBOL(iic_sideways_release);
 int iic_release(struct inode* inode, struct file* filp)
 {
 	iic_client_t* client = (iic_client_t*)filp->private_data;
-	iic_bus_t* bus = container_of(inode->i_cdev,
-				      iic_bus_t,
-				      cdev);
 	IENTER();
 
 	IFLDs(2, "CLOSE    client[%p] bus[%08lx]\n", client, bus->bus_id);
@@ -318,7 +294,6 @@ EXPORT_SYMBOL(iic_release);
 
 void iic_cleanup_xfr(iic_xfr_t* xfr, dd_ffdc_t ** o_ffdc)
 {
-	int i;
 	IENTER();
 
 	del_timer(&xfr->delay);
@@ -338,7 +313,6 @@ int iic_create_xfr(iic_client_t* client, struct kiocb* iocb,
 	iic_xfr_t *xfr;
 	iic_xfr_opts_t *t_opts;
 	iic_eng_t *eng = client->bus->eng;
-	int i;
 	unsigned short j = 0, count = 0, size = 0;
 
 	IENTER();
@@ -393,7 +367,6 @@ int iic_create_xfr(iic_client_t* client, struct kiocb* iocb,
 	{
 		unsigned long data_sz = xfr->size;
 		unsigned long start;
-		char* data = (char*)&xfr->offset_ffdc;
 
 		if(t_opts->wsplit)
 		{
@@ -1227,9 +1200,12 @@ ssize_t iic_read(struct file *filp, char __user *buf, size_t count,
 	}
 
 	rc = iic_common_read(client, kbuf, count, offset, NULL);
+	if (rc < 0)
+		goto free;
 
-	copy_to_user(buf, kbuf, count);
+	rc = copy_to_user(buf, kbuf, count);
 
+free:
 	kfree(kbuf);
 
 exit:
@@ -1339,10 +1315,13 @@ ssize_t iic_write(struct file *filp, const char __user *buf, size_t count,
 		goto exit;
 	}
 
-	copy_from_user(kbuf, buf, count);
+	rc = copy_from_user(kbuf, buf, count);
+	if (rc)
+		goto free;
 
 	rc = iic_common_write(client, kbuf, count, offset, NULL);
 
+free:
 	kfree(kbuf);
 
 exit:
@@ -2203,7 +2182,6 @@ iic_bus_t*  iic_create_bus(struct class* classp, iic_eng_t* eng,
 	IFLDi(1, "bus[%08lx] created\n", bus->bus_id);
 	goto exit;
 
-exit_q_create:
 	device_destroy(classp, bus->devnum);
 exit_class_add:
 	cdev_del(&bus->cdev);
@@ -2246,14 +2224,6 @@ static void __exit iic_exit(void)
 	IENTER();
 	printk("IIC: base support unloaded.\n");
 	IEXIT(0);
-}
-
-static int iic_set_trc_sz(const char* val, struct kernel_param *kp)
-{
-	int rc = param_set_int(val, kp);
-	if(rc)
-		return rc;
-	return 0;
 }
 
 module_init(iic_init);
