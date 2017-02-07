@@ -83,27 +83,7 @@ iic_opts_t iic_dflt_opts =
 	}
 };
 
-static const char iic_mstr_version[] = "3.0";
-
-/* save off the default cdev type pointer so we can call the default cdev
- * release function in our own bus release function
- */
-static struct kobj_type* cdev_dflt_type = 0;
-struct kobj_type iic_bus_type;
-
-/* funtion called when cdev object (embedded in bus object) ref count
- * reaches zero.  (prevents cdev memory from being freed to early)
- */
-void iic_bus_release(struct kobject* kobj)
-{
-	struct cdev *p = container_of(kobj, struct cdev, kobj);
-	iic_bus_t* bus = container_of(p, iic_bus_t, cdev);
-
-	IFLDi(1, "deleting bus[%08lx]\n", bus->bus_id);
-	if(cdev_dflt_type && cdev_dflt_type->release)
-		cdev_dflt_type->release(kobj);
-	kfree(bus);
-}
+static const char iic_mstr_version[] = "3.1";
 
 int iic_open(struct inode* inode, struct file* filp);
 int iic_release(struct inode* inode, struct file* filp);
@@ -167,7 +147,6 @@ int iic_common_open(iic_client_t ** o_client, iic_bus_t * bus, int engine_num)
 	client->tgid = current->tgid;
 	sema_init(&client->sem, 1);
 	init_waitqueue_head(&client->wait);
-	kobject_get(&bus->eng->kobj);
 	*o_client = client;
 
 exit:
@@ -262,7 +241,6 @@ int iic_common_release(iic_client_t * client)
 
         client->bus = 0;
         kfree(client);
-        kobject_put(&bus->eng->kobj);
 
         IEXIT(rc);
         return rc;
@@ -1170,6 +1148,7 @@ EXPORT_SYMBOL(iic_sideways_read);
 ssize_t iic_read(struct file *filp, char __user *buf, size_t count,
 		 loff_t *offset)
 {
+	int rc_copy;
 	ssize_t rc = count;
 	char *kbuf;
 	iic_client_t *client = (iic_client_t*)filp->private_data;
@@ -1203,7 +1182,7 @@ ssize_t iic_read(struct file *filp, char __user *buf, size_t count,
 	if (rc < 0)
 		goto free;
 
-	rc = copy_to_user(buf, kbuf, count);
+	rc_copy = copy_to_user(buf, kbuf, count);
 
 free:
 	kfree(kbuf);
@@ -2148,23 +2127,11 @@ iic_bus_t*  iic_create_bus(struct class* classp, iic_eng_t* eng,
 	bus->devnum = devnum;
 	bus->i2c_hz = 400000;
 	cdev_init(&bus->cdev, &iic_fops); // ref count = 1
-	/* since cdev is embedded in our bus structure, override the cdev
-	 * cleanup function with our own so that the bus object doesn't get
-	 * freed until the cdev ref count goes to zero.
-	 */
-	if(!cdev_dflt_type)
-	{
-		cdev_dflt_type = bus->cdev.kobj.ktype;
-		memcpy(&iic_bus_type, cdev_dflt_type, sizeof(iic_bus_type));
-		iic_bus_type.release = iic_bus_release;
-	}
-	bus->cdev.kobj.ktype = &iic_bus_type;
 	kobject_set_name(&bus->cdev.kobj, name);
 	rc = cdev_add(&bus->cdev, devnum, 1);
 	if(rc)
 	{
 		IFLDe(1, "cdev_add failed for bus %08lx\n", bus->bus_id);
-		kobject_put(&bus->cdev.kobj);
 		goto exit_cdev_add;
 	}
 
@@ -2186,6 +2153,7 @@ iic_bus_t*  iic_create_bus(struct class* classp, iic_eng_t* eng,
 exit_class_add:
 	cdev_del(&bus->cdev);
 exit_cdev_add:
+	kfree(bus);
 	bus = 0;
 exit:
 	IEXIT((int)bus);
@@ -2202,7 +2170,9 @@ void iic_delete_bus(struct class* classp, iic_bus_t* bus)
 		goto exit;
 	}
 	IFLDi(1, "cleanup bus[%08lx]\n", bus->bus_id);
+	device_destroy(classp, bus->devnum);
 	cdev_del(&bus->cdev);
+	kfree(bus);
 exit:
 	IEXIT(0);
 	return;

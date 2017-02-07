@@ -36,60 +36,12 @@
 struct class* iic_fsi_class = 0;
 dev_t iic_devnum_start = 0;
 
-static const char iic_fsi_version[] = "3.0";
+static const char iic_fsi_version[] = "3.1";
 
 int iic_fsi_probe(struct device *dev);
 int iic_fsi_remove(struct device *dev);
-void iic_fsi_shutdown(struct device *dev);
 int iic_fsi_suspend(struct device *dev);
 int iic_fsi_resume(struct device *dev);
-static void iic_eng_release(struct kobject* kobj);
-
-/* callback function for when the reference count for an engine reaches 0 */
-static void iic_eng_release(struct kobject* kobj)
-{
-	iic_eng_t* eng = container_of(kobj, iic_eng_t, kobj);
-	struct device* dev = eng->dev;
-	unsigned long flags;
-
-	IENTER();
-
-	/*remove all busses associated with the engine */
-	spin_lock_irqsave(&eng->lock, flags);
-	while(eng->busses){
-		iic_bus_t* temp = eng->busses;
-		eng->busses = temp->next;
-		iic_delete_bus(iic_fsi_class, temp);
-	}
-
-	eng->enabled = 0x0ULL;
-	spin_unlock_irqrestore(&eng->lock, flags);
-
-
-	/* providing an arch specific cleanup routine is optional.
-	 * if not specified, use the default.
-	 */
-	if (iic_eng_ops_is_vaild(eng->ops)) {
-		if(eng->ops->cleanup_eng)
-		{
-			eng->ops->cleanup_eng(eng);
-		}
-		else
-		{
-			IDBGd(0, "free engine\n");
-			kfree(eng);
-		}
-	}
-
-	dev_set_drvdata(dev, 0);
-	kobject_put(&dev->kobj);
-
-	IEXIT(0);
-}
-
-static struct kobj_type iic_eng_ktype = {
-	.release = iic_eng_release,
-};
 
 int readb_wrap(iic_eng_t* eng, unsigned int addr, unsigned char *val, 
 	       iic_ffdc_t** ffdc)
@@ -223,7 +175,7 @@ int iic_add_ports(iic_eng_t* eng, uint64_t ports)
 
 	IENTER();
 
-	IFLDi(3, "Adding ports[0x%08x%08x] to eng[0x%08x]",
+	IFLDi(3, "Adding ports[0x%08x%08x] to eng[0x%08x]\n",
 	      (uint32_t)(ports >> 32),
 	      (uint32_t)ports,
 	      eng->id);
@@ -305,8 +257,6 @@ int iic_del_ports(iic_eng_t* eng, uint64_t ports)
 
 	/* walk unordered SLL and delete bus if it is in the ports bit mask */
 	spin_lock_irqsave(&eng->lock, flags);
-	if(test_bit(IIC_ENG_REMOVED, &eng->flags))
-		goto exit;
 	p_abusp = &eng->busses;
 	abusp = *p_abusp;
 	while(abusp)
@@ -316,7 +266,6 @@ int iic_del_ports(iic_eng_t* eng, uint64_t ports)
 			/* found a match, remove it */
 			*p_abusp = abusp->next;
 			eng->enabled &= ~(0x1ULL << abusp->port);
-			device_destroy(iic_fsi_class, abusp->devnum);
 			iic_delete_bus(iic_fsi_class, abusp);
 		}
 		else
@@ -333,6 +282,7 @@ exit:
 	return 0;
 }
 
+#define IIC_FSI_PORTS	0xFFFULL
 /*
  * Called when an FSI IIC engine is plugged in.  
  * Causes creation of the /dev entry.
@@ -361,12 +311,11 @@ int iic_fsi_probe(struct device *dev)
 	iic_init_eng(eng);
 	set_bit(IIC_ENG_BLOCK, &eng->flags); //block until resumed
 	eng->id = 0x00F5112C;
-	IFLDi(1, "PROBE    eng[%08x]", eng->id);
+	IFLDi(1, "PROBE    eng[%08x]\n", eng->id);
 	eng->ra = &fsi_reg_access;
 	IFLDd(1, "vaddr=%#08lx\n", eng->base);
 	eng->dev = dev;
 	// The new kernel now requires 2 arguments
-	kobject_init(&eng->kobj, &iic_eng_ktype); //ref count = 1
 	eng->ops = iic_get_eng_ops(FSI_ENGID_I2C);
 	if(!eng->ops)
 	{
@@ -382,7 +331,7 @@ int iic_fsi_probe(struct device *dev)
 
 	IFLDd(1, "irq  = %d\n", eng->irq);
 
-	new_ports = 0xFFFULL;
+	new_ports = IIC_FSI_PORTS;
 	set_bit(IIC_ENG_P8_Z8_CENTAUR, &eng->flags);
 
 
@@ -394,21 +343,13 @@ int iic_fsi_probe(struct device *dev)
 	dev_set_drvdata(dev, eng);
 	eng->private_data = 0; //unused
 
-
-	/* set the callback function for when the eng ref count reaches 0 */
-	kobject_get(&eng->dev->kobj);
-
 	iic_fsi_resume(dev);
 
 error:
 	if(rc)
 	{
 		IFLDi(1, "IIC: iic_fsi_probe failed: %d\n", rc);
-		while(eng && eng->busses){
-			iic_bus_t* temp = eng->busses;
-			eng->busses = temp->next;
-			iic_delete_bus(iic_fsi_class, temp);
-		}
+		iic_del_ports(eng, new_ports);
 		if(eng)
 		{
 			kfree(eng);
@@ -430,9 +371,7 @@ error:
 int iic_fsi_remove(struct device* dev)
 {
 	int rc = 0;
-	iic_bus_t* bus;
 	iic_eng_t* eng = (iic_eng_t*)dev_get_drvdata(dev);
-	unsigned long flags;
 
 	IENTER();
        
@@ -453,60 +392,13 @@ int iic_fsi_remove(struct device* dev)
 	IFLDi(1, "REMOVE   eng[%08x]\n", eng->id);
 
 	/* Clean up device files immediately, don't wait for ref count */
-	spin_lock_irqsave(&eng->lock, flags);
-	bus = eng->busses;
-	while(bus)
-	{
-		/* causes hot unplug event */
-		device_destroy(iic_fsi_class, bus->devnum);
-		bus = bus->next;
-	}
-	spin_unlock_irqrestore(&eng->lock, flags);
-
+	iic_del_ports(eng, IIC_FSI_PORTS);
 	/* cleans up engine and bus structures if ref count is zero */
-	kobject_put(&eng->kobj);
+	kfree(eng);
 	
 error:
 	IEXIT(0);
 	return 0;
-}
-
-/* This function is called when a link is removed or the driver is unloaded.
- * It's job is to quiesce and disable the hardware if possible and unregister 
- * interrupts. It always precedes the remove function.
- *
- * The device may be in the resumed or suspended state when this function is
- * called.
- *
- * This function is no longer called for mcp5
- */
-void iic_fsi_shutdown(struct device *dev)
-{
-	int rc = 0;
-	iic_eng_t* eng = (iic_eng_t*)dev_get_drvdata(dev);
-
-	IENTER();
-	if(!eng || !eng->ops)
-	{
-		rc = -1;
-		goto error;
-	}
-	IFLDi(1, "SHUTDOWN eng[%08x]\n", eng->id);
-
-	/* set ENG_REMOVED flag so that aborted operations have status
-	 * set to ENOLINK (lost fsi link) instead of ENODEV (no lbus).
-	 */
-	set_bit(IIC_ENG_REMOVED, &eng->flags);
-
-	iic_fsi_suspend(dev);
-	
-error:
-	if(rc)
-	{
-		IFLDe(1, "iic_fsi_shutdown failed: %d\n", rc);
-	}
-	IEXIT(0);
-	return;
 }
 
 /* This function is called when we loose ownership or are preparing to give
