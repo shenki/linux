@@ -488,6 +488,13 @@ config ASPEED_LPC_SNOOP
 	  allows the BMC to listen on and save the data written by
 	  the host to an arbitrary LPC I/O port.
 
+config ASPEED_LPC_MBOX
+	tristate "Aspeed LPC Mailbox Controller"
+	depends on (ARCH_ASPEED || COMPILE_TEST) && REGMAP && MFD_SYSCON
+	---help---
+	  Expose the ASPEED LPC MBOX registers found on Aspeed SOCs (AST2400
+	  and AST2500) to userspace.
+
 config PCI_ENDPOINT_TEST
 	depends on PCI
 	select CRC32
