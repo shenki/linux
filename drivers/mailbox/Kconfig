@@ -162,4 +162,12 @@ config BCM_FLEXRM_MBOX
 	  Mailbox implementation of the Broadcom FlexRM ring manager,
 	  which provides access to various offload engines on Broadcom
 	  SoCs. Say Y here if you want to use the Broadcom FlexRM.
+
+config ASPEED_LPC_MBOX
+	depends on (ARCH_ASPEED || COMPILE_TEST) && REGMAP && MFD_SYSCON
+	tristate "Aspeed LPC Mailbox Controller"
+	help
+	  Provides a driver for the MBOX registers found on Aspeed SOCs
+	  (AST2400 and AST2500). This driver provides a device for aspeed
+	  mbox registers
 endif
