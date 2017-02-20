@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include "aspeed-g4.dtsi"
+#include <dt-bindings/gpio/aspeed-gpio.h>
 
 / {
 	model = "Palmetto BMC";
@@ -26,8 +27,39 @@
 
 		vga_memory: framebuffer@5f000000 {
 			no-map;
-			reg = <0x5f000000 0x01000000>; /* 16M */
+			reg = <0x5f000000 0x01000000>; /* 16MB */
 		};
+
+		flash_memory: region@98000000 {
+			no-map;
+			reg = <0x98000000 0x01000000>; /* 16MB */
+		};
+	};
+
+        leds {
+                compatible = "gpio-leds";
+
+                heartbeat {
+                        gpios = <&gpio ASPEED_GPIO(R, 4) GPIO_ACTIVE_LOW>;
+                };
+
+                power {
+                        gpios = <&gpio ASPEED_GPIO(R, 5) GPIO_ACTIVE_LOW>;
+                };
+
+                identify {
+                        gpios = <&gpio ASPEED_GPIO(A, 2) GPIO_ACTIVE_LOW>;
+                };
+        };
+
+	gpio-fsi {
+		compatible = "fsi-master-gpio", "fsi-master";
+
+		clock-gpios = <&gpio ASPEED_GPIO(A, 4) GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpio ASPEED_GPIO(A, 5) GPIO_ACTIVE_HIGH>;
+		mux-gpios = <&gpio ASPEED_GPIO(A, 6) GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio ASPEED_GPIO(D, 0) GPIO_ACTIVE_HIGH>;
+		trans-gpios = <&gpio ASPEED_GPIO(H, 6) GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -36,28 +68,133 @@
 	flash@0 {
 		status = "okay";
 		m25p,fast-read;
-		label = "bmc";
+#include "aspeed-bmc-opp-flash-layout.dtsi"
 	};
 };
 
 &spi {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_default>;
+
 	flash@0 {
 		status = "okay";
-		m25p,fast-read;
 		label = "pnor";
+		m25p,fast-read;
 	};
 };
 
-&uart5 {
-	status = "okay";
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flbusy_default &pinctrl_flwp_default
+
+			&pinctrl_vgahs_default &pinctrl_vgavs_default
+			&pinctrl_ddcclk_default &pinctrl_ddcdat_default>;
 };
 
 &mac0 {
 	status = "okay";
 
 	use-ncsi;
+	no-hw-checksum;
+};
 
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_rmii1_default>;
+
+&uart5 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c256";
+		reg = <0x50>;
+		pagesize = <64>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds3231";
+		reg = <0x68>;
+		// interrupts = <GPIOF0>
+	};
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+
+	tmp423@4c {
+		compatible = "ti,tmp423";
+		reg = <0x4c>;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+
+	occ@50 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x50>;
+	};
+};
+
+&i2c4 {
+	status = "okay";
+};
+
+&i2c5 {
+	status = "okay";
+};
+
+&i2c6 {
+	status = "okay";
+};
+
+&i2c7 {
+	status = "okay";
+};
+
+&gpio {
+	pin_func_mode0 {
+		gpio-hog;
+		gpios = <ASPEED_GPIO(C, 4) GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "func_mode0";
+	};
+
+	pin_func_mode1 {
+		gpio-hog;
+		gpios = <ASPEED_GPIO(C, 5)  GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "func_mode1";
+	};
+
+	pin_func_mode2 {
+		gpio-hog;
+		gpios = <ASPEED_GPIO(C, 6) GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "func_mode2";
+	};
+};
+
+&vuart {
+	status = "okay";
+};
+
+&lpc_ctrl {
+	status = "okay";
+	memory-region = <&flash_memory>;
+	flash = <&spi>;
+};
+
+&mbox {
+	status = "okay";
+};
+
+&wdt2 {
+	status = "okay";
 };

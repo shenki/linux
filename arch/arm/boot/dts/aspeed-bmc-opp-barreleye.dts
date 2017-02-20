@@ -1,0 +1,187 @@
+/dts-v1/;
+
+#include "aspeed-g4.dtsi"
+#include <dt-bindings/gpio/aspeed-gpio.h>
+
+/ {
+	model = "Barrelye BMC";
+	compatible = "rackspace,barreleye-bmc", "aspeed,ast2400";
+
+	aliases {
+		serial4 = &uart5;
+	};
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,115200 earlyprintk";
+	};
+
+	memory {
+		reg = <0x40000000 0x20000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		vga_memory: framebuffer@5f000000 {
+			no-map;
+			reg = <0x5f000000 0x01000000>; /* 16MB */
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		heartbeat {
+			gpios = <&gpio ASPEED_GPIO(R, 17) GPIO_ACTIVE_HIGH>;
+		};
+
+		identify {
+			gpios = <&gpio ASPEED_GPIO(R, 2) GPIO_ACTIVE_LOW>;
+		};
+
+		beep {
+			gpios = <&gpio ASPEED_GPIO(N, 7) GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+#include "aspeed-bmc-opp-flash-layout.dtsi"
+	};
+};
+
+&spi {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_default>;
+
+	flash@0 {
+		m25p,fast-read;
+		status = "okay";
+		label = "pnor";
+	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flbusy_default &pinctrl_flwp_default
+			&pinctrl_vgahs_default &pinctrl_vgavs_default
+			&pinctrl_ddcclk_default &pinctrl_ddcdat_default
+			&pinctrl_bmcint_default &pinctrl_flack_default>;
+};
+
+&mac0 {
+	status = "okay";
+
+	use-ncsi;
+	no-hw-checksum;
+};
+
+
+&uart5 {
+	status = "okay";
+};
+
+
+&i2c0 {
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c256";
+		reg = <0x50>;
+		pagesize = <64>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds3231";
+		reg = <0x68>;
+	};
+
+	lm75@4a {
+		compatible = "national,lm75";
+		reg = <0x4a>;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+
+	occ@50 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x50>;
+	};
+
+	occ@51 {
+		compatible = "ibm,occ-i2c";
+		reg = <0x51>;
+	};
+};
+
+&i2c4 {
+	status = "okay";
+
+	adm1278@10 {
+		// P12V_a for CPU0
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+		sense-resistor = <500>;
+	};
+
+	eeprom@54 {
+		compatible = "atmel,24c256";
+		reg = <0x54>;
+		pagesize = <64>;
+	};
+};
+
+&i2c5 {
+	status = "okay";
+
+	adm1278@10 {
+		// P12V_b for CPU1
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+		sense-resistor = <500>;
+	};
+};
+
+&i2c6 {
+	status = "okay";
+
+	nct7904@2d {
+		compatible = "nuvoton,nct7904";
+		reg = <0x2d>;
+	};
+
+	nct7904@2e {
+		compatible = "nuvoton,nct7904";
+		reg = <0x2e>;
+	};
+
+	eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <8>;
+	};
+
+	eeprom@55 {
+		compatible = "atmel,24c02";
+		reg = <0x55>;
+		pagesize = <8>;
+	};
+};
+
+&vuart {
+	status = "okay";
+};
+
+&wdt2 {
+	status = "okay";
+};

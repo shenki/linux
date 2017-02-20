@@ -8,6 +8,8 @@
  */
 
 #include <linux/init.h>
+#include <linux/gpio/machine.h>
+#include <dt-bindings/gpio/aspeed-gpio.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/io.h>
@@ -134,6 +136,34 @@ static void __init do_zaius_setup(void)
 	/* Read BOARD_REV[4:0] fuses from GPIOM[7:3] */
 	reg = readl(AST_IO(AST_BASE_GPIO | 0x78));
 	board_rev = (reg >> 3) & 0x1F;
+	printk(KERN_INFO "Zaius platform board revision: 0x%02lx\n", board_rev);
+
+	/* EVT boards have different FSI pin mappings */
+	if (board_rev < 0x08) {
+		static struct gpiod_lookup_table fsi_evt_gpio_lookup = {
+			.dev_id = "fsi-master",
+			.table = {
+				GPIO_LOOKUP("1e780000.gpio", ASPEED_GPIO(C, 3),
+					    "clock", GPIO_ACTIVE_HIGH),
+				GPIO_LOOKUP("1e780000.gpio", ASPEED_GPIO(C, 2),
+					    "data", GPIO_ACTIVE_HIGH),
+				{ },
+			},
+		};
+		gpiod_add_lookup_table(&fsi_evt_gpio_lookup);
+	} else {
+		static struct gpiod_lookup_table fsi_gpio_lookup = {
+			.dev_id = "fsi-master",
+			.table = {
+				GPIO_LOOKUP("1e780000.gpio", ASPEED_GPIO(G, 0),
+					    "clock", GPIO_ACTIVE_HIGH),
+				GPIO_LOOKUP("1e780000.gpio", ASPEED_GPIO(G, 1),
+					    "data", GPIO_ACTIVE_HIGH),
+				{ },
+			},
+		};
+		gpiod_add_lookup_table(&fsi_gpio_lookup);
+	}
 
 	/* Disable GPIO H/AC pulldowns to float 1-wire interface pins */
 	reg = readl(AST_IO(AST_BASE_SCU | 0x8C));
@@ -168,6 +198,21 @@ static void __init do_witherspoon_setup(void)
 static void __init do_romulus_setup(void)
 {
 	do_common_setup();
+}
+
+static void __init do_lanyang_setup(void)
+{
+	unsigned long reg;
+
+	do_common_setup();
+
+	/* Disable default behavior of UART1 being held in reset by LPCRST#.
+	 * By releasing UART1 from being controlled by LPC reset, it becomes
+	 * immediately available regardless of the host being up.
+	 */
+	reg = readl(AST_IO(AST_BASE_LPC | 0x98));
+	/* Clear "Enable UART1 reset source from LPC" */
+	writel(reg & ~BIT(4), AST_IO(AST_BASE_LPC | 0x98));
 }
 
 #define SCU_PASSWORD	0x1688A8A8
@@ -210,6 +255,8 @@ static void __init aspeed_init_early(void)
 		do_witherspoon_setup();
 	if (of_machine_is_compatible("ibm,romulus-bmc"))
 		do_romulus_setup();
+	if (of_machine_is_compatible("inventec,lanyang-bmc"))
+		do_lanyang_setup();
 }
 
 static void __init aspeed_map_io(void)

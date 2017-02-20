@@ -4,7 +4,7 @@
 
 / {
 	model = "AST2500 EVB";
-	compatible = "aspeed,ast2500";
+	compatible = "aspeed,ast2500-evb", "aspeed,ast2500";
 
 	aliases {
 		serial4 = &uart5;
@@ -25,16 +25,20 @@
 	flash@0 {
 		status = "okay";
 		m25p,fast-read;
-		label = "bmc";
+#include "aspeed-bmc-opp-flash-layout.dtsi"
 	};
 };
 
 &spi1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_default>;
+
 	flash@0 {
 		status = "okay";
 		m25p,fast-read;
 		label = "pnor";
+		m25p,fast-read;
 	};
 };
 
@@ -58,4 +62,35 @@
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
+};
+
+&i2c3 {
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c08";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+};
+
+&i2c7 {
+	status = "okay";
+
+	lm75@4d {
+		compatible = "national,lm75";
+		reg = <0x4d>;
+	};
+};
+
+&gfx {
+	status = "okay";
+};
+
+&pinctrl {
+	aspeed,external-nodes = <&gfx &lhc>;
+};
+
+&wdt2 {
+	status = "okay";
 };

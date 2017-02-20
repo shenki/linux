@@ -1,0 +1,423 @@
+/dts-v1/;
+
+#include "aspeed-g5.dtsi"
+#include <dt-bindings/gpio/aspeed-gpio.h>
+#include <dt-bindings/leds/leds-pca955x.h>
+
+/ {
+	model = "Witherspoon BMC";
+	compatible = "ibm,witherspoon-bmc", "aspeed,ast2500";
+
+	aliases {
+		serial4 = &uart5;
+	};
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,115200 earlyprintk";
+	};
+
+	memory {
+		reg = <0x80000000 0x20000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		flash_memory: region@98000000 {
+			no-map;
+			reg = <0x98000000 0x04000000>; /* 64M */
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		air-water {
+			label = "air-water";
+			gpios = <&gpio ASPEED_GPIO(B, 5) GPIO_ACTIVE_LOW>;
+			linux,code = <ASPEED_GPIO(B, 5)>;
+		};
+
+		checkstop {
+			label = "checkstop";
+			gpios = <&gpio ASPEED_GPIO(J, 2) GPIO_ACTIVE_LOW>;
+			linux,code = <ASPEED_GPIO(J, 2)>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		rear-fault {
+			gpios = <&gpio ASPEED_GPIO(N, 2) GPIO_ACTIVE_LOW>;
+		};
+
+		rear-id {
+			gpios = <&gpio ASPEED_GPIO(N, 4) GPIO_ACTIVE_LOW>;
+		};
+
+		rear-power {
+			gpios = <&gpio ASPEED_GPIO(N, 3) GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-fsi {
+		compatible = "fsi-master-gpio", "fsi-master";
+
+		status = "okay";
+
+		clock-gpios = <&gpio ASPEED_GPIO(AA, 0) GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpio ASPEED_GPIO(E, 0) GPIO_ACTIVE_HIGH>;
+		mux-gpios = <&gpio ASPEED_GPIO(A, 6) GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio ASPEED_GPIO(D, 0) GPIO_ACTIVE_HIGH>;
+		trans-gpios = <&gpio ASPEED_GPIO(R, 2) GPIO_ACTIVE_HIGH>;
+	};
+
+	iio-hwmon {
+		compatible = "iio-hwmon";
+		io-channels = <&bmp 1>;
+	};
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+
+#include "aspeed-bmc-opp-flash-layout.dtsi"
+	};
+	flash@1 {
+		status = "okay";
+		label = "alt";
+		m25p,fast-read;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_default>;
+
+	flash@0 {
+		status = "okay";
+		label = "pnor";
+		m25p,fast-read;
+	};
+};
+
+&lpc_ctrl {
+	status = "okay";
+	memory-region = <&flash_memory>;
+	flash = <&spi1>;
+};
+
+&mbox {
+	status = "okay";
+};
+
+&uart1 {
+	/* Rear RS-232 connector */
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_txd1_default
+			&pinctrl_rxd1_default
+			&pinctrl_nrts1_default
+			&pinctrl_ndtr1_default
+			&pinctrl_ndsr1_default
+			&pinctrl_ncts1_default
+			&pinctrl_ndcd1_default
+			&pinctrl_nri1_default>;
+};
+
+&uart2 {
+	/* APSS */
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_txd2_default &pinctrl_rxd2_default>;
+};
+
+&uart5 {
+	status = "okay";
+};
+
+&mac0 {
+	status = "okay";
+
+	use-ncsi;
+	no-hw-checksum;
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "disabled";
+};
+
+&i2c2 {
+	status = "okay";
+
+	/* MUX ->
+	 *    Samtec 1
+	 *    Samtec 2
+	 */
+
+};
+
+&i2c3 {
+	status = "okay";
+
+	/* CLK Buffer 9DBV0841 */
+	/* CLK Buffer 9FGS9091 */
+	/* APSS */
+
+	/* 9516 (repeater) ->
+	 *    Power Supply 0
+	 *    Power Supply 1
+	 *    Fir Card ->
+	 *      MAX31785 Fan Cntl
+	 *    Regs 3.3VS, 1.1VCS, 5VCS, 1.8V
+	 */
+
+	bmp: bmp280@77 {
+		compatible = "bosch,bmp280";
+		reg = <0x77>;
+		#io-channel-cells = <1>;
+	};
+
+	max31785@52 {
+		compatible = "maxim,max31785";
+		reg = <0x52>;
+	};
+
+	dps310@76 {
+		compatible = "infineon,dps310";
+		reg = <0x76>;
+	};
+};
+
+&i2c4 {
+	status = "okay";
+
+	/* CP1 VDN & VDDR */
+	/* CP1 VDD & VCS */
+	/* CP1 VIO */
+
+	tmp423a@4c {
+		compatible = "ti,tmp423";
+		reg = <0x4c>;
+	};
+
+	ir35221@70 {
+		compatible = "infineon,ir35221";
+		reg = <0x70>;
+	};
+
+	ir35221@71 {
+		compatible = "infineon,ir35221";
+		reg = <0x71>;
+	};
+};
+
+
+&i2c5 {
+	status = "okay";
+
+	/* CP1 VDN & VDDR */
+	/* CP1 VDD & VCS */
+	/* CP1 VIO */
+
+	tmp423a@4c {
+		compatible = "ti,tmp423";
+		reg = <0x4c>;
+	};
+
+	ir35221@70 {
+		compatible = "infineon,ir35221";
+		reg = <0x70>;
+	};
+
+	ir35221@71 {
+		compatible = "infineon,ir35221";
+		reg = <0x71>;
+	};
+};
+
+&i2c6 {
+	status = "disabled";
+};
+
+&i2c7 {
+	status = "disabled";
+};
+
+&i2c8 {
+	status = "disabled";
+};
+
+
+&i2c9 {
+	status = "okay";
+
+
+	/* MUX
+	 *    -> PCIe Slot 3
+	 *    -> PCIe Slot 4
+	 *    -> PCA9517 -> PEX8725
+	 */
+
+	tmp275@4a {
+		compatible = "ti,tmp275";
+		reg = <0x4a>;
+	};
+};
+
+&i2c10 {
+	status = "okay";
+
+	/* MUX
+	 *    -> PCIe Slot 3
+	 *    -> PCIe Slot 4
+	 */
+};
+
+&i2c11 {
+	status = "okay";
+
+	pca9552: pca9552@60 {
+		compatible = "nxp,pca9552";
+		reg = <0x60>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		gpio-line-names = "PS_SMBUS_RESET_N", "APSS_RESET_N",
+		"GPU0_TH_OVERT_N_BUFF",	"GPU1_TH_OVERT_N_BUFF",
+		"GPU2_TH_OVERT_N_BUFF", "GPU3_TH_OVERT_N_BUFF",
+		"GPU4_TH_OVERT_N_BUFF",	"GPU5_TH_OVERT_N_BUFF",
+		"GPU0_PWR_GOOD_BUFF", "GPU1_PWR_GOOD_BUFF",
+		"GPU2_PWR_GOOD_BUFF", "GPU3_PWR_GOOD_BUFF",
+		"GPU4_PWR_GOOD_BUFF", "GPU5_PWR_GOOD_BUFF",
+		"12V_BREAKER_FLT_N", "THROTTLE_UNLATCHED_N";
+
+		gpio@0 {
+			reg = <0>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@1 {
+			reg = <1>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@2 {
+			reg = <2>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@3 {
+			reg = <3>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@4 {
+			reg = <4>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@5 {
+			reg = <5>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@6 {
+			reg = <6>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@7 {
+			reg = <7>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@8 {
+			reg = <8>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@9 {
+			reg = <9>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@10 {
+			reg = <10>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@11 {
+			reg = <11>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@12 {
+			reg = <12>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@13 {
+			reg = <13>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@14 {
+			reg = <14>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+		gpio@15 {
+			reg = <15>;
+			type = <PCA955X_TYPE_GPIO>;
+		};
+
+	};
+
+	/* TPM */
+	/* 9552 */
+
+	rtc@32 {
+		compatible = "epson,rx8900";
+		reg = <0x32>;
+	};
+
+	eeprom@51 {
+		compatible = "atmel,24c64";
+		reg = <0x51>;
+	};
+
+	ucd90160@64 {
+		compatible = "ti,ucd90160";
+		reg = <0x64>;
+	};
+};
+
+&i2c12 {
+	status = "okay";
+
+	/* CP0 VPP */
+};
+
+&i2c13 {
+	status = "okay";
+
+	/* CP1 VPP */
+};
+
+&vuart {
+	status = "okay";
+};
+
+&gfx {
+	status = "okay";
+};
+
+&pinctrl {
+	aspeed,external-nodes = <&gfx &lhc>;
+};
+
+&wdt2 {
+	status = "okay";
+};

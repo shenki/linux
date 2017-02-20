@@ -1,0 +1,314 @@
+/dts-v1/;
+
+#include "aspeed-g5.dtsi"
+#include <dt-bindings/gpio/aspeed-gpio.h>
+
+/ {
+	model = "Lanyang BMC";
+	compatible = "inventec,lanyang-bmc", "aspeed,ast2500";
+
+	aliases {
+		serial4 = &uart5;
+	};
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,115200 earlyprintk";
+	};
+
+	memory {
+		reg = <0x80000000 0x40000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		flash_memory: region@98000000 {
+			no-map;
+			reg = <0x98000000 0x04000000>; /* 64M */
+		};
+	};
+
+	onewire0 {
+		compatible = "w1-gpio";
+		gpios = <&gpio ASPEED_GPIO(D, 1) GPIO_ACTIVE_HIGH>;
+	};
+
+	onewire1 {
+		compatible = "w1-gpio";
+		gpios = <&gpio ASPEED_GPIO(D, 2) GPIO_ACTIVE_HIGH>;
+	};
+
+	onewire2 {
+		compatible = "w1-gpio";
+		gpios = <&gpio ASPEED_GPIO(D, 3) GPIO_ACTIVE_HIGH>;
+	};
+
+	onewire3 {
+		compatible = "w1-gpio";
+		gpios = <&gpio ASPEED_GPIO(D, 4) GPIO_ACTIVE_HIGH>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		sys_boot_status {
+			label = "System_boot_status";
+			gpios = <&gpio ASPEED_GPIO(B, 6) GPIO_ACTIVE_LOW>;
+		};
+
+		attention {
+			label = "Attention_locator";
+			gpios = <&gpio ASPEED_GPIO(B, 7) GPIO_ACTIVE_HIGH>;
+		};
+
+		plt_fault {
+			label = "Platform_fault";
+			gpios = <&gpio ASPEED_GPIO(B, 1) GPIO_ACTIVE_HIGH>;
+		};
+
+		hdd_fault {
+			label = "Onboard_drive_fault";
+			gpios = <&gpio ASPEED_GPIO(B, 3) GPIO_ACTIVE_HIGH>;
+		};
+		bmc_err {
+			lable = "BMC_fault";
+			gpios = <&gpio ASPEED_GPIO(H, 6) GPIO_ACTIVE_HIGH>;
+		};
+
+		sys_err {
+			lable = "Sys_fault";
+			gpios = <&gpio ASPEED_GPIO(H, 7) GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-fsi {
+		compatible = "fsi-master-gpio", "fsi-master";
+
+		clock-gpios = <&gpio ASPEED_GPIO(J, 0) GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpio ASPEED_GPIO(J, 1) GPIO_ACTIVE_HIGH>;
+		trans-gpios = <&gpio ASPEED_GPIO(D, 5) GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio ASPEED_GPIO(D, 0) GPIO_ACTIVE_HIGH>;
+		mux-gpios = <&gpio ASPEED_GPIO(H, 2) GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+#include "aspeed-bmc-opp-flash-layout.dtsi"
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_default>;
+
+	flash@0 {
+		status = "okay";
+		label = "pnor";
+		m25p,fast-read;
+	};
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi2ck_default
+		     &pinctrl_spi2cs0_default
+		     &pinctrl_spi2cs1_default
+		     &pinctrl_spi2miso_default
+		     &pinctrl_spi2mosi_default>;
+
+	flash@0 {
+		status = "okay";
+	};
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_txd1_default
+		     &pinctrl_rxd1_default>;
+};
+
+&lpc_ctrl {
+	status = "okay";
+	memory-region = <&flash_memory>;
+	flash = <&spi1>;
+};
+
+&mbox {
+	status = "okay";
+};
+
+&uart5 {
+	status = "okay";
+};
+
+&mac0 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_rmii1_default>;
+	use-ncsi;
+};
+
+&mac1 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
+};
+
+&i2c0 {
+	status = "okay";
+
+	rtc@68 {
+		compatible = "dallas,ds3231";
+		reg = <0x68>;
+	};
+
+	/* RTC DS3231 @68h	 */
+};
+
+&i2c1 {
+	status = "disable";
+
+	/* APSS
+	 * BCM5719
+	 */
+};
+
+&i2c2 {
+	status = "okay";
+
+	/* AT24C64 @55h */
+	eeprom@55 {
+		compatible = "atmel,24c64";
+		reg = <0x55>;
+		pagesize = <32>;
+	};
+
+	/*
+	 * PCA9546 @75h
+	 *		bus0	48V MON LM5058 @41h
+	 *				48V H-SWAP LM5058 @40h
+	 *		bus1	P0 0V8 MON LM5058 @40h
+	 *				P1 0V8 MON LM5058 @41h
+	 *		bus2	P0 0V7 MON LM5058 @40h
+	 *				P1 0V7 MON LM5058 @41h
+	 *		bus3	P0 VDDQ0 MON LM5058 @40h
+	 *				P0 VDDQ1 MON LM5058 @41h
+	 *				P1 VDDQ0 MON LM5058 @42h
+	 *				P1 VDDQ1 MON LM5058 @43h
+	 */
+	i2c-switch@75 {
+		compatible = "nxp,pca9546";
+		reg = <0x75>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+
+	/* Power sequencer UCD90160 PMBUS @64h */
+	ucd90160@64 {
+		compatible = "ti,ucd90160";
+		reg = <0x6B>;
+	};
+};
+
+&i2c4 {
+	status = "disabled";
+
+	/* P0 FSP connecter */
+};
+
+&i2c5 {
+	status = "okay";
+
+	/* CPU0 0V96 IR38063 @41h */
+	/* CPU1 0V96 IR38063 @42h */
+	/* CPU0 1V0 IR38063 @40h */
+	/* CPU1 1V0 IR38063 @43h */
+};
+
+&i2c6 {
+	status = "disabled";
+
+	/* P1 FSP connecter */
+};
+
+&i2c7 {
+	status = "okay";
+
+	/* CLK BUFF 9DBL0452 @6Dh */
+	/* CLK GEN 9FGS9092 @6Bh */
+};
+
+&i2c8 {
+	status = "okay";
+
+};
+
+&i2c9 {
+	status = "okay";
+
+	/* T-SENSOR TMP75 @48h */
+	tmp75@48 {
+		compatible = "ti,tmp75";
+		reg = <0x48>;
+	};
+
+	/* T-SENSOR TMP75 @49h */
+	tmp75@49 {
+		compatible = "ti,tmp75";
+		reg = <0x49>;
+	};
+
+	/* T-SENSOR TMP75 @4Ah */
+	tmp75@4A {
+		compatible = "ti,tmp75";
+		reg = <0x4A>;
+	};
+
+	/* 12V Brick Q54SJ12050 @96h(TBD) */
+};
+
+&i2c10 {
+	status = "disabled";
+};
+
+&i2c11 {
+	status = "disabled";
+
+	/* TPM connector @57h */
+};
+
+&i2c12 {
+	status = "disabled";
+};
+
+&i2c13 {
+	status = "disabled";
+};
+
+&vuart {
+	status = "okay";
+};
+
+&gfx {
+        status = "okay";
+};
+
+&pinctrl {
+	aspeed,external-nodes = <&gfx &lhc>;
+};

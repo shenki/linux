@@ -1,0 +1,146 @@
+/dts-v1/;
+
+#include <dt-bindings/gpio/aspeed-gpio.h>
+#include "aspeed-g5.dtsi"
+
+/ {
+	model = "MSN BMC";
+	compatible = "mellanox,msn-bmc", "aspeed,ast2500";
+
+	aliases {
+		serial0 = &uart1;
+		serial4 = &uart5;
+	};
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,115200n8 earlyprintk";
+	};
+
+	memory {
+		/* 512MiB SDRAM DDR4 @ 0x8000_0000 */
+		reg = <0x80000000 0x20000000>;
+	};
+
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+#include "aspeed-bmc-mellanox-msn-flash-layout.dtsi"
+	};
+};
+
+&uart5 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_txd1_default
+		     &pinctrl_rxd1_default
+		     &pinctrl_nrts1_default
+		     &pinctrl_ndtr1_default
+		     &pinctrl_ndsr1_default
+		     &pinctrl_ncts1_default
+		     &pinctrl_ndcd1_default
+		     &pinctrl_nri1_default>;
+};
+
+&mac0 {
+	status = "okay";
+	use-ncsi;
+};
+
+&i2c5 {
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c32";
+		reg = <0x50>;
+	};
+
+	eeprom@51 {
+		compatible = "atmel,24c32";
+		reg = <0x51>;
+	};
+};
+
+&i2c6 {
+	status = "okay";
+
+	eeprom@51 {
+		compatible = "atmel,24c32";
+		reg = <0x51>;
+	};
+
+	eeprom@52 {
+		compatible = "atmel,24c32";
+		reg = <0x52>;
+	};
+
+	eeprom@55 {
+		compatible = "atmel,24c32";
+		reg = <0x55>;
+	};
+
+	i2cswitch@71 {
+		compatible = "nxp,pca9548";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x71>;
+	};
+};
+
+&i2c8 {
+	status = "okay";
+
+	carrier_ambient: lm75@49 {
+		#thermal-sensor-cells = <0>;
+		compatible = "national,lm75";
+		reg = <0x49>;
+	};
+
+	swbrd_ambient: lm75@4a {
+		#thermal-sensor-cells = <0>;
+		compatible = "national,lm75";
+		reg = <0x4a>;
+	};
+};
+
+&i2c10 {
+	status = "okay";
+
+	hwmon@41 {
+		compatible = "ti,ucd9224";
+		reg = <0x41>;
+	};
+
+	hwmon@27 {
+		compatible = "ti,ucd9224";
+		reg = <0x27>;
+	};
+
+	adc@6d {
+		compatible = "maxim,max11603";
+		reg = <0x6d>;
+		adc0: iio-device@0 {
+			#io-channel-cells = <1>;
+			io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>,
+				      <&adc0 3>, <&adc0 4>, <&adc0 5>,
+				      <&adc0 6>, <&adc0 7>;
+		};
+	};
+};
+
+&vuart {
+	status = "okay";
+};
+
+&wdt2 {
+	status = "okay";
+};
+

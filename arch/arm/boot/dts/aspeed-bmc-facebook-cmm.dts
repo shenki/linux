@@ -1,0 +1,207 @@
+/dts-v1/;
+
+#include "aspeed-g5.dtsi"
+
+/ {
+	model = "FACEBOOK CMM BMC";
+	compatible = "facebook,cmm-bmc", "aspeed,ast2500";
+
+	aliases {
+		serial1 = &uart1;
+	};
+
+	chosen {
+		stdout-path = &uart1;
+		bootargs = "console=ttyS1,115200 earlyprintk";
+	};
+
+	memory {
+		reg = <0x80000000 0x3f000000>;
+	};
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+#include "aspeed-bmc-facebook-cmm-flash-layout.dtsi"
+	};
+
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&mac1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+
+	i2cswitch@77 {
+		compatible = "nxp,pca9548";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x77>;
+
+		/* To connect to SCM_LC & SCM_FC */
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	/* PCA9510AD buffer to connect PDU */
+};
+
+&i2c3 {
+	status = "okay";
+
+	lm75@48 {
+		compatible = "national,lm75";
+		reg = <0x48>;
+	};
+
+	lm75@49 {
+		compatible = "national,lm75";
+		reg = <0x49>;
+	};
+};
+
+&i2c4 {
+	status = "okay";
+};
+
+&i2c5 {
+	status = "okay";
+
+	adm1278@10 {
+		compatible = "adi,adm1278";
+		reg = <0x10>;
+	};
+};
+
+&i2c6 {
+	status = "okay";
+	eeprom@51 {
+		compatible = "atmel,24c64";
+		reg = <0x51>;
+		pagesize = <16>;
+	};
+
+	pca9534@27 {
+		compatible = "nxp,pca9534";
+		reg = <0x27>;
+		gpio-controller;
+		#gpio-cells = <1>;
+	};
+
+};
+
+&i2c7 {
+	status = "okay";
+
+	i2cswitch@70 {
+		compatible = "nxp,pca9548";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x70>;
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			seeprom@50 {
+				compatible = "atmel,24c02";
+				reg = <0x50>;
+				pagesize = <16>;
+			};
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			seeprom@51 {
+				compatible = "atmel,24c02";
+				reg = <0x51>;
+				pagesize = <16>;
+			};
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			seeprom@52 {
+				compatible = "atmel,24c02";
+				reg = <0x52>;
+				pagesize = <16>;
+			};
+		};
+
+		i2c@4 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <4>;
+			clock-frequency = <400000>;
+			tpm@20 {
+				compatible = "infineon,slb9645tt";
+				reg = <0x20>;
+			};
+
+		};
+	};
+};
+
+&i2c8 {
+	status = "okay";
+
+	i2cswitch@77 {
+		compatible = "nxp,pca9548";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x77>;
+
+		/* To connect to Fan board */
+	};
+};
+
+&i2c9 {
+	status = "okay";
+};
+
+&i2c10 {
+	status = "okay";
+};
+
+&i2c11 {
+	status = "okay";
+};
+
+&i2c12 {
+	status = "okay";
+};
+
+&i2c13 {
+	status = "okay";
+	/* CPLD at reg = <3E> */
+};
+
+&gfx {
+	status = "okay";
+};
+
+&pinctrl {
+	aspeed,external-nodes = <&gfx &lhc>;
+};
+
+&wdt2 {
+	status = "okay";
+};

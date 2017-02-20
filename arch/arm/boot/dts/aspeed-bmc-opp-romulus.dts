@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include "aspeed-g5.dtsi"
+#include <dt-bindings/gpio/aspeed-gpio.h>
 
 / {
 	model = "Romulus BMC";
@@ -16,7 +17,7 @@
 	};
 
 	memory {
-		reg = <0x80000000 0x40000000>;
+		reg = <0x80000000 0x20000000>;
 	};
 
 	reserved-memory {
@@ -24,11 +25,80 @@
 		#size-cells = <1>;
 		ranges;
 
-		vga_memory: framebuffer@bf000000 {
+		flash_memory: region@98000000 {
 			no-map;
-			reg = <0xbf000000 0x01000000>; /* 16M */
+			reg = <0x98000000 0x04000000>; /* 64M */
 		};
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		fault {
+			gpios = <&gpio ASPEED_GPIO(N, 2) GPIO_ACTIVE_LOW>;
+		};
+
+		identify {
+			gpios = <&gpio ASPEED_GPIO(N, 4) GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			gpios = <&gpio ASPEED_GPIO(R, 5) GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-fsi {
+		compatible = "fsi-master-gpio", "fsi-master";
+
+		status = "okay";
+
+		clock-gpios = <&gpio ASPEED_GPIO(AA, 0) GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpio ASPEED_GPIO(AA, 2) GPIO_ACTIVE_HIGH>;
+		mux-gpios = <&gpio ASPEED_GPIO(A, 6) GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio ASPEED_GPIO(D, 0) GPIO_ACTIVE_HIGH>;
+		trans-gpios = <&gpio ASPEED_GPIO(R, 2) GPIO_ACTIVE_HIGH>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		checkstop {
+			label = "checkstop";
+			gpios = <&gpio ASPEED_GPIO(J, 2) GPIO_ACTIVE_LOW>;
+			linux,code = <ASPEED_GPIO(J, 2)>;
+		};
+	};
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+#include "aspeed-bmc-opp-flash-layout.dtsi"
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spi1_default>;
+
+	flash@0 {
+		status = "okay";
+		label = "pnor";
+		m25p,fast-read;
+	};
+};
+
+&lpc_ctrl {
+	status = "okay";
+	memory-region = <&flash_memory>;
+	flash = <&spi1>;
+};
+
+&mbox {
+	status = "okay";
 };
 
 &fmc {
@@ -78,4 +148,135 @@
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_rmii1_default>;
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "enabled";
+
+	/* CPU1 */
+};
+
+&i2c2 {
+	/* FSI Mux */
+
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+
+	/* Clock chip */
+};
+
+&i2c4 {
+	status = "okay";
+
+	/* Voltage regulators:
+	 *  CPU0 VDD/VCS
+	 *  CPU0 VDN/VIO
+	 *  CPU0 VDDR A
+	 *  CPU0 VDDR B
+	 */
+};
+
+&i2c5 {
+	status = "okay";
+
+	/* Voltage regulators:
+	 *  CPU1 VDD/VCS
+	 *  CPU1 VDN/VIO
+	 *  CPU1 VDDR A
+	 *  CPU1 VDDR B
+	 */
+};
+
+&i2c6 {
+	/* PCIe slot 1 (x8) */
+	status = "enabled";
+};
+
+&i2c7 {
+	/* PCIe slot 2 (x16) */
+	status = "enabled";
+};
+
+&i2c8 {
+	/* PCIe slot 3 (x16) */
+	status = "enabled";
+};
+
+&i2c9 {
+	/* PCIe slot 4 (x16) */
+	status = "enabled";
+};
+
+&i2c10 {
+	/* PCIe slot 5 (x8) */
+	status = "enabled";
+};
+
+&i2c11 {
+	status = "okay";
+
+	rtc@32 {
+		compatible = "epson,rx8900";
+		reg = <0x32>;
+	};
+
+	/* TPM */
+};
+
+&i2c12 {
+	status = "okay";
+
+	/* Fan Controller */
+	max31785@52 {
+		compatible = "maxim,max31785";
+		reg = <0x52>;
+	};
+
+	/* CPLD */
+	/* Power Supply */
+	/* Temp Sensor */
+	/* Temp Sensor */
+
+};
+
+&i2c13 {
+	status = "disabled";
+};
+
+&gpio {
+    nic_func_mode0 {
+		gpio-hog;
+		gpios = <ASPEED_GPIO(D, 3) GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "nic_func_mode0";
+    };
+    nic_func_mode1 {
+		gpio-hog;
+		gpios = <ASPEED_GPIO(D, 4) GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "nic_func_mode1";
+    };
+};
+
+&vuart {
+	status = "okay";
+};
+
+&gfx {
+	status = "okay";
+};
+
+&pinctrl {
+	aspeed,external-nodes = <&gfx &lhc>;
+};
+
+&wdt2 {
+	status = "okay";
 };
