@@ -18,6 +18,11 @@
 	memory {
 		reg = <0x80000000 0x20000000>;
 	};
+
+	iio-hwmon {
+		compatible = "iio-hwmon";
+		iio-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 3>;
+	};
 };
 
 &fmc {
@@ -58,4 +63,14 @@
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
+};
+
+&adc {
+	status = "okay";
+
+	pinctrl-names ="default";
+	pinconf-0 = <&pinctrl_adc0_default
+		&pinctrl_adc1_default
+		&pinctrl_adc2_default
+		&pinctrl_adc3_default>;
 };
