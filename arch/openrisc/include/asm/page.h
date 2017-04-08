@@ -32,6 +32,10 @@
 
 #define PAGE_OFFSET	0xc0000000
 #define KERNELBASE	PAGE_OFFSET
+#define PHYSICAL_START  0x40000000
+#define ARCH_PFN_OFFSET (PHYSICAL_START >> PAGE_SHIFT)
+
+#define VIRT_PHYS_OFFSET (KERNELBASE - PHYSICAL_START)
 
 /* This is not necessarily the right place for this, but it's needed by
  * drivers/of/fdt.c
@@ -73,8 +77,8 @@ typedef struct page *pgtable_t;
 
 #ifndef __ASSEMBLY__
 
-#define __va(x) ((void *)((unsigned long)(x) + PAGE_OFFSET))
-#define __pa(x) ((unsigned long) (x) - PAGE_OFFSET)
+#define __va(x) ((void *)((unsigned long)(x) + VIRT_PHYS_OFFSET))
+#define __pa(x) ((unsigned long) (x) - (VIRT_PHYS_OFFSET))
 
 #define virt_to_pfn(kaddr)      (__pa(kaddr) >> PAGE_SHIFT)
 #define pfn_to_virt(pfn)        __va((pfn) << PAGE_SHIFT)

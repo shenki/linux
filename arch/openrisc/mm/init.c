@@ -160,16 +160,36 @@ void __init paging_init(void)
 	 * the kernel pages are still all RW, so we can still modify the
 	 * text directly... after this change and a TLB flush, the kernel
 	 * pages will become RO.
+	 *
+	 * l.j instruction is opcode 0 and does a
+	 * PC ←  exts(Immediate << 2) + JumpInsnAddr
 	 */
 	{
 		extern unsigned long dtlb_miss_handler;
 		extern unsigned long itlb_miss_handler;
 
-		unsigned long *dtlb_vector = __va(0x900);
-		unsigned long *itlb_vector = __va(0xa00);
+		// FIXME: Use EVBAR here..
+		unsigned long *dtlb_vector = __va(0x900+PHYSICAL_START);
+		unsigned long *itlb_vector = __va(0xa00+PHYSICAL_START);
 
-		printk(KERN_INFO "itlb_miss_handler %p\n", &itlb_miss_handler);
-		*itlb_vector = ((unsigned long)&itlb_miss_handler -
+		unsigned long pa_itlb_miss_handler = __pa(&itlb_miss_handler);
+		unsigned long pa_dtlb_miss_handler = __pa(&dtlb_miss_handler);
+
+		unsigned long *boot_itlb_miss_handler = ((*itlb_vector) << 2) + ((unsigned long)itlb_vector);
+		unsigned long *boot_dtlb_miss_handler = ((*dtlb_vector) << 2) + ((unsigned long)dtlb_vector);
+
+		printk(KERN_INFO "itlb_miss_handler va:%p pa:%p (boot:%p)\n", &itlb_miss_handler, (void*)pa_itlb_miss_handler, boot_itlb_miss_handler);
+		printk(KERN_INFO "dtlb_miss_handler va:%p pa:%p (boot:%p)\n", &dtlb_miss_handler, (void*)pa_dtlb_miss_handler, boot_dtlb_miss_handler);
+
+		barrier();
+
+		/* As the distance from the vector location to the miss handler
+		 * handler is the same in physical and virtual address space,
+		 * we don't need to do the translation here.
+		 *
+		 * IE pa(miss_handler)-pa(vector) == va(miss_handler)-va(vector)
+		 */
+		*itlb_vector = (((unsigned long)&itlb_miss_handler) -
 				(unsigned long)itlb_vector) >> 2;
 
 		/* Soft ordering constraint to ensure that dtlb_vector is
@@ -177,8 +197,7 @@ void __init paging_init(void)
 		 */
 		barrier();
 
-		printk(KERN_INFO "dtlb_miss_handler %p\n", &dtlb_miss_handler);
-		*dtlb_vector = ((unsigned long)&dtlb_miss_handler -
+		*dtlb_vector = (((unsigned long)&dtlb_miss_handler) -
 				(unsigned long)dtlb_vector) >> 2;
 
 	}
@@ -189,8 +208,8 @@ void __init paging_init(void)
 	barrier();
 
 	/* Invalidate instruction caches after code modification */
-	mtspr(SPR_ICBIR, 0x900);
-	mtspr(SPR_ICBIR, 0xa00);
+	mtspr(SPR_ICBIR, 0x900+PHYSICAL_START);
+	mtspr(SPR_ICBIR, 0xa00+PHYSICAL_START);
 
 	/* New TLB miss handlers and kernel page tables are in now place.
 	 * Make sure that page flags get updated for all pages in TLB by
