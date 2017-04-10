@@ -7,6 +7,14 @@ menuconfig MEMORY
 
 if MEMORY
 
+config AST_G5_SDMC
+	depends on (ARCH_AST2500 || ARCH_AST3200)
+	bool "ASPEED G5 DRAM Controller"
+	
+config AST_SDMC
+        bool "ASPEED DRAM Controller"
+	depends on (ARCH_AST2300 || ARCH_AST2400)
+
 config ARM_PL172_MPMC
 	tristate "ARM PL172 MPMC driver"
 	depends on ARM_AMBA && OF

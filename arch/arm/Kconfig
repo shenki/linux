@@ -340,6 +340,16 @@ config ARCH_MULTIPLATFORM
 	select SPARSE_IRQ
 	select USE_OF
 
+config ARCH_ASPEED
+	bool "ASPEED AST Family"
+	select ARM_AMBA
+	select PLAT_ASPEED
+	select ARCH_WANT_OPTIONAL_GPIOLIB
+	select MIGHT_HAVE_PCI
+	select GENERIC_CLOCKEVENTS
+	select MULTI_IRQ_HANDLER
+	select IRQ_DOMAIN
+
 config ARM_SINGLE_ARMV7M
 	bool "ARMv7-M based platforms (Cortex-M0/M3/M4)"
 	depends on !MMU
@@ -711,6 +721,8 @@ config ARCH_VIRT
 # Kconfigs may be included either alphabetically (according to the
 # plat- suffix) or along side the corresponding mach-* source.
 #
+source "arch/arm/mach-aspeed/Kconfig"
+
 source "arch/arm/mach-mvebu/Kconfig"
 
 source "arch/arm/mach-alpine/Kconfig"
@@ -764,8 +776,6 @@ source "arch/arm/mach-ks8695/Kconfig"
 source "arch/arm/mach-meson/Kconfig"
 
 source "arch/arm/mach-moxart/Kconfig"
-
-source "arch/arm/mach-aspeed/Kconfig"
 
 source "arch/arm/mach-mv78xx0/Kconfig"
 
@@ -900,6 +910,10 @@ config ARCH_MPS2
 	  for the platform may vary, so adjustment of RAM base might be needed.
 
 # Definitions to make life easier
+config PLAT_ASPEED
+	bool
+	select FIQ
+
 config ARCH_ACORN
 	bool
 

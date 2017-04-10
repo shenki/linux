@@ -18,6 +18,9 @@
 #include <linux/irqdomain.h>
 #include <linux/pm_runtime.h>
 #include "pci.h"
+#ifdef CONFIG_PLAT_ASPEED
+#include <mach/irqs.h>
+#endif
 
 #define CARDBUS_LATENCY_TIMER	176	/* secondary latency timer */
 #define CARDBUS_RESERVE_BUSNR	3
@@ -1037,7 +1040,11 @@ static void pci_read_irq(struct pci_dev *dev)
 	dev->pin = irq;
 	if (irq)
 		pci_read_config_byte(dev, PCI_INTERRUPT_LINE, &irq);
+#ifdef CONFIG_PLAT_ASPEED
+	dev->irq = dev->pin + IRQ_PCIE_CHAIN_START - 1;
+#else
 	dev->irq = irq;
+#endif
 }
 
 void set_pcie_port_type(struct pci_dev *pdev)

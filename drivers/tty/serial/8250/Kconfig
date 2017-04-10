@@ -167,6 +167,41 @@ config SERIAL_8250_RUNTIME_UARTS
 	  with the module parameter "nr_uarts", or boot-time parameter
 	  8250.nr_uarts
 
+config SERIAL_AST_VUART
+        tristate "AST VUART driver"
+        depends on ARCH_ASPEED
+        select SERIAL_CORE
+        help
+          The ASPEED VUART driver supporting. The device node is /dev/ttyS
+	
+config SERIAL_AST_DMA_UART
+        tristate "AST UART driver with DMA"
+        depends on ARCH_ASPEED
+        select SERIAL_CORE
+        help
+          The ASPEED UART driver with DMA supporting. The device node is /dev/ttyDMA
+
+config AST_NR_DMA_UARTS
+        int "Maximum number of uart dma serial ports"
+        depends on SERIAL_AST_DMA_UART
+        default "4"
+        help
+          Set this to the number of serial ports you want the driver
+          to support.  This includes any ports discovered via ACPI or
+          PCI enumeration and any ports that may be added at run-time
+          via hot-plug, or any ISA multi-port serial cards.
+
+config AST_RUNTIME_DMA_UARTS
+        int "Number of uart dma serial ports to register at runtime"
+        depends on SERIAL_AST_DMA_UART
+        range 0 AST_NR_DMA_UARTS
+        default "4"
+        help
+          Set this to the maximum number of serial ports you want
+          the kernel to register at boot time.  This can be overridden
+          with the module parameter "nr_uarts", or boot-time parameter
+          8250.nr_uarts
+
 config SERIAL_8250_EXTENDED
 	bool "Extended 8250/16550 serial driver options"
 	depends on SERIAL_8250

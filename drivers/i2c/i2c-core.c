@@ -2586,6 +2586,39 @@ int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
 }
 EXPORT_SYMBOL(i2c_transfer);
 
+#ifdef CONFIG_AST_I2C_SLAVE_MODE
+int i2c_slave_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
+{
+	int ret;
+
+	if (adap->algo->slave_xfer) {
+#ifdef DEBUG
+		dev_dbg(&adap->dev, "slave_xfer %c, addr=0x%02x, "
+			"len=%d\n", (msgs->flags & I2C_M_RD)
+			? 'W' : 'R', msgs->addr, msgs->len);
+#endif
+		if (in_atomic() || irqs_disabled()) {
+			ret = i2c_trylock_bus(adap, I2C_LOCK_SEGMENT);
+			if (!ret)
+				/* I2C activity is ongoing. */
+				return -EAGAIN;
+		} else {
+			i2c_lock_bus(adap, I2C_LOCK_SEGMENT);
+		}
+
+		ret = adap->algo->slave_xfer(adap, msgs);
+		i2c_unlock_bus(adap, I2C_LOCK_SEGMENT);
+
+		return ret;
+	} else {
+		dev_dbg(&adap->dev, "I2C level transfers not supported\n");
+		return -EOPNOTSUPP;
+	}
+}
+EXPORT_SYMBOL(i2c_slave_transfer);
+
+#endif
+
 /**
  * i2c_master_send - issue a single I2C message in master transmit mode
  * @client: Handle to slave device

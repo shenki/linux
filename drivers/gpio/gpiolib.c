@@ -330,7 +330,11 @@ static int gpiochip_set_desc_names(struct gpio_chip *gc)
 struct linehandle_state {
 	struct gpio_device *gdev;
 	const char *label;
+#if 0	
 	struct gpio_desc *descs[GPIOHANDLES_MAX];
+#else
+	struct gpio_desc *descs[ARCH_NR_GPIOS + ARCH_NR_SGPIOS];
+#endif
 	u32 numdescs;
 };
 

@@ -1,0 +1,8 @@
+/dts-v1/;
+
+/ {
+	model = "AST2500 EVB";
+	compatible = "aspeed,ast2500";
+
+};
+
