@@ -113,9 +113,6 @@ static void __init do_garrison_setup(void)
 	/* Setup PNOR address mapping for 64M flash */
 	writel(0x30000C00, AST_IO(AST_BASE_LPC | 0x88));
 	writel(0xFC0003FF, AST_IO(AST_BASE_LPC | 0x8C));
-
-	/* SCU setup */
-	writel(0xd7000000, AST_IO(AST_BASE_SCU | 0x88));
 }
 
 static void __init do_ast2500evb_setup(void)
