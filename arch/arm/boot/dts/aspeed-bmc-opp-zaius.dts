@@ -337,7 +337,19 @@
 	 */
 };
 
+&pinctrl {
+	aspeed,external-nodes = <&gfx &lhc>;
+
+	pinctrl_gpioh_unbiased: gpioi_unbiased {
+		pins = "A8", "C7", "B7", "A7", "D7", "B6", "A6", "E7";
+		bias-disable;
+	};
+};
+
 &gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpioh_unbiased>;
+
 	line_iso_u146_en {
 		gpio-hog;
 		gpios = <ASPEED_GPIO(O, 4) GPIO_ACTIVE_HIGH>;
@@ -373,10 +385,6 @@
 
 &gfx {
 	status = "okay";
-};
-
-&pinctrl {
-	aspeed,external-nodes = <&gfx &lhc>;
 };
 
 &wdt2 {

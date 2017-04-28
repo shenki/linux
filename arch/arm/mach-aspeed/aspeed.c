@@ -165,10 +165,6 @@ static void __init do_zaius_setup(void)
 		gpiod_add_lookup_table(&fsi_gpio_lookup);
 	}
 
-	/* Disable GPIO H/AC pulldowns to float 1-wire interface pins */
-	reg = readl(AST_IO(AST_BASE_SCU | 0x8C));
-	writel(reg | BIT(23), AST_IO(AST_BASE_SCU | 0x8C));
-
 	/* Assert MAC2 PHY hardware reset */
 	/* Set pin low */
 	reg = readl(AST_IO(AST_BASE_GPIO | 0x00));
