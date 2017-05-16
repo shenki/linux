@@ -87,22 +87,10 @@ static const char *const ast_dt_compat[] __initconst = {
 };
 
 
-#if 1
 //Non-DT
-MACHINE_START(ASPEED, AST_MACH_NAME)
-	.map_io			= ast_map_io,
-	.init_irq			= ast_init_irq,	
-	.init_machine		= ast_init,	
-	.init_time			= ast_init_timer,
-#if defined(CONFIG_AST_WATCHDOG) || defined(CONFIG_AST_WATCHDOG_MODULE)	 	
-	.restart			= ast_soc_wdt_reset,
-#endif
-MACHINE_END
-#else
 DT_MACHINE_START(ASPEED_DT, AST_MACH_NAME)
         .dt_compat      = ast_dt_compat, //tq2440_dt_compat,
         .map_io         = ast_map_io, //tq2440_dt_map_io,
         .init_irq       = ast_init_irq, //irqchip_init,
         .init_machine   = ast_init,//tq2440_dt_machine_init,
 MACHINE_END
-#endif
