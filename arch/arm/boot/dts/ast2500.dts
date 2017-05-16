@@ -1,8 +1,13 @@
 /dts-v1/;
 
+#include "skeleton.dtsi"
+
 / {
 	model = "AST2500 EVB";
 	compatible = "aspeed,ast2500";
 
+	memory {
+		reg = <0x80000000 0x40000000>;
+	};
 };
 
