@@ -6,8 +6,23 @@
 	model = "AST2500 EVB";
 	compatible = "aspeed,ast2500";
 
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&vic>;
+
 	memory {
 		reg = <0x80000000 0x40000000>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,arm1176jzf-s";
+			device_type = "cpu";
+			reg = <0>;
+		};
 	};
 
 	ahb {
@@ -16,12 +31,47 @@
 		#size-cells = <1>;
 		ranges;
 
+		vic: interrupt-controller@1e6c0080 {
+			compatible = "aspeed,ast2400-vic";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			valid-sources = <0xfefff7ff 0x0807ffff>;
+			reg = <0x1e6c0080 0x80>;
+		};
+
 		apb {
 			compatible = "simple-bus";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
 
+			clk_apb: clk_apb {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <24750000>;
+			};
+
+			clk_uart: clk_uart {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <24000000>;
+			};
+
+			timer@1e782000 {
+				compatible = "aspeed,ast2400-timer";
+				reg = <0x1e782000 0x90>;
+				interrupts = <16>;
+				clocks = <&clk_apb>;
+			};
+
+			serial@1e784000 {
+				compatible = "ns16550a";
+				reg = <0x1e784000 0x1000>;
+				reg-shift = <2>;
+				interrupts = <9>;
+				clocks = <&clk_uart>;
+				no-loopback-test;
+			};
 
 			wdt@01e785000 {
 				compatible = "aspeed,ast2500-wdt";
@@ -34,6 +84,8 @@
 				reg = <0x1e785020 0x1c>;
 				status = "okay";
 			};
+
+
 		};
 	};
 };

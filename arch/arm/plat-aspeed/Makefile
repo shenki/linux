@@ -2,7 +2,7 @@
 # Makefile for the linux kernel.
 #
 
-obj-y 			+= timer.o devs.o ast-ahbc.o
+obj-y 			+= devs.o ast-ahbc.o
 
 obj-$(CONFIG_IRMP)	+= ast-bmc-scu.o
 

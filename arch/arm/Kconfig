@@ -349,6 +349,9 @@ config ARCH_ASPEED
 	select GENERIC_CLOCKEVENTS
 	select MULTI_IRQ_HANDLER
 	select IRQ_DOMAIN
+	select MOXART_TIMER
+	select COMMON_CLK
+	select CLKSRC_OF
 
 config ARM_SINGLE_ARMV7M
 	bool "ARMv7-M based platforms (Cortex-M0/M3/M4)"

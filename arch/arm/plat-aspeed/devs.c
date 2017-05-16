@@ -43,7 +43,6 @@ init_fnc_t __initdata *init_all_device[] = {
 typedef void (init_fnc_t) (void);
 
 init_fnc_t __initdata *init_all_device[] = {
-	ast_add_device_uart,
 	ast_add_device_i2c,
 	ast_add_device_spi,
 	ast_add_device_ehci,
