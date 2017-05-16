@@ -9,5 +9,32 @@
 	memory {
 		reg = <0x80000000 0x40000000>;
 	};
+
+	ahb {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		apb {
+			compatible = "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+
+			wdt@01e785000 {
+				compatible = "aspeed,ast2500-wdt";
+				reg = <0x1e785000 0x1c>;
+				status = "okay";
+			};
+
+			wdt@01e785020 {
+				compatible = "aspeed,ast2500-wdt";
+				reg = <0x1e785020 0x1c>;
+				status = "okay";
+			};
+		};
+	};
 };
 
