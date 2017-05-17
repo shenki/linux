@@ -173,6 +173,7 @@ config MOXART_TIMER
 	bool "Moxart timer driver" if COMPILE_TEST
 	depends on GENERIC_CLOCKEVENTS
 	select CLKSRC_MMIO
+	select CLKSRC_OF
 	help
 	  Enables support for the Moxart timer.
 
