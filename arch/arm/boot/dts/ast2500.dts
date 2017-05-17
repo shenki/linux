@@ -14,6 +14,15 @@
 		reg = <0x80000000 0x40000000>;
 	};
 
+	aliases {
+		serial4 = &uart5;
+	};
+
+	chosen {
+		stdout-path = &uart5;
+		bootargs = "console=ttyS4,115200 earlyprintk";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -64,11 +73,11 @@
 				clocks = <&clk_apb>;
 			};
 
-			serial@1e784000 {
+			uart5: serial@1e784000 {
 				compatible = "ns16550a";
 				reg = <0x1e784000 0x1000>;
 				reg-shift = <2>;
-				interrupts = <9>;
+				interrupts = <10>;
 				clocks = <&clk_uart>;
 				no-loopback-test;
 			};
