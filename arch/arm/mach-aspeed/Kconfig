@@ -35,7 +35,6 @@ config ARCH_AST2400
 config ARCH_AST2500
 	select CPU_V6
 	select USB_ARCH_HAS_EHCI
-	select AST_UART_SDMA
 	select EGFX_IRQ
 	bool "AST2500"
 

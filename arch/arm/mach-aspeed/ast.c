@@ -61,8 +61,10 @@ void __init ast_map_io(void)
 
 static void __init ast_init(void)
 {
+#if 0
 #ifdef CONFIG_ARCH_AST2500
 	ast_uart_sdma_init();
+#endif
 #endif
 #ifdef CONFIG_ARCH_AST3200
 	//AST3200 usb audio codec clock
