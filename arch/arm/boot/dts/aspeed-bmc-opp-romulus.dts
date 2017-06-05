@@ -71,6 +71,8 @@
 	};
 };
 
+#include "ibm-power9-cfam.dtsi"
+
 &fmc {
 	status = "okay";
 	flash@0 {

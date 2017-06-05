@@ -1,0 +1,45 @@
+&fsi {
+	cfam@0,0 {
+		reg = <0 0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sbefifo@2400 {
+			compatible = "ibm,p9-sbefifo";
+			reg = <0x2400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			occ@1 {
+				compatible = "ibm,p9-occ";
+				reg = <1>;
+			};
+		};
+
+		hub@3400 {
+			compatible = "fsi-master-hub";
+			reg = <0x3400 0x400>;
+			#address-cells = <2>;
+			#size-cells = <0>;
+
+			cfam@1,0 {
+				reg = <1 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				sbefifo@2400 {
+					compatible = "ibm,p9-sbefifo";
+					reg = <0x2400 0x400>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					occ@2 {
+						compatible =
+							"ibm,p9-occ";
+						reg = <2>;
+					};
+				};
+			};
+		};
+	};
+};
