@@ -38,6 +38,7 @@
 #define MAX31785_REG_MFR_ID			0x99
 #define MAX31785_REG_MFR_MODEL			0x9a
 #define MAX31785_REG_MFR_REVISION		0x9b
+#define MAX31785_REG_MFR_FAULT_RESP		0xd9
 #define MAX31785_REG_MFR_FAN_CONFIG		0xf1
 #define	 MAX31785_REG_MFR_FAN_CONFIG_DUAL_TACH	BIT(12)
 #define MAX31785_REG_READ_FAN_PWM		0xf3
@@ -51,6 +52,9 @@
 
 /* Fan Status register bits */
 #define MAX31785_FAN_STATUS_FAULT_MASK		0x80
+
+/* Fault response register bits */
+#define MAX31785_FAULT_PIN_MONITOR		BIT(0)
 
 /* Fan Command constants */
 #define MAX31785_FAN_COMMAND_PWM_RATIO		40
@@ -782,6 +786,35 @@ static int max31785_get_capabilities(struct max31785 *data)
 	return 0;
 }
 
+static int max31785_init_fault_resp(struct i2c_client *client)
+{
+	struct device_node *np = client->dev.of_node;
+	int page;
+	int rc;
+
+	if (np && of_get_property(np, "fault-max-fan", NULL)) {
+		for (page = 0; page < NR_CHANNEL; page++) {
+
+			/* set max fans on fault */
+			rc = max31785_set_page(client, page);
+			if (rc < 0)
+				return rc;
+
+			rc = i2c_smbus_read_byte_data(client,
+					MAX31785_REG_MFR_FAULT_RESP);
+			if (rc < 0)
+				return rc;
+
+			rc |= MAX31785_FAULT_PIN_MONITOR;
+			rc = i2c_smbus_write_byte_data(client,
+					MAX31785_REG_MFR_FAULT_RESP, rc);
+		}
+		return rc;
+	}
+
+	return 0;
+}
+
 static int max31785_probe(struct i2c_client *client,
 			  const struct i2c_device_id *id)
 {
@@ -802,6 +835,10 @@ static int max31785_probe(struct i2c_client *client,
 
 	data->client = client;
 	mutex_init(&data->lock);
+
+	rc = max31785_init_fault_resp(client);
+	if (rc)
+		return rc;
 
 	rc = max31785_init_fans(data);
 	if (rc)
