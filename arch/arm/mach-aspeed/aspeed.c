@@ -138,7 +138,7 @@ static void __init do_zaius_setup(void)
 	/* EVT boards have different FSI pin mappings */
 	if (board_rev < 0x08) {
 		static struct gpiod_lookup_table fsi_evt_gpio_lookup = {
-			.dev_id = "fsi-master",
+			.dev_id = "gpio-fsi",
 			.table = {
 				GPIO_LOOKUP("1e780000.gpio", ASPEED_GPIO(C, 3),
 					    "clock", GPIO_ACTIVE_HIGH),
@@ -150,7 +150,7 @@ static void __init do_zaius_setup(void)
 		gpiod_add_lookup_table(&fsi_evt_gpio_lookup);
 	} else {
 		static struct gpiod_lookup_table fsi_gpio_lookup = {
-			.dev_id = "fsi-master",
+			.dev_id = "gpio-fsi",
 			.table = {
 				GPIO_LOOKUP("1e780000.gpio", ASPEED_GPIO(G, 0),
 					    "clock", GPIO_ACTIVE_HIGH),
