@@ -10,6 +10,7 @@
  */
 
 #include <linux/bug.h>
+#include <linux/clk.h>
 #include <linux/device.h>
 #include <linux/io.h>
 #include <linux/module.h>
@@ -112,6 +113,8 @@ struct aspeed_smc_controller {
 	void __iomem *regs;			/* controller registers */
 	void __iomem *ahb_base;			/* per-chip windows resource */
 	u32 ahb_window_size;			/* full mapping window size */
+
+	struct clk *ahb_clk;
 
 	struct aspeed_smc_chip *chips[0];	/* pointers to attached chips */
 };
@@ -941,6 +944,10 @@ static int aspeed_smc_probe(struct platform_device *pdev)
 		return PTR_ERR(controller->ahb_base);
 
 	controller->ahb_window_size = resource_size(res);
+
+	controller->ahb_clk = devm_clk_get(&pdev->dev, "ahb");
+	if (IS_ERR(controller->ahb_clk))
+		return PTR_ERR(controller->ahb_clk);
 
 	ret = aspeed_smc_setup_flash(controller, np, res);
 	if (ret)
