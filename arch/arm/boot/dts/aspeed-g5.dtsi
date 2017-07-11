@@ -343,7 +343,7 @@
 			};
 
 			vuart: vuart@1e787000 {
-				compatible = "aspeed,vuart";
+				compatible = "aspeed,ast2500-vuart";
 				reg = <0x1e787000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <8>;
