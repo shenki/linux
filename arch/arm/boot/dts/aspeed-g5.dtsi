@@ -1,4 +1,5 @@
 #include "skeleton.dtsi"
+#include <dt-bindings/clock/aspeed-clock.h>
 
 / {
 	model = "Aspeed BMC";
@@ -50,7 +51,7 @@
 			status = "disabled";
 			aspeed,fmc-has-dma;
 			interrupts = <19>;
-			clocks = <&clk_ahb>;
+			clocks = <&syscon ASPEED_CLK_AHB>;
 			clock-names = "ahb";
 			flash@0 {
 				reg = < 0 >;
@@ -76,7 +77,7 @@
 			#size-cells = <0>;
 			compatible = "aspeed,ast2500-spi";
 			status = "disabled";
-			clocks = <&clk_ahb>;
+			clocks = <&syscon ASPEED_CLK_AHB>;
 			clock-names = "ahb";
 			flash@0 {
 				reg = < 0 >;
@@ -97,7 +98,7 @@
 			#size-cells = <0>;
 			compatible = "aspeed,ast2500-spi";
 			status = "disabled";
-			clocks = <&clk_ahb>;
+			clocks = <&syscon ASPEED_CLK_AHB>;
 			clock-names = "ahb";
 			flash@0 {
 				reg = < 0 >;
@@ -167,6 +168,7 @@
 			reg = <0x1e660000 0x180>;
 			interrupts = <2>;
 			status = "disabled";
+			clocks = <&syscon ASPEED_CLK_GATE_MAC1CLK>;
 		};
 
 		mac1: ethernet@1e680000 {
@@ -174,6 +176,7 @@
 			reg = <0x1e680000 0x180>;
 			interrupts = <3>;
 			status = "disabled";
+			clocks = <&syscon ASPEED_CLK_GATE_MAC2CLK>;
 		};
 
 		apb {
@@ -187,39 +190,8 @@
 				reg = <0x1e6e2000 0x1a8>;
 				#address-cells = <1>;
 				#size-cells = <0>;
-
-				clk_clkin: clk_clkin@70 {
-					#clock-cells = <0>;
-					compatible = "aspeed,g5-clkin-clock";
-					reg = <0x70>;
-				};
-
-				clk_hpll: clk_hpll@24 {
-					#clock-cells = <0>;
-					compatible = "aspeed,g5-hpll-clock";
-					reg = <0x24>;
-					clocks = <&clk_clkin>;
-				};
-
-				clk_ahb: clk_ahb@70 {
-					#clock-cells = <0>;
-					compatible = "aspeed,g5-ahb-clock";
-					reg = <0x70>;
-					clocks = <&clk_hpll>;
-				};
-
-				clk_apb: clk_apb@08 {
-					#clock-cells = <0>;
-					compatible = "aspeed,g5-apb-clock";
-					reg = <0x08>;
-					clocks = <&clk_hpll>;
-				};
-
-				clk_uart: clk_uart@2c {
-					#clock-cells = <0>;
-					compatible = "aspeed,g5-uart-clock";
-					reg = <0x2c>;
-				};
+				#clock-cells = <1>;
+				#reset-cells = <1>;
 
 				pinctrl: pinctrl@1e6e2000 {
 					compatible = "aspeed,g5-pinctrl";
@@ -254,7 +226,7 @@
 				interrupts = <20>;
 				interrupt-controller;
 				gpio-ranges = <&pinctrl 0 0 232>;
-				clocks = <&clk_hpll>;
+				clocks = <&syscon ASPEED_CLK_APB>;
 			};
 
 			timer: timer@1e782000 {
@@ -264,7 +236,7 @@
 				// interrupt and assumes it's for timer 1
 				//interrupts = <16 17 18 35 36 37 38 39>;
 				interrupts = <16>;
-				clocks = <&clk_apb>;
+				clocks = <&syscon ASPEED_CLK_APB>;
 			};
 
 			ibt: ibt@1e789140 {
@@ -296,7 +268,7 @@
 				reg = <0x1e783000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <9>;
-				clocks = <&clk_uart>;
+				clocks = <&syscon ASPEED_CLK_GATE_UART1CLK>;
 				no-loopback-test;
 				status = "disabled";
 			};
@@ -306,7 +278,7 @@
 				reg = <0x1e78d000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <32>;
-				clocks = <&clk_uart>;
+				clocks = <&syscon ASPEED_CLK_GATE_UART2CLK>;
 				no-loopback-test;
 				status = "disabled";
 			};
@@ -316,7 +288,7 @@
 				reg = <0x1e78e000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <33>;
-				clocks = <&clk_uart>;
+				clocks = <&syscon ASPEED_CLK_GATE_UART3CLK>;
 				no-loopback-test;
 				status = "disabled";
 			};
@@ -326,7 +298,7 @@
 				reg = <0x1e78f000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <34>;
-				clocks = <&clk_uart>;
+				clocks = <&syscon ASPEED_CLK_GATE_UART4CLK>;
 				no-loopback-test;
 				status = "disabled";
 			};
@@ -336,7 +308,7 @@
 				reg = <0x1e784000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <10>;
-				clocks = <&clk_uart>;
+				clocks = <&syscon ASPEED_CLK_GATE_UART5CLK>;
 				current-speed = <38400>;
 				no-loopback-test;
 				status = "disabled";
@@ -347,7 +319,7 @@
 				reg = <0x1e787000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <8>;
-				clocks = <&clk_uart>;
+				clocks = <&syscon ASPEED_CLK_UART>;
 				no-loopback-test;
 				status = "disabled";
 			};
@@ -355,7 +327,7 @@
 			adc: adc@1e6e9000 {
 				compatible = "aspeed,ast2500-adc";
 				reg = <0x1e6e9000 0xb0>;
-				clocks = <&clk_apb>;
+				clocks = <&syscon ASPEED_CLK_APB>;
 				#io-channel-cells = <1>;
 				status = "disabled";
 			};
@@ -386,7 +358,7 @@
 
 		reg = <0x40 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <0>;
 		interrupt-parent = <&i2c_ic>;
@@ -401,7 +373,7 @@
 
 		reg = <0x80 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <1>;
 		interrupt-parent = <&i2c_ic>;
@@ -416,7 +388,7 @@
 
 		reg = <0xc0 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <2>;
 		interrupt-parent = <&i2c_ic>;
@@ -432,7 +404,7 @@
 
 		reg = <0x100 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <3>;
 		interrupt-parent = <&i2c_ic>;
@@ -448,7 +420,7 @@
 
 		reg = <0x140 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <4>;
 		interrupt-parent = <&i2c_ic>;
@@ -464,7 +436,7 @@
 
 		reg = <0x180 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <5>;
 		interrupt-parent = <&i2c_ic>;
@@ -480,7 +452,7 @@
 
 		reg = <0x1c0 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <6>;
 		interrupt-parent = <&i2c_ic>;
@@ -496,7 +468,7 @@
 
 		reg = <0x300 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <7>;
 		interrupt-parent = <&i2c_ic>;
@@ -512,7 +484,7 @@
 
 		reg = <0x340 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <8>;
 		interrupt-parent = <&i2c_ic>;
@@ -528,7 +500,7 @@
 
 		reg = <0x380 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <9>;
 		interrupt-parent = <&i2c_ic>;
@@ -544,7 +516,7 @@
 
 		reg = <0x3c0 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <10>;
 		interrupt-parent = <&i2c_ic>;
@@ -560,7 +532,7 @@
 
 		reg = <0x400 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <11>;
 		interrupt-parent = <&i2c_ic>;
@@ -576,7 +548,7 @@
 
 		reg = <0x440 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <12>;
 		interrupt-parent = <&i2c_ic>;
@@ -592,7 +564,7 @@
 
 		reg = <0x480 0x40>;
 		compatible = "aspeed,ast2500-i2c-bus";
-		clocks = <&clk_apb>;
+		clocks = <&syscon ASPEED_CLK_APB>;
 		bus-frequency = <100000>;
 		interrupts = <13>;
 		interrupt-parent = <&i2c_ic>;
