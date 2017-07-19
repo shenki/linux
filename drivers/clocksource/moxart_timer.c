@@ -178,6 +178,7 @@ static int __init moxart_timer_init(struct device_node *node)
 		ret = PTR_ERR(clk);
 		goto out_unmap;
 	}
+	clk_prepare_enable(clk);
 
 	pclk = clk_get_rate(clk);
 
