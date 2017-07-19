@@ -797,8 +797,6 @@ static int aspeed_i2c_probe_bus(struct platform_device *pdev)
 	if (IS_ERR(parent_clk))
 		return PTR_ERR(parent_clk);
 	bus->parent_clk_frequency = clk_get_rate(parent_clk);
-	/* We just need the clock rate, we don't actually use the clk object. */
-	devm_clk_put(&pdev->dev, parent_clk);
 
 	ret = of_property_read_u32(pdev->dev.of_node,
 				   "bus-frequency", &bus->bus_frequency);
