@@ -21,6 +21,7 @@
 
 #define pr_fmt(fmt)	KBUILD_MODNAME ": " fmt
 
+#include <linux/clk.h>
 #include <linux/dma-mapping.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
@@ -1738,6 +1739,7 @@ static int ftgmac100_probe(struct platform_device *pdev)
 	struct net_device *netdev;
 	struct ftgmac100 *priv;
 	struct device_node *np;
+	struct clk *clk;
 	int err = 0;
 
 	if (!pdev)
@@ -1771,6 +1773,13 @@ static int ftgmac100_probe(struct platform_device *pdev)
 	priv->netdev = netdev;
 	priv->dev = &pdev->dev;
 	INIT_WORK(&priv->reset_task, ftgmac100_reset_task);
+
+	/* Enable clock if present */
+	clk = devm_clk_get(&pdev->dev, NULL);
+	if (!IS_ERR(clk)) {
+		clk_prepare(clk);
+		clk_enable(clk);
+	}
 
 	/* map io memory */
 	priv->res = request_mem_region(res->start, resource_size(res),
