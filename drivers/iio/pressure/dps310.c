@@ -219,6 +219,9 @@ static bool dps310_is_writeable_reg(struct device *dev, unsigned int reg)
 	case DPS310_MEAS_CFG:
 	case DPS310_CFG_REG:
 	case DPS310_RESET:
+	case 0x0e:
+	case 0x0f:
+	case 0x62:
 		return true;
 	default:
 		return false;
@@ -235,6 +238,7 @@ static bool dps310_is_volatile_reg(struct device *dev, unsigned int reg)
 	case DPS310_TMP_B1:
 	case DPS310_TMP_B2:
 	case DPS310_MEAS_CFG:
+	case 0x32:
 		return true;
 	default:
 		return false;
@@ -308,13 +312,52 @@ static const struct regmap_config dps310_regmap_config = {
 	.writeable_reg = dps310_is_writeable_reg,
 	.volatile_reg = dps310_is_volatile_reg,
 	.cache_type = REGCACHE_RBTREE,
-	.max_register = 0x29,
+	.max_register = 0x62,
 };
 
 static const struct iio_info dps310_info = {
 	.read_raw = dps310_read_raw,
 	.write_raw = dps310_write_raw,
 };
+
+/*
+ * Some verions of chip will read temperatures in the ~60C range when
+ * its acutally ~20C. This is the manufacturer recommended workaround
+ * to correct the issue.
+ */
+static int dps310_temp_workaround(struct dps310_data *data)
+{
+	int r, reg;
+
+	r = regmap_read(data->regmap, 0x32, &reg);
+	if (r < 0)
+		return r;
+
+	/* If bit 1 is set then the device is okay, and the workaround does not
+	 * need to be applied */
+	if (reg & BIT(1))
+		return 0;
+
+	r = regmap_write(data->regmap, 0x0e, 0xA5);
+	if (r < 0)
+		return r;
+
+	r = regmap_write(data->regmap, 0x0f, 0x96);
+	if (r < 0)
+		return r;
+
+	r = regmap_write(data->regmap, 0x62, 0x02);
+	if (r < 0)
+		return r;
+
+	r = regmap_write(data->regmap, 0x0e, 0x00);
+	if (r < 0)
+		return r;
+
+	r = regmap_write(data->regmap, 0x0f, 0x00);
+
+	return r;
+}
 
 static int dps310_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
@@ -375,6 +418,10 @@ static int dps310_probe(struct i2c_client *client,
 		return r;
 
 	r = dps310_get_temp_coef(data);
+	if (r < 0)
+		return r;
+
+	r = dps310_temp_workaround(data);
 	if (r < 0)
 		return r;
 
