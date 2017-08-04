@@ -124,6 +124,8 @@
 			#address-cells = <2>;
 			#size-cells = <0>;
 
+			no-scan-on-init;
+
 			cfam@1,0 {
 				reg = <1 0>;
 				#address-cells = <1>;
