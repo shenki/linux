@@ -417,6 +417,16 @@
 			type = <PCA955X_TYPE_GPIO>;
 		};
 	};
+
+	power_ps@68 {
+		compatible = "ibm,power-ps";
+		reg = <0x68>;
+	};
+
+	power_ps@69 {
+		compatible = "ibm,power-ps";
+		reg = <0x69>;
+	};
 };
 
 &i2c4 {
