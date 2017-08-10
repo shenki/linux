@@ -1,0 +1,21 @@
+Device-tree bindings for IBM POWER system power supplies
+--------------------------------------------------------
+
+Required properties:
+ - compatible = "ibm,power-ps";
+ - reg = < I2C bus address >;		: Address of the power supply on the
+					  I2C bus.
+
+Example:
+
+    i2c-bus@100 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        #interrupt-cells = <1>;
+        < more properties >
+
+        power_ps@68 {
+            compatible = "ibm,power-ps";
+            reg = <0x68>;
+        };
+    };
