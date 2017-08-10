@@ -410,6 +410,12 @@ struct pmbus_driver_info {
 	/* Regulator functionality, if supported by this chip driver. */
 	int num_regulators;
 	const struct regulator_desc *reg_desc;
+
+	/*
+	 * Controls whether or not to create debugfs entries for this driver's
+	 * devices.
+	 */
+	bool debugfs;
 };
 
 /* Regulator ops */
