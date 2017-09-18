@@ -28,6 +28,7 @@
 		serial2 = &uart3;
 		serial3 = &uart4;
 		serial4 = &uart5;
+		serial5 = &vuart;
 	};
 
 	cpus {
@@ -167,7 +168,7 @@
 
 			uart1: serial@1e783000 {
 				compatible = "ns16550a";
-				reg = <0x1e783000 0x1000>;
+				reg = <0x1e783000 0x20>;
 				reg-shift = <2>;
 				interrupts = <9>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART1CLK>;
@@ -177,7 +178,7 @@
 
 			uart2: serial@1e78d000 {
 				compatible = "ns16550a";
-				reg = <0x1e78d000 0x1000>;
+				reg = <0x1e78d000 0x20>;
 				reg-shift = <2>;
 				interrupts = <32>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART2CLK>;
@@ -187,7 +188,7 @@
 
 			uart3: serial@1e78e000 {
 				compatible = "ns16550a";
-				reg = <0x1e78e000 0x1000>;
+				reg = <0x1e78e000 0x20>;
 				reg-shift = <2>;
 				interrupts = <33>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART3CLK>;
@@ -197,7 +198,7 @@
 
 			uart4: serial@1e78f000 {
 				compatible = "ns16550a";
-				reg = <0x1e78f000 0x1000>;
+				reg = <0x1e78f000 0x20>;
 				reg-shift = <2>;
 				interrupts = <34>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART4CLK>;
@@ -207,7 +208,7 @@
 
 			uart5: serial@1e784000 {
 				compatible = "ns16550a";
-				reg = <0x1e784000 0x1000>;
+				reg = <0x1e784000 0x20>;
 				reg-shift = <2>;
 				interrupts = <10>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART5CLK>;
@@ -216,9 +217,9 @@
 				status = "disabled";
 			};
 
-			uart6: serial@1e787000 {
-				compatible = "ns16550a";
-				reg = <0x1e787000 0x1000>;
+			vuart: vuart@1e787000 {
+				compatible = "aspeed,ast2400-vuart";
+				reg = <0x1e787000 0x40>;
 				reg-shift = <2>;
 				interrupts = <10>;
 				no-loopback-test;
