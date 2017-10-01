@@ -52,4 +52,15 @@ BUILTIN_DTB := n
 endif
 core-$(BUILTIN_DTB) += arch/openrisc/boot/dts/
 
+boot := arch/$(ARCH)/boot
+BOOT_TARGETS = vmlinux.bin
+PHONY += $(BOOT_TARGETS) install
+KBUILD_IMAGE := $(boot)/vmlinux.bin
+
+all:   $(notdir $(KBUILD_IMAGE)) $(KBUILD_DTBS)
+
+$(BOOT_TARGETS): vmlinux
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+	@$(kecho) '  Kernel: $(boot)/$@ is ready'
+
 all: vmlinux
