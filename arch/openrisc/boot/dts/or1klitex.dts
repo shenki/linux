@@ -45,6 +45,16 @@
 		interrupts = <2>;
 	};
 
+	mac0: mac@e0007800 {
+		compatible = "litex,liteeth";
+		reg = <0xe0008000 0x44
+		       0xe0007800 0x0a
+		       0xb0000000 0x2000>;
+		interrupts = <3>;
+		tx-fifo-depth = <2>;
+		rx-fifo-depth = <2>;
+        };
+
 	leds {
 		compatible = "gpio-leds";
 
