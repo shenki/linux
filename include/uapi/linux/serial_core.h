@@ -278,4 +278,10 @@
 /* MediaTek BTIF */
 #define PORT_MTK_BTIF	117
 
+/* LITEX UART */
+#define PORT_LITEX	118
+
+/* LITEX UART */
+#define PORT_UART_LITEX	119
+
 #endif /* _UAPILINUX_SERIAL_CORE_H */

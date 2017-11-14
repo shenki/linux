@@ -1707,6 +1707,29 @@ config SERIAL_OWL_CONSOLE
 	  Say 'Y' here if you wish to use Actions Semiconductor S500/S900 UART
 	  as the system console.
 
+config SERIAL_UART_LITEX
+	tristate "Enjoy-Digital UART LiteX serial port support"
+	depends on HAS_IOMEM
+	depends on OF
+	select SERIAL_CORE
+	help
+	  Say Y here if you want to use the Enjoy-Digital UART Lite-X serial
+	  controller.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called uart_litex.
+
+config SERIAL_UART_LITEX_CONSOLE
+	bool "Support for console on Enjoy-Digital UART Lite-X serial port"
+	depends on SERIAL_UART_LITEX=y
+	select SERIAL_CORE_CONSOLE
+	select SERIAL_EARLYCON
+	help
+	  Say Y here if you wish to use a Enjoy-Digital UART Lite-X as the
+	  system console (the system console is the device which receives
+	  all kernel messages and warnings and which allows logins in
+	  single user mode).
+
 endmenu
 
 config SERIAL_MCTRL_GPIO
