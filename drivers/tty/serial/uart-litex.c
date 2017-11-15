@@ -50,18 +50,14 @@
 #define LITEX_STATUS_FRAME	0x40
 #define LITEX_STATUS_PARITY	0x80
 
-#define LITEX_CONTROL_RST_TX	0x01
-#define LITEX_CONTROL_RST_RX	0x02
-#define LITEX_CONTROL_IE	0x10
-
 static inline u32 uart_in32(u32 offset, struct uart_port *port)
 {
-	return readb(port->membase + offset);
+	return ioread32be(port->membase + offset);
 }
 
 static inline void uart_out32(u32 val, u32 offset, struct uart_port *port)
 {
-	writeb(val, port->membase + offset);
+	iowrite32be(val, port->membase + offset);
 }
 
 static struct uart_port litex_uart_ports[LITEX_NR_UARTS];
@@ -166,12 +162,8 @@ static irqreturn_t litex_uart_isr(int irq, void *dev_id)
 
 static unsigned int litex_uart_tx_empty(struct uart_port *port)
 {
-	unsigned long flags;
-	unsigned int ret;
-
-	// TODO implement by reading LITEX_UART_TXFULL
-
-	return TIOCSER_TEMT;
+	/* Not really empty but not-full */
+	return (uart_in32(LITEX_UART_TXFULL, port)) ? 0 : TIOCSER_TEMT;
 }
 
 static unsigned int litex_uart_get_mctrl(struct uart_port *port)
@@ -227,12 +219,6 @@ static int litex_uart_startup(struct uart_port *port)
 	r = uart_in32(LITEX_UART_EV_ENABLE, port);
 	if (r == 0)
 		uart_out32(0x3, LITEX_UART_EV_ENABLE, port);
-
-#if 0 // TODO error
-	uart_out32(LITEX_CONTROL_RST_RX | LITEX_CONTROL_RST_TX,
-		LITEX_CONTROL, port);
-	uart_out32(LITEX_CONTROL_IE, LITEX_CONTROL, port);
-#endif
 
 	return 0;
 }
@@ -338,36 +324,6 @@ static int litex_uart_verify_port(struct uart_port *port, struct serial_struct *
 	return 0;
 }
 
-#ifdef CONFIG_CONSOLE_POLL
-static int litex_uart_get_poll_char(struct uart_port *port)
-{
-	return NO_POLL_CHAR; // hack - delete me
-
-#if 0 // TODO RX
-	if (!(uart_in32(LITEX_STATUS, port) & LITEX_STATUS_RXVALID))
-		return NO_POLL_CHAR;
-#endif
-
-	return uart_in32(LITEX_UART_RX, port);
-}
-
-static void litex_uart_put_poll_char(struct uart_port *port, unsigned char ch)
-{
-#if 0 // TODO TXFULL
-	while (uart_in32(LITEX_STATUS, port) & LITEX_STATUS_TXFULL)
-		cpu_relax();
-#else
-	// while (uart_in32(LITEX_UART_TXFULL, port) & 1)
-		// cpu_relax();
-
-	// msleep(10);
-#endif
-
-	/* write char to device */
-	uart_out32(ch, LITEX_UART_TX, port);
-}
-#endif
-
 static const struct uart_ops litex_uart_ops = {
 	.tx_empty	= litex_uart_tx_empty,
 	.get_mctrl	= litex_uart_get_mctrl,
@@ -384,10 +340,6 @@ static const struct uart_ops litex_uart_ops = {
 	.request_port	= litex_uart_request_port,
 	.config_port	= litex_uart_config_port,
 	.verify_port	= litex_uart_verify_port,
-#ifdef CONFIG_CONSOLE_POLL
-	.poll_get_char	= litex_uart_get_poll_char,
-	.poll_put_char	= litex_uart_put_poll_char,
-#endif
 };
 
 /* ---------------------------------------------------------------------
@@ -397,41 +349,26 @@ static const struct uart_ops litex_uart_ops = {
 #ifdef CONFIG_SERIAL_UART_LITEX_CONSOLE
 static void litex_uart_console_wait_tx(struct uart_port *port)
 {
-	u8 val;
+	u32 full;
 	unsigned long timeout;
 
 	/*
 	 * Spin waiting for TX fifo to have space available.
-	 * When using the Microblaze Debug Module this can take up to 1s
+	 * Copied from Microblaze.
 	 */
 	timeout = jiffies + msecs_to_jiffies(1000);
-#if 0 // TODO TXFULL
 	while (1) {
-		val = uart_in32(LITEX_STATUS, port);
-		if ((val & LITEX_STATUS_TXFULL) == 0)
+		full = uart_in32(LITEX_UART_TXFULL, port);
+		if (!full)
 			break;
-		if (time_after(jiffies, timeout)) {
-			dev_warn(port->dev,
-				 "timeout waiting for TX buffer empty\n");
-			break;
-		}
-		cpu_relax();
-	}
-#else
-	while (1) {
-		val = uart_in32(LITEX_UART_TXFULL, port);
-		if ((val & 1) == 0)
-			break;
-		if (time_after(jiffies, timeout)) {
-			dev_warn(port->dev,
-				 "timeout waiting for TX buffer empty\n");
-			break;
-		}
-		cpu_relax();
-	}
 
-	// msleep(1);
-#endif
+		if (time_after(jiffies, timeout)) {
+			dev_warn(port->dev,
+				 "timeout waiting for TX buffer empty\n");
+			break;
+		}
+		cpu_relax();
+	}
 }
 
 static void litex_uart_console_putchar(struct uart_port *port, int ch)
@@ -445,7 +382,7 @@ static void litex_uart_console_write(struct console *co, const char *s,
 {
 	struct uart_port *port = &litex_uart_ports[co->index];
 	unsigned long flags;
-	unsigned int ier;
+	u32 ier;
 	int locked = 1;
 
 	if (oops_in_progress) {
@@ -454,20 +391,17 @@ static void litex_uart_console_write(struct console *co, const char *s,
 		spin_lock_irqsave(&port->lock, flags);
 
 	/* save and disable interrupt */
-#if 0 // TODO interrupt
-	ier = uart_in32(LITEX_STATUS, port) & LITEX_STATUS_IE;
-	uart_out32(0, LITEX_CONTROL, port);
-#endif
+	ier = uart_in32(LITEX_UART_EV_ENABLE, port);
+	if (ier)
+		uart_out32(0, LITEX_UART_EV_ENABLE, port);
 
 	uart_console_write(port, s, count, litex_uart_console_putchar);
 
 	litex_uart_console_wait_tx(port);
 
 	/* restore interrupt state */
-#if 0 // TODO interrupt
 	if (ier)
-		uart_out32(LITEX_CONTROL_IE, LITEX_CONTROL, port);
-#endif
+		uart_out32(ier, LITEX_UART_EV_ENABLE, port);
 
 	if (locked)
 		spin_unlock_irqrestore(&port->lock, flags);
