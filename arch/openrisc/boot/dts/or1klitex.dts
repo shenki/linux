@@ -6,12 +6,12 @@
 	interrupt-parent = <&pic>;
 
 	aliases {
-		serial0 = &serial0;
+		uart0 = &serial0;
 	};
 
 	chosen {
-		bootargs = "earlycon earlyprintk debug keep_bootcon";
-		stdout-path = &serial0;
+		bootargs = "earlycon console=ttyLX0,115200";
+		stdout-path = "uart0:115200";
 	};
 
 	memory@0 {

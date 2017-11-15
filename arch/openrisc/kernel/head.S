@@ -326,6 +326,12 @@
 
 /* =====================================================[ exceptions] === */
 
+/* ---[ 0x0: Jump to RESET exception ]----------------------------------- */
+    .org 0x0
+	l.j	0x100
+	 l.nop
+
+
 /* ---[ 0x100: RESET exception ]----------------------------------------- */
     .org 0x100
 	/* Jump to .init code at _start which lives in the .head section
