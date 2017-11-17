@@ -1,0 +1,35 @@
+Device-tree bindings for P9 SBEFIFO CFAM device
+-----------------------------------------------
+
+Required properties:
+ - compatible = "ibm,p9-sbefifo";
+ - reg = < address size >;		: FSI CFAM address for the SBE engine
+					  and address space size.
+ - #address-cells = <1>;		: Number of address cells in child
+					  nodes.
+ - #size-cells = <0>;			: Number of size cells in child nodes.
+
+Optional properties:
+ - <child nodes>			: Devices that are accessible through
+					  the SBEFIFO. Child nodes are "opaque"
+					  to the SBEFIFO; the SBEFIFO needs no
+					  information about a child node other
+					  than if it exists or not.
+
+Child node optional properties:
+ - compatible = "dts-name"
+ - reg = < address >;			: Meaningful only for the child node
+
+Examples:
+
+    sbefifo@2400 {
+        compatible = "ibm,p9-sbefifo";
+        reg = < 0x2400 0x400 >;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        occ@1 {
+            compatible = "ibm,p9-occ";
+            reg = < 1 >;
+        };
+    };
