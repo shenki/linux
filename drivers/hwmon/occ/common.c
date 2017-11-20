@@ -146,6 +146,8 @@ static ssize_t occ_show_error(struct device *dev,
 
 static DEVICE_ATTR(occ_error, 0444, occ_show_error, NULL);
 
+static void occ_sysfs_notify(struct occ *occ);
+
 static int occ_poll(struct occ *occ)
 {
 	struct occ_poll_response_header *header;
@@ -169,7 +171,7 @@ static int occ_poll(struct occ *occ)
 		if (occ->error_count++ > OCC_ERROR_COUNT_THRESHOLD)
 			occ->error = rc;
 
-		return rc;
+		goto done;
 	}
 
 	/* clear error since communication was successful */
@@ -190,7 +192,9 @@ static int occ_poll(struct occ *occ)
 		occ->last_safe = 0;
 	}
 
-	return 0;
+done:
+	occ_sysfs_notify(occ);
+	return rc;
 }
 
 static int occ_set_user_power_cap(struct occ *occ, u16 user_power_cap)
@@ -1243,6 +1247,51 @@ static struct attribute *occ_attributes[] = {
 static const struct attribute_group occ_attr_group = {
 	.attrs = occ_attributes,
 };
+
+static void occ_sysfs_notify(struct occ *occ)
+{
+	const char *name;
+	struct occ_poll_response_header *header =
+		(struct occ_poll_response_header *)occ->resp.data;
+
+	/* sysfs attributes aren't loaded yet; don't proceed */
+	if (!occ->hwmon)
+		goto done;
+
+	if (header->occs_present != occ->previous_occs_present &&
+	    (header->status & OCC_STAT_MASTER)) {
+		name = sensor_dev_attr_occs_present.dev_attr.attr.name;
+		sysfs_notify(&occ->bus_dev->kobj, NULL, name);
+	}
+
+	if ((header->ext_status & OCC_EXT_STAT_DVFS_OT) !=
+	    (occ->previous_ext_status & OCC_EXT_STAT_DVFS_OT)) {
+		name = sensor_dev_attr_occ_dvfs_ot.dev_attr.attr.name;
+		sysfs_notify(&occ->bus_dev->kobj, NULL, name);
+	}
+
+	if ((header->ext_status & OCC_EXT_STAT_DVFS_POWER) !=
+	    (occ->previous_ext_status & OCC_EXT_STAT_DVFS_POWER)) {
+		name = sensor_dev_attr_occ_dvfs_power.dev_attr.attr.name;
+		sysfs_notify(&occ->bus_dev->kobj, NULL, name);
+	}
+
+	if ((header->ext_status & OCC_EXT_STAT_MEM_THROTTLE) !=
+	    (occ->previous_ext_status & OCC_EXT_STAT_MEM_THROTTLE)) {
+		name = sensor_dev_attr_occ_mem_throttle.dev_attr.attr.name;
+		sysfs_notify(&occ->bus_dev->kobj, NULL, name);
+	}
+
+	if (occ->error && occ->error != occ->previous_error) {
+		name = dev_attr_occ_error.attr.name;
+		sysfs_notify(&occ->bus_dev->kobj, NULL, name);
+	}
+
+done:
+	occ->previous_error = occ->error;
+	occ->previous_ext_status = header->ext_status;
+	occ->previous_occs_present = header->occs_present;
+}
 
 /* only need to do this once at startup, as OCC won't change sensors on us */
 static void occ_parse_poll_response(struct occ *occ)

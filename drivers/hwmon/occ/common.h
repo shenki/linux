@@ -111,6 +111,11 @@ struct occ {
 	int error;
 	unsigned int error_count;	/* number of errors observed */
 	unsigned long last_safe;	/* time OCC entered safe state */
+
+	/* store previous poll state to compare; notify sysfs on change */
+	int previous_error;
+	u8 previous_ext_status;
+	u8 previous_occs_present;
 };
 
 int occ_setup(struct occ *occ, const char *name);
