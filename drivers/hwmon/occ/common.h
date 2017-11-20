@@ -107,6 +107,10 @@ struct occ {
 	struct occ_attribute *attrs;
 	struct attribute_group group;
 	const struct attribute_group *groups[2];
+
+	int error;
+	unsigned int error_count;	/* number of errors observed */
+	unsigned long last_safe;	/* time OCC entered safe state */
 };
 
 int occ_setup(struct occ *occ, const char *name);

@@ -18,6 +18,11 @@
 
 #include "common.h"
 
+#define OCC_ERROR_COUNT_THRESHOLD	2	/* OCC HW defined */
+
+#define OCC_STATE_SAFE			4
+#define OCC_SAFE_TIMEOUT		msecs_to_jiffies(60000) /* 1 min */
+
 #define OCC_UPDATE_FREQUENCY		msecs_to_jiffies(1000)
 
 #define OCC_TEMP_SENSOR_FAULT		0xFF
@@ -131,10 +136,22 @@ struct extended_sensor {
 	u8 data[6];
 } __packed;
 
+static ssize_t occ_show_error(struct device *dev,
+			      struct device_attribute *attr, char *buf)
+{
+	struct occ *occ = dev_get_drvdata(dev);
+
+	return snprintf(buf, PAGE_SIZE - 1, "%d\n", occ->error);
+}
+
+static DEVICE_ATTR(occ_error, 0444, occ_show_error, NULL);
+
 static int occ_poll(struct occ *occ)
 {
+	struct occ_poll_response_header *header;
 	u16 checksum = occ->poll_cmd_data + 1;
 	u8 cmd[8];
+	int rc;
 
 	/* big endian */
 	cmd[0] = 0;			/* sequence number */
@@ -147,7 +164,33 @@ static int occ_poll(struct occ *occ)
 	cmd[7] = 0;
 
 	/* mutex should already be locked if necessary */
-	return occ->send_cmd(occ, cmd);
+	rc = occ->send_cmd(occ, cmd);
+	if (rc) {
+		if (occ->error_count++ > OCC_ERROR_COUNT_THRESHOLD)
+			occ->error = rc;
+
+		return rc;
+	}
+
+	/* clear error since communication was successful */
+	occ->error_count = 0;
+	occ->error = 0;
+
+	/* check for safe state */
+	header = (struct occ_poll_response_header *)occ->resp.data;
+	if (header->occ_state == OCC_STATE_SAFE) {
+		if (occ->last_safe) {
+			if (time_after(jiffies,
+				       occ->last_safe + OCC_SAFE_TIMEOUT))
+				occ->error = -EHOSTDOWN;
+		} else {
+			occ->last_safe = jiffies;
+		}
+	} else {
+		occ->last_safe = 0;
+	}
+
+	return 0;
 }
 
 static int occ_set_user_power_cap(struct occ *occ, u16 user_power_cap)
@@ -175,6 +218,15 @@ static int occ_set_user_power_cap(struct occ *occ, u16 user_power_cap)
 	rc = occ->send_cmd(occ, cmd);
 
 	mutex_unlock(&occ->lock);
+
+	if (rc) {
+		if (occ->error_count++ > OCC_ERROR_COUNT_THRESHOLD)
+			occ->error = rc;
+	} else {
+		/* successful communication so clear the error */
+		occ->error_count = 0;
+		occ->error = 0;
+	}
 
 	return rc;
 }
@@ -1184,6 +1236,7 @@ static struct attribute *occ_attributes[] = {
 	&sensor_dev_attr_occ_quick_drop.dev_attr.attr,
 	&sensor_dev_attr_occ_status.dev_attr.attr,
 	&sensor_dev_attr_occs_present.dev_attr.attr,
+	&dev_attr_occ_error.attr,
 	NULL
 };
 
