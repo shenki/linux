@@ -135,6 +135,8 @@ static int p9_sbe_occ_remove(struct platform_device *pdev)
 	p9_sbe_occ->sbe = NULL;
 	p9_sbe_occ_close_client(p9_sbe_occ);
 
+	occ_shutdown(occ);
+
 	return 0;
 }
 

@@ -110,5 +110,6 @@ struct occ {
 };
 
 int occ_setup(struct occ *occ, const char *name);
+void occ_shutdown(struct occ *occ);
 
 #endif /* OCC_COMMON_H */
