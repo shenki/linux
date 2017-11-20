@@ -1,0 +1,18 @@
+Device-tree bindings for P9 On-Chip Controller
+----------------------------------------------
+
+The POWER9 On-Chip Controller is accessed through the SBEFIFO. All OCC nodes
+must be child nodes of SBEFIFO devices (see ibm,p9-sbefifo.txt).
+
+Required properties:
+ - compatible = "ibm,p9-occ";
+
+Optional properties:
+ - reg = <processor index>;	: Index for the processor this OCC is on.
+
+Examples:
+
+    occ@1 {
+        compatible = "ibm,p9-occ";
+        reg = <1>;
+    };
