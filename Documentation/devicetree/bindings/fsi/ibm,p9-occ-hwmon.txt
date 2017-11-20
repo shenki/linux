@@ -1,0 +1,16 @@
+Device-tree bindings for FSI-based On-Chip Controller hwmon device
+------------------------------------------------------------------
+
+Required properties:
+ - compatible = "ibm,p9-occ-hwmon";
+
+Examples:
+
+    occ@1 {
+        compatible = "ibm,p9-occ";
+        reg = <1>;
+
+        occ-hwmon@1 {
+            compatible = "ibm,p9-occ-hmwon";
+        }
+    };
