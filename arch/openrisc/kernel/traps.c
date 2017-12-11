@@ -41,7 +41,7 @@
 
 extern char _etext, _stext;
 
-int kstack_depth_to_print = 0x180;
+int kstack_depth_to_print = 24;
 int lwa_flag;
 unsigned long __user *lwa_addr;
 
@@ -61,9 +61,7 @@ void show_trace(struct task_struct *task, unsigned long *stack)
 	while (valid_stack_ptr(context, stack)) {
 		addr = *stack++;
 		if (__kernel_text_address(addr)) {
-			printk(" [<%08lx>]", addr);
-			print_symbol(" %s", addr);
-			printk("\n");
+			printk(" [<%08lx>] %pS", addr, (void *)addr);
 		}
 	}
 	printk(" =======================\n");
@@ -114,6 +112,7 @@ void show_registers(struct pt_regs *regs)
 	int i;
 	int in_kernel = 1;
 	unsigned long esp;
+	char str[sizeof("00 ") * 40 + 2 + 1], *p = str;
 
 	esp = (unsigned long)(&regs->sp);
 	if (user_mode(regs))
@@ -152,25 +151,21 @@ void show_registers(struct pt_regs *regs)
 		printk("\nStack: ");
 		show_stack(NULL, (unsigned long *)esp);
 
-		printk("\nCode: ");
 		if (regs->pc < PAGE_OFFSET)
 			goto bad;
 
-		for (i = -24; i < 24; i++) {
+		for (i = -10; i < 10; i++) {
 			unsigned char c;
 			if (__get_user(c, &((unsigned char *)regs->pc)[i])) {
 bad:
-				printk(" Bad PC value.");
+				p += sprintf(p, " Bad PC value");
 				break;
 			}
 
-			if (i == 0)
-				printk("(%02x) ", c);
-			else
-				printk("%02x ", c);
+			p += sprintf(p, i == 0 ? "(%02x) " : "%02x ", c);
 		}
 	}
-	printk("\n");
+	printk("Code: %s\n", str);
 }
 
 void nommu_dump_state(struct pt_regs *regs,
