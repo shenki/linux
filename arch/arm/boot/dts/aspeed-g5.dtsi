@@ -298,6 +298,14 @@
 						compatible = "aspeed,ast2500-lhc";
 						reg = <0x20 0x24 0x48 0x8>;
 					};
+
+					mbox: mbox@180 {
+						compatible = "aspeed,ast2500-mbox";
+						reg = <0x180 0x5c>;
+						interrupts = <46>;
+						#mbox-cells = <1>;
+						status = "disabled";
+					};
 				};
 			};
 
