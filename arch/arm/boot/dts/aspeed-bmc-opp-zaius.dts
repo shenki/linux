@@ -163,6 +163,9 @@
 	snoop-ports = <0x80>;
 };
 
+&mbox {
+       status = "okay";
+};
 
 &uart5 {
 	status = "okay";
