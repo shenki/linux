@@ -299,6 +299,13 @@
 						reg = <0x20 0x24 0x48 0x8>;
 					};
 
+					ibt: ibt@0c {
+						compatible = "aspeed,ast2500-ibt-bmc";
+						reg = <0x0c 0x18>;
+						interrupts = <8>;
+						status = "disabled";
+					};
+
 					mbox: mbox@180 {
 						compatible = "aspeed,ast2500-mbox";
 						reg = <0x180 0x5c>;
