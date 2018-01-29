@@ -114,3 +114,7 @@
 &vuart {
 	status = "okay";
 };
+
+&ibt {
+	status = "okay";
+};
