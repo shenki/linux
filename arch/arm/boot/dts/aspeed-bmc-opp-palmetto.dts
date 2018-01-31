@@ -26,6 +26,11 @@
 			no-map;
 			reg = <0x5f000000 0x01000000>; /* 16M */
 		};
+
+		flash_memory: region@98000000 {
+			no-map;
+			reg = <0x98000000 0x01000000>; /* 16MB */
+		};
 	};
 
 	leds {
@@ -128,6 +133,11 @@
 
 &i2c3 {
 	status = "okay";
+
+	occ-hwmon@50 {
+		compatible = "ibm,p8-occ-hwmon";
+		reg = <0x50>;
+	};
 };
 
 &i2c4 {
@@ -151,6 +161,16 @@
 };
 
 &ibt {
+	status = "okay";
+};
+
+&lpc_ctrl {
+	status = "okay";
+	memory-region = <&flash_memory>;
+	flash = <&spi>;
+};
+
+&mbox {
 	status = "okay";
 };
 
