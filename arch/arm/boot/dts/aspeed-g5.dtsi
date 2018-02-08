@@ -299,9 +299,9 @@
 						reg = <0x20 0x24 0x48 0x8>;
 					};
 
-					ibt: ibt@0c {
+					ibt: ibt@c0 {
 						compatible = "aspeed,ast2500-ibt-bmc";
-						reg = <0x0c 0x18>;
+						reg = <0xc0 0x18>;
 						interrupts = <8>;
 						status = "disabled";
 					};
