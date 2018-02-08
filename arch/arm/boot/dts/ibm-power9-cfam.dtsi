@@ -113,7 +113,7 @@
 			#size-cells = <0>;
 
 			occ@1 {
-				compatible = "ibm,p9-occ";
+				compatible = "ibm,p9-occ-hwmon";
 				reg = <1>;
 			};
 		};
@@ -205,8 +205,7 @@
 					#size-cells = <0>;
 
 					occ@2 {
-						compatible =
-							"ibm,p9-occ";
+						compatible = "ibm,p9-occ-hwmon";
 						reg = <2>;
 					};
 				};
