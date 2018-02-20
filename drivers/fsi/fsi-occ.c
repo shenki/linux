@@ -21,7 +21,6 @@
 #include <linux/mutex.h>
 #include <linux/fsi-occ.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
@@ -737,24 +736,24 @@ EXPORT_SYMBOL_GPL(occ_drv_release);
 
 static int occ_unregister_child(struct device *dev, void *data)
 {
-	struct platform_device *child = to_platform_device(dev);
+	struct platform_device *hwmon_dev = to_platform_device(dev);
 
-	of_device_unregister(child);
-	if (dev->of_node)
-		of_node_clear_flag(dev->of_node, OF_POPULATED);
+	platform_device_unregister(hwmon_dev);
 
 	return 0;
 }
 
 static int occ_probe(struct platform_device *pdev)
 {
-	int rc, child_idx = 0;
+	int rc;
 	u32 reg;
 	struct occ *occ;
-	struct device_node *np;
-	struct platform_device *child;
+	struct platform_device *hwmon_dev;
 	struct device *dev = &pdev->dev;
-	char child_name[32];
+	struct platform_device_info hwmon_dev_info = {
+		.parent = dev,
+		.name = "occ-hwmon",
+	};
 
 	occ = devm_kzalloc(dev, sizeof(*occ), GFP_KERNEL);
 	if (!occ)
@@ -796,14 +795,10 @@ static int occ_probe(struct platform_device *pdev)
 		return rc;
 	}
 
-	/* create platform devs for dts child nodes (hwmon, etc) */
-	for_each_available_child_of_node(dev->of_node, np) {
-		snprintf(child_name, sizeof(child_name), "occ%d-dev%d",
-			 occ->idx, child_idx++);
-		child = of_platform_device_create(np, child_name, dev);
-		if (!child)
-			dev_warn(dev, "failed to create child node dev\n");
-	}
+	hwmon_dev_info.id = occ->idx;
+	hwmon_dev = platform_device_register_full(&hwmon_dev_info);
+	if (!hwmon_dev)
+		dev_warn(dev, "failed to create hwmon device\n");
 
 	platform_set_drvdata(pdev, occ);
 
