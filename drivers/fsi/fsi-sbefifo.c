@@ -29,9 +29,9 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
-#include <linux/timer.h>
 #include <linux/uaccess.h>
 #include <linux/wait.h>
+#include <linux/workqueue.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sbefifo.h>
@@ -60,7 +60,7 @@
 #define SBEFIFO_MAX_RESCHDULE	msecs_to_jiffies(5000)
 
 struct sbefifo {
-	struct timer_list poll_timer;
+	struct delayed_work work;
 	struct fsi_device *fsi_dev;
 	struct miscdevice mdev;
 	wait_queue_head_t wait;
@@ -101,6 +101,8 @@ struct sbefifo_client {
 	struct kref kref;
 	unsigned long f_flags;
 };
+
+static struct workqueue_struct *sbefifo_wq;
 
 static DEFINE_IDA(sbefifo_ida);
 
@@ -344,7 +346,7 @@ static void sbefifo_release_client(struct kref *kref)
 			 */
 			set_bit(SBEFIFO_XFR_CANCEL, &xfr->flags);
 			sbefifo_get(sbefifo);
-			if (mod_timer(&client->dev->poll_timer, jiffies))
+			if (!queue_work(sbefifo_wq, &sbefifo->work.work))
 				sbefifo_put(sbefifo);
 		}
 	}
@@ -382,10 +384,11 @@ static struct sbefifo_xfr *sbefifo_next_xfr(struct sbefifo *sbefifo)
 	return NULL;
 }
 
-static void sbefifo_poll_timer(unsigned long data)
+static void sbefifo_worker(struct work_struct *work)
 {
 	static const unsigned long EOT_MASK = 0x000000ff;
-	struct sbefifo *sbefifo = (void *)data;
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct sbefifo *sbefifo = container_of(dwork, struct sbefifo, work);
 	struct sbefifo_buf *rbuf, *wbuf;
 	struct sbefifo_xfr *xfr, *tmp;
 	struct sbefifo_buf drain;
@@ -403,6 +406,7 @@ static void sbefifo_poll_timer(unsigned long data)
 
 	trace_sbefifo_begin_xfer(xfr);
 
+again:
 	rbuf = xfr->rbuf;
 	wbuf = xfr->wbuf;
 
@@ -424,9 +428,8 @@ static void sbefifo_poll_timer(unsigned long data)
 		devn = sbefifo_dev_nwwriteable(sts);
 		if (devn == 0) {
 			/* No open slot for write.  Reschedule. */
-			sbefifo->poll_timer.expires = jiffies +
-				SBEFIFO_RESCHEDULE;
-			add_timer(&sbefifo->poll_timer);
+			queue_delayed_work(sbefifo_wq, &sbefifo->work,
+					   SBEFIFO_RESCHEDULE);
 			goto out_unlock;
 		}
 
@@ -478,9 +481,8 @@ static void sbefifo_poll_timer(unsigned long data)
 			}
 
 			/* No data yet.  Reschedule. */
-			sbefifo->poll_timer.expires = jiffies +
-				SBEFIFO_RESCHEDULE;
-			add_timer(&sbefifo->poll_timer);
+			queue_delayed_work(sbefifo_wq, &sbefifo->work,
+					   SBEFIFO_RESCHEDULE);
 			goto out_unlock;
 		} else {
 			xfr->wait_data_timeout = 0;
@@ -528,10 +530,12 @@ out:
 		}
 		INIT_LIST_HEAD(&sbefifo->xfrs);
 
-	} else if (eot && sbefifo_next_xfr(sbefifo)) {
-		sbefifo_get(sbefifo);
-		sbefifo->poll_timer.expires = jiffies;
-		add_timer(&sbefifo->poll_timer);
+	} else if (eot) {
+		xfr = sbefifo_next_xfr(sbefifo);
+		if (xfr) {
+			wake_up_interruptible(&sbefifo->wait);
+			goto again;
+		}
 	}
 
 	sbefifo_put(sbefifo);
@@ -652,7 +656,7 @@ static ssize_t sbefifo_read_common(struct sbefifo_client *client,
 		if (!test_bit(SBEFIFO_XFR_COMPLETE, &xfr->flags)) {
 			/* Fill the read buffer back up. */
 			sbefifo_get(sbefifo);
-			if (mod_timer(&client->dev->poll_timer, jiffies))
+			if (!queue_work(sbefifo_wq, &sbefifo->work.work))
 				sbefifo_put(sbefifo);
 		} else {
 			list_del(&xfr->client);
@@ -738,7 +742,7 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
 								 &n))) {
 			set_bit(SBEFIFO_XFR_CANCEL, &xfr->flags);
 			sbefifo_get(sbefifo);
-			if (mod_timer(&sbefifo->poll_timer, jiffies))
+			if (!queue_work(sbefifo_wq, &sbefifo->work.work))
 				sbefifo_put(sbefifo);
 
 			ret = -ERESTARTSYS;
@@ -758,7 +762,8 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
 			    n)) {
 				set_bit(SBEFIFO_XFR_CANCEL, &xfr->flags);
 				sbefifo_get(sbefifo);
-				if (mod_timer(&sbefifo->poll_timer, jiffies))
+				if (!queue_work(sbefifo_wq,
+						&sbefifo->work.work))
 					sbefifo_put(sbefifo);
 				ret = -EFAULT;
 				goto out;
@@ -783,7 +788,7 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
 
 		/* Drain the write buffer. */
 		sbefifo_get(sbefifo);
-		if (mod_timer(&client->dev->poll_timer, jiffies))
+		if (!queue_work(sbefifo_wq, &sbefifo->work.work))
 			sbefifo_put(sbefifo);
 	}
 
@@ -943,8 +948,7 @@ static int sbefifo_probe(struct device *dev)
 		 sbefifo->idx);
 
 	/* This bit of silicon doesn't offer any interrupts... */
-	setup_timer(&sbefifo->poll_timer, sbefifo_poll_timer,
-		    (unsigned long)sbefifo);
+	INIT_DELAYED_WORK(&sbefifo->work, sbefifo_worker);
 
 	sbefifo->mdev.minor = MISC_DYNAMIC_MINOR;
 	sbefifo->mdev.fops = &sbefifo_fops;
@@ -997,7 +1001,7 @@ static int sbefifo_remove(struct device *dev)
 
 	ida_simple_remove(&sbefifo_ida, sbefifo->idx);
 
-	if (del_timer_sync(&sbefifo->poll_timer))
+	if (cancel_delayed_work_sync(&sbefifo->work))
 		sbefifo_put(sbefifo);
 
 	sbefifo_put(sbefifo);
@@ -1025,11 +1029,17 @@ static struct fsi_driver sbefifo_drv = {
 
 static int sbefifo_init(void)
 {
+	sbefifo_wq = create_singlethread_workqueue("sbefifo");
+	if (!sbefifo_wq)
+		return -ENOMEM;
+
 	return fsi_driver_register(&sbefifo_drv);
 }
 
 static void sbefifo_exit(void)
 {
+	destroy_workqueue(sbefifo_wq);
+
 	fsi_driver_unregister(&sbefifo_drv);
 
 	ida_destroy(&sbefifo_ida);
