@@ -33,6 +33,9 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 
+#define CREATE_TRACE_POINTS
+#include <trace/events/sbefifo.h>
+
 /*
  * The SBEFIFO is a pipe-like FSI device for communicating with
  * the self boot engine on POWER processors.
@@ -275,6 +278,8 @@ static struct sbefifo_xfr *sbefifo_enq_xfr(struct sbefifo_client *client)
 	if (!xfr)
 		return ERR_PTR(-ENOMEM);
 
+	trace_sbefifo_enq_xfer(client, xfr);
+
 	xfr->rbuf = &client->rbuf;
 	xfr->wbuf = &client->wbuf;
 	list_add_tail(&xfr->xfrs, &sbefifo->xfrs);
@@ -302,6 +307,8 @@ static struct sbefifo_client *sbefifo_new_client(struct sbefifo *sbefifo)
 	client = kzalloc(sizeof(*client), GFP_KERNEL);
 	if (!client)
 		return NULL;
+
+	trace_sbefifo_new_client(client);
 
 	kref_init(&client->kref);
 	client->dev = sbefifo;
@@ -343,6 +350,7 @@ static void sbefifo_release_client(struct kref *kref)
 	}
 
 	sbefifo_put(sbefifo);
+	trace_sbefifo_release_client(client);
 	kfree(client);
 }
 
@@ -392,6 +400,8 @@ static void sbefifo_poll_timer(unsigned long data)
 				       xfrs);
 	if (!xfr)
 		goto out_unlock;
+
+	trace_sbefifo_begin_xfer(xfr);
 
 	rbuf = xfr->rbuf;
 	wbuf = xfr->wbuf;
@@ -506,6 +516,8 @@ static void sbefifo_poll_timer(unsigned long data)
 	}
 
 out:
+	trace_sbefifo_end_xfer(xfr, ret);
+
 	if (unlikely(ret)) {
 		sbefifo->rc = ret;
 		dev_err(&sbefifo->fsi_dev->dev,
@@ -611,6 +623,10 @@ static ssize_t sbefifo_read_common(struct sbefifo_client *client,
 		INIT_LIST_HEAD(&client->xfrs);
 		goto out;
 	}
+
+	trace_sbefifo_deq_xfer(client, list_first_entry_or_null(&client->xfrs,
+							   struct sbefifo_xfr,
+							   client));
 
 	n = min_t(size_t, n, len);
 
