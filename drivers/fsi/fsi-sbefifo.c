@@ -314,7 +314,7 @@ static struct sbefifo_client *sbefifo_new_client(struct sbefifo *sbefifo)
 	return client;
 }
 
-static void sbefifo_client_release(struct kref *kref)
+static void sbefifo_release_client(struct kref *kref)
 {
 	struct sbefifo *sbefifo;
 	struct sbefifo_client *client;
@@ -353,7 +353,7 @@ static void sbefifo_get_client(struct sbefifo_client *client)
 
 static void sbefifo_put_client(struct sbefifo_client *client)
 {
-	kref_put(&client->kref, sbefifo_client_release);
+	kref_put(&client->kref, sbefifo_release_client);
 }
 
 static struct sbefifo_xfr *sbefifo_next_xfr(struct sbefifo *sbefifo)
