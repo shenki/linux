@@ -707,7 +707,10 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
 	n = sbefifo_buf_nbwriteable(&client->wbuf);
 
 	spin_lock_irq(&sbefifo->lock);
-	xfr = sbefifo_next_xfr(sbefifo);	/* next xfr to be executed */
+ 
+	/* next xfr to be executed */
+	xfr = list_first_entry_or_null(&sbefifo->xfrs, struct sbefifo_xfr,
+				       xfrs);
 
 	if ((client->f_flags & O_NONBLOCK) && xfr && n < len) {
 		spin_unlock_irq(&sbefifo->lock);
