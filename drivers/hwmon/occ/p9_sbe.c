@@ -116,6 +116,7 @@ static int p9_sbe_occ_probe(struct platform_device *pdev)
 	if (!p9_sbe_occ)
 		return -ENOMEM;
 
+	spin_lock_init(&p9_sbe_occ->lock);
 	p9_sbe_occ->sbe = pdev->dev.parent;
 	occ = &p9_sbe_occ->occ;
 	occ->bus_dev = &pdev->dev;
