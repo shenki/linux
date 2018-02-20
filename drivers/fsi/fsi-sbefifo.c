@@ -22,6 +22,7 @@
 #include <linux/list.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
+#include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/of_platform.h>
@@ -66,7 +67,8 @@ struct sbefifo {
 	wait_queue_head_t wait;
 	struct list_head xfrs;
 	struct kref kref;
-	spinlock_t lock;
+	spinlock_t list_lock;		/* lock access to the xfrs list */
+	struct mutex sbefifo_lock;	/* lock access to the hardware */
 	char name[32];
 	int idx;
 	int rc;
@@ -397,12 +399,16 @@ static void sbefifo_worker(struct work_struct *work)
 	int ret = 0;
 	u32 sts;
 	int i;
+	unsigned long flags;
 
-	spin_lock(&sbefifo->lock);
+	spin_lock_irqsave(&sbefifo->list_lock, flags);
 	xfr = list_first_entry_or_null(&sbefifo->xfrs, struct sbefifo_xfr,
 				       xfrs);
+	spin_unlock_irqrestore(&sbefifo->list_lock, flags);
 	if (!xfr)
-		goto out_unlock;
+		return;
+
+	mutex_lock(&sbefifo->sbefifo_lock);
 
 	trace_sbefifo_begin_xfer(xfr);
 
@@ -509,7 +515,11 @@ again:
 				goto out;
 
 			set_bit(SBEFIFO_XFR_COMPLETE, &xfr->flags);
+
+			spin_lock_irqsave(&sbefifo->list_lock, flags);
 			list_del(&xfr->xfrs);
+			spin_unlock_irqrestore(&sbefifo->list_lock, flags);
+
 			if (unlikely(test_bit(SBEFIFO_XFR_CANCEL,
 					      &xfr->flags)))
 				kfree(xfr);
@@ -524,14 +534,19 @@ out:
 		sbefifo->rc = ret;
 		dev_err(&sbefifo->fsi_dev->dev,
 			"Fatal bus access failure: %d\n", ret);
+
+		spin_lock_irqsave(&sbefifo->list_lock, flags);
 		list_for_each_entry_safe(xfr, tmp, &sbefifo->xfrs, xfrs) {
 			list_del(&xfr->xfrs);
 			kfree(xfr);
 		}
 		INIT_LIST_HEAD(&sbefifo->xfrs);
-
+		spin_unlock_irqrestore(&sbefifo->list_lock, flags);
 	} else if (eot) {
+		spin_lock_irqsave(&sbefifo->list_lock, flags);
 		xfr = sbefifo_next_xfr(sbefifo);
+		spin_unlock_irqrestore(&sbefifo->list_lock, flags);
+
 		if (xfr) {
 			wake_up_interruptible(&sbefifo->wait);
 			goto again;
@@ -542,7 +557,7 @@ out:
 	wake_up_interruptible(&sbefifo->wait);
 
 out_unlock:
-	spin_unlock(&sbefifo->lock);
+	mutex_unlock(&sbefifo->sbefifo_lock);
 }
 
 static int sbefifo_open(struct inode *inode, struct file *file)
@@ -700,6 +715,7 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
 	struct sbefifo_xfr *xfr;
 	ssize_t ret = 0;
 	size_t n;
+	unsigned long flags;
 
 	if ((len >> 2) << 2 != len)
 		return -EINVAL;
@@ -710,26 +726,26 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
 	sbefifo_get_client(client);
 	n = sbefifo_buf_nbwriteable(&client->wbuf);
 
-	spin_lock_irq(&sbefifo->lock);
+	spin_lock_irqsave(&sbefifo->list_lock, flags);
  
 	/* next xfr to be executed */
 	xfr = list_first_entry_or_null(&sbefifo->xfrs, struct sbefifo_xfr,
 				       xfrs);
 
 	if ((client->f_flags & O_NONBLOCK) && xfr && n < len) {
-		spin_unlock_irq(&sbefifo->lock);
+		spin_unlock_irqrestore(&sbefifo->list_lock, flags);
 		ret = -EAGAIN;
 		goto out;
 	}
 
 	xfr = sbefifo_enq_xfr(client);		/* this xfr queued up */
 	if (IS_ERR(xfr)) {
-		spin_unlock_irq(&sbefifo->lock);
+		spin_unlock_irqrestore(&sbefifo->list_lock, flags);
 		ret = PTR_ERR(xfr);
 		goto out;
 	}
 
-	spin_unlock_irq(&sbefifo->lock);
+	spin_unlock_irqrestore(&sbefifo->list_lock, flags);
 
 	/*
 	 * Partial writes are not really allowed in that EOT is sent exactly
@@ -938,7 +954,8 @@ static int sbefifo_probe(struct device *dev)
 		}
 	}
 
-	spin_lock_init(&sbefifo->lock);
+	spin_lock_init(&sbefifo->list_lock);
+	mutex_init(&sbefifo->sbefifo_lock);
 	kref_init(&sbefifo->kref);
 	init_waitqueue_head(&sbefifo->wait);
 	INIT_LIST_HEAD(&sbefifo->xfrs);
@@ -981,8 +998,11 @@ static int sbefifo_remove(struct device *dev)
 {
 	struct sbefifo *sbefifo = dev_get_drvdata(dev);
 	struct sbefifo_xfr *xfr, *tmp;
+	unsigned long flags;
 
-	spin_lock(&sbefifo->lock);
+	/* lock the sbefifo so to prevent deleting an ongoing xfr */
+	mutex_lock(&sbefifo->sbefifo_lock);
+	spin_lock_irqsave(&sbefifo->list_lock, flags);
 
 	WRITE_ONCE(sbefifo->rc, -ENODEV);
 	list_for_each_entry_safe(xfr, tmp, &sbefifo->xfrs, xfrs) {
@@ -992,7 +1012,8 @@ static int sbefifo_remove(struct device *dev)
 
 	INIT_LIST_HEAD(&sbefifo->xfrs);
 
-	spin_unlock(&sbefifo->lock);
+	spin_unlock_irqrestore(&sbefifo->list_lock, flags);
+	mutex_unlock(&sbefifo->sbefifo_lock);
 
 	wake_up_all(&sbefifo->wait);
 
