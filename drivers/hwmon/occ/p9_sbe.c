@@ -34,34 +34,32 @@ struct p9_sbe_occ {
 	 * open, close and NULL assignment. This prevents simultaneous opening
 	 * and closing of the client, or closing multiple times.
 	 */
-	spinlock_t client_lock;
+	struct mutex client_lock;
 };
 
 #define to_p9_sbe_occ(x)	container_of((x), struct p9_sbe_occ, occ)
 
 static void p9_sbe_occ_close_client(struct p9_sbe_occ *ctx)
 {
-	unsigned long flags;
 	struct occ_client *tmp_client;
 
-	spin_lock_irqsave(&ctx->client_lock, flags);
+	mutex_lock(&ctx->client_lock);
 	tmp_client = ctx->client;
 	ctx->client = NULL;
 	occ_drv_release(tmp_client);
-	spin_unlock_irqrestore(&ctx->client_lock, flags);
+	mutex_unlock(&ctx->client_lock);
 }
 
 static int p9_sbe_occ_send_cmd(struct occ *occ, u8 *cmd)
 {
 	int rc;
-	unsigned long flags;
 	struct occ_response *resp = &occ->resp;
 	struct p9_sbe_occ *ctx = to_p9_sbe_occ(occ);
 
-	spin_lock_irqsave(&ctx->client_lock, flags);
+	mutex_lock(&ctx->client_lock);
 	if (ctx->sbe)
 		ctx->client = occ_drv_open(ctx->sbe, 0);
-	spin_unlock_irqrestore(&ctx->client_lock, flags);
+	mutex_unlock(&ctx->client_lock);
 
 	if (!ctx->client)
 		return -ENODEV;
@@ -115,7 +113,7 @@ static int p9_sbe_occ_probe(struct platform_device *pdev)
 	if (!ctx)
 		return -ENOMEM;
 
-	spin_lock_init(&ctx->lock);
+	mutex_init(&ctx->client_lock);
 	ctx->sbe = pdev->dev.parent;
 	occ = &ctx->occ;
 	occ->bus_dev = &pdev->dev;
