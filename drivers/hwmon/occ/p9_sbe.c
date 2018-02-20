@@ -16,6 +16,9 @@
 
 #include "common.h"
 
+/* Satisfy lockdep's need for static keys */
+static struct lock_class_key p9_sbe_occ_client_lock_key;
+
 struct p9_sbe_occ {
 	struct occ occ;
 	struct device *sbe;
@@ -114,6 +117,7 @@ static int p9_sbe_occ_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	mutex_init(&ctx->client_lock);
+	lockdep_set_class(&ctx->client_lock, &p9_sbe_occ_client_lock_key);
 	ctx->sbe = pdev->dev.parent;
 	occ = &ctx->occ;
 	occ->bus_dev = &pdev->dev;
