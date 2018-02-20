@@ -34,7 +34,7 @@ struct p9_sbe_occ {
 	 * open, close and NULL assignment. This prevents simultaneous opening
 	 * and closing of the client, or closing multiple times.
 	 */
-	spinlock_t lock;
+	spinlock_t client_lock;
 };
 
 #define to_p9_sbe_occ(x)	container_of((x), struct p9_sbe_occ, occ)
@@ -44,11 +44,11 @@ static void p9_sbe_occ_close_client(struct p9_sbe_occ *ctx)
 	unsigned long flags;
 	struct occ_client *tmp_client;
 
-	spin_lock_irqsave(&ctx->lock, flags);
+	spin_lock_irqsave(&ctx->client_lock, flags);
 	tmp_client = ctx->client;
 	ctx->client = NULL;
 	occ_drv_release(tmp_client);
-	spin_unlock_irqrestore(&ctx->lock, flags);
+	spin_unlock_irqrestore(&ctx->client_lock, flags);
 }
 
 static int p9_sbe_occ_send_cmd(struct occ *occ, u8 *cmd)
@@ -58,10 +58,10 @@ static int p9_sbe_occ_send_cmd(struct occ *occ, u8 *cmd)
 	struct occ_response *resp = &occ->resp;
 	struct p9_sbe_occ *ctx = to_p9_sbe_occ(occ);
 
-	spin_lock_irqsave(&ctx->lock, flags);
+	spin_lock_irqsave(&ctx->client_lock, flags);
 	if (ctx->sbe)
 		ctx->client = occ_drv_open(ctx->sbe, 0);
-	spin_unlock_irqrestore(&ctx->lock, flags);
+	spin_unlock_irqrestore(&ctx->client_lock, flags);
 
 	if (!ctx->client)
 		return -ENODEV;
