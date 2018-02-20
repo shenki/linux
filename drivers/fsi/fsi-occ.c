@@ -29,6 +29,9 @@
 #include <linux/wait.h>
 #include <linux/workqueue.h>
 
+#define CREATE_TRACE_POINTS
+#include <trace/events/fsi_occ.h>
+
 #define OCC_SRAM_BYTES		4096
 #define OCC_CMD_DATA_BYTES	4090
 #define OCC_RESP_DATA_BYTES	4089
@@ -130,6 +133,8 @@ static int occ_enqueue_xfr(struct occ_xfr *xfr)
 	list_add_tail(&xfr->link, &occ->xfrs);
 
 	spin_unlock_irqrestore(&occ->list_lock, flags);
+
+	trace_occ_enq_xfer(client, xfr);
 
 	if (empty)
 		queue_work(occ_wq, &occ->work);
@@ -276,6 +281,7 @@ static ssize_t occ_read_common(struct occ_client *client, char __user *ubuf,
 
 done:
 	spin_unlock_irqrestore(&client->lock, flags);
+	trace_occ_read_complete(client, xfr);
 	occ_put_client(client);
 	return rc;
 }
@@ -307,6 +313,7 @@ static ssize_t occ_write_common(struct occ_client *client,
 	occ_get_client(client);
 	xfr = &client->xfr;
 
+	trace_occ_write_begin(client, xfr);
 	spin_lock_irqsave(&client->lock, flags);
 
 	if (test_bit(CLIENT_XFR_PENDING, &client->flags)) {
@@ -637,6 +644,7 @@ again:
 	set_bit(XFR_IN_PROGRESS, &xfr->flags);
 
 	spin_unlock_irqrestore(&occ->list_lock, flags);
+	trace_occ_worker_xfer_begin(client, xfr);
 	mutex_lock(&occ->occ_lock);
 
 	start = jiffies;
@@ -699,6 +707,7 @@ done:
 	spin_unlock_irqrestore(&occ->list_lock, flags);
 
 	wake_up_interruptible(&client->wait);
+	trace_occ_worker_xfer_complete(client, xfr);
 	occ_put_client(client);
 
 	if (!empty)
