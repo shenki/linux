@@ -39,16 +39,16 @@ struct p9_sbe_occ {
 
 #define to_p9_sbe_occ(x)	container_of((x), struct p9_sbe_occ, occ)
 
-static void p9_sbe_occ_close_client(struct p9_sbe_occ *occ)
+static void p9_sbe_occ_close_client(struct p9_sbe_occ *ctx)
 {
 	unsigned long flags;
 	struct occ_client *tmp_client;
 
-	spin_lock_irqsave(&occ->lock, flags);
-	tmp_client = occ->client;
-	occ->client = NULL;
+	spin_lock_irqsave(&ctx->lock, flags);
+	tmp_client = ctx->client;
+	ctx->client = NULL;
 	occ_drv_release(tmp_client);
-	spin_unlock_irqrestore(&occ->lock, flags);
+	spin_unlock_irqrestore(&ctx->lock, flags);
 }
 
 static int p9_sbe_occ_send_cmd(struct occ *occ, u8 *cmd)
@@ -56,26 +56,25 @@ static int p9_sbe_occ_send_cmd(struct occ *occ, u8 *cmd)
 	int rc;
 	unsigned long flags;
 	struct occ_response *resp = &occ->resp;
-	struct p9_sbe_occ *p9_sbe_occ = to_p9_sbe_occ(occ);
+	struct p9_sbe_occ *ctx = to_p9_sbe_occ(occ);
 
-	spin_lock_irqsave(&p9_sbe_occ->lock, flags);
-	if (p9_sbe_occ->sbe)
-		p9_sbe_occ->client = occ_drv_open(p9_sbe_occ->sbe, 0);
-	spin_unlock_irqrestore(&p9_sbe_occ->lock, flags);
+	spin_lock_irqsave(&ctx->lock, flags);
+	if (ctx->sbe)
+		ctx->client = occ_drv_open(ctx->sbe, 0);
+	spin_unlock_irqrestore(&ctx->lock, flags);
 
-	if (!p9_sbe_occ->client)
+	if (!ctx->client)
 		return -ENODEV;
 
 	/* skip first byte (sequence number), OCC driver handles it */
-	rc = occ_drv_write(p9_sbe_occ->client, (const char *)&cmd[1], 7);
+	rc = occ_drv_write(ctx->client, (const char *)&cmd[1], 7);
 	if (rc < 0)
 		goto err;
 
-	rc = occ_drv_read(p9_sbe_occ->client, (char *)resp, sizeof(*resp));
+	rc = occ_drv_read(ctx->client, (char *)resp, sizeof(*resp));
 	if (rc < 0)
 		goto err;
 
-	/* check the OCC response */
 	switch (resp->return_status) {
 	case OCC_RESP_CMD_IN_PRG:
 		rc = -ETIMEDOUT;
@@ -103,22 +102,22 @@ static int p9_sbe_occ_send_cmd(struct occ *occ, u8 *cmd)
 	}
 
 err:
-	p9_sbe_occ_close_client(p9_sbe_occ);
+	p9_sbe_occ_close_client(ctx);
 	return rc;
 }
 
 static int p9_sbe_occ_probe(struct platform_device *pdev)
 {
 	struct occ *occ;
-	struct p9_sbe_occ *p9_sbe_occ = devm_kzalloc(&pdev->dev,
-						     sizeof(*p9_sbe_occ),
+	struct p9_sbe_occ *ctx = devm_kzalloc(&pdev->dev,
+						     sizeof(*ctx),
 						     GFP_KERNEL);
-	if (!p9_sbe_occ)
+	if (!ctx)
 		return -ENOMEM;
 
-	spin_lock_init(&p9_sbe_occ->lock);
-	p9_sbe_occ->sbe = pdev->dev.parent;
-	occ = &p9_sbe_occ->occ;
+	spin_lock_init(&ctx->lock);
+	ctx->sbe = pdev->dev.parent;
+	occ = &ctx->occ;
 	occ->bus_dev = &pdev->dev;
 	platform_set_drvdata(pdev, occ);
 
@@ -131,10 +130,10 @@ static int p9_sbe_occ_probe(struct platform_device *pdev)
 static int p9_sbe_occ_remove(struct platform_device *pdev)
 {
 	struct occ *occ = platform_get_drvdata(pdev);
-	struct p9_sbe_occ *p9_sbe_occ = to_p9_sbe_occ(occ);
+	struct p9_sbe_occ *ctx = to_p9_sbe_occ(occ);
 
-	p9_sbe_occ->sbe = NULL;
-	p9_sbe_occ_close_client(p9_sbe_occ);
+	ctx->sbe = NULL;
+	p9_sbe_occ_close_client(ctx);
 
 	occ_shutdown(occ);
 
