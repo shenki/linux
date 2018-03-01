@@ -256,7 +256,7 @@ static ssize_t occ_show_temp_1(struct device *dev,
 			       struct device_attribute *attr, char *buf)
 {
 	int rc;
-	u16 val = 0;
+	u32 val = 0;
 	struct temp_sensor_1 *temp;
 	struct occ *occ = dev_get_drvdata(dev);
 	struct occ_sensors *sensors = &occ->sensors;
@@ -393,7 +393,7 @@ static ssize_t occ_show_power_1(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	int rc;
-	u32 val = 0;
+	u64 val = 0;
 	struct power_sensor_1 *power;
 	struct occ *occ = dev_get_drvdata(dev);
 	struct occ_sensors *sensors = &occ->sensors;
@@ -417,13 +417,13 @@ static ssize_t occ_show_power_1(struct device *dev,
 		break;
 	case 3:
 		/* microwatts */
-		val = get_unaligned_be16(&power->value) * 1000000;
+		val = get_unaligned_be16(&power->value) * 1000000ULL;
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	return snprintf(buf, PAGE_SIZE - 1, "%u\n", val);
+	return snprintf(buf, PAGE_SIZE - 1, "%llu\n", val);
 }
 
 static ssize_t occ_show_power_2(struct device *dev,
@@ -454,7 +454,7 @@ static ssize_t occ_show_power_2(struct device *dev,
 		break;
 	case 3:
 		/* microwatts */
-		val = get_unaligned_be16(&power->value) * 1000000;
+		val = get_unaligned_be16(&power->value) * 1000000ULL;
 		break;
 	case 4:
 		val = power->function_id;
@@ -496,7 +496,7 @@ static ssize_t occ_show_power_a0(struct device *dev,
 		break;
 	case 3:
 		/* microwatts */
-		val = get_unaligned_be16(&power->system.value) * 1000000;
+		val = get_unaligned_be16(&power->system.value) * 1000000ULL;
 		break;
 	case 4:
 		val = get_unaligned_be32(&power->system.update_tag);
@@ -511,7 +511,7 @@ static ssize_t occ_show_power_a0(struct device *dev,
 		break;
 	case 8:
 		/* microwatts */
-		val = get_unaligned_be16(&power->proc.value) * 1000000;
+		val = get_unaligned_be16(&power->proc.value) * 1000000ULL;
 		break;
 	case 9:
 		val = get_unaligned_be32(&power->proc.update_tag);
@@ -523,7 +523,7 @@ static ssize_t occ_show_power_a0(struct device *dev,
 		return snprintf(buf, PAGE_SIZE - 1, "vdd\n");
 	case 12:
 		/* microwatts */
-		val = get_unaligned_be16(&power->vdd.value) * 1000000;
+		val = get_unaligned_be16(&power->vdd.value) * 1000000ULL;
 		break;
 	case 13:
 		val = get_unaligned_be32(&power->vdd.update_tag);
@@ -535,7 +535,7 @@ static ssize_t occ_show_power_a0(struct device *dev,
 		return snprintf(buf, PAGE_SIZE - 1, "vdn\n");
 	case 16:
 		/* microwatts */
-		val = get_unaligned_be16(&power->vdn.value) * 1000000;
+		val = get_unaligned_be16(&power->vdn.value) * 1000000ULL;
 		break;
 	case 17:
 		val = get_unaligned_be32(&power->vdn.update_tag);
