@@ -209,11 +209,23 @@ static int aspeed_clk_enable(struct clk_hw *hw)
 {
 	struct aspeed_clk_gate *gate = to_aspeed_clk_gate(hw);
 	unsigned long flags;
+	u32 reg;
 	u32 clk = BIT(gate->clock_idx);
 	u32 rst = BIT(gate->reset_idx);
-	u32 enval;
+	u32 enval = (gate->flags & CLK_GATE_SET_TO_DISABLE) ? 0 : clk;
 
 	spin_lock_irqsave(gate->lock, flags);
+
+	/*
+	 * Only reset/enable/unreset if clock is stopped. The LPC clock has
+	 * issues otherwise.
+	 */
+	enval = (gate->flags & CLK_GATE_SET_TO_DISABLE) ? 0 : clk;
+	regmap_read(gate->map, ASPEED_CLK_STOP_CTRL, &reg);
+	if ((reg & clk) == enval) {
+		spin_unlock_irqrestore(gate->lock, flags);
+		return 0;
+	}
 
 	if (gate->reset_idx >= 0) {
 		/* Put IP in reset */
@@ -224,7 +236,6 @@ static int aspeed_clk_enable(struct clk_hw *hw)
 	}
 
 	/* Enable clock */
-	enval = (gate->flags & CLK_GATE_SET_TO_DISABLE) ? 0 : clk;
 	regmap_update_bits(gate->map, ASPEED_CLK_STOP_CTRL, clk, enval);
 
 	if (gate->reset_idx >= 0) {
