@@ -151,13 +151,20 @@ static __always_inline bool memory_is_poisoned_2_4_8(unsigned long addr,
 
 static __always_inline bool memory_is_poisoned_16(unsigned long addr)
 {
-	u16 *shadow_addr = (u16 *)kasan_mem_to_shadow((void *)addr);
+	u8 *shadow_addr = (u8 *)kasan_mem_to_shadow((void *)addr);
 
-	/* Unaligned 16-bytes access maps into 3 shadow bytes. */
-	if (unlikely(!IS_ALIGNED(addr, KASAN_SHADOW_SCALE_SIZE)))
-		return *shadow_addr || memory_is_poisoned_1(addr + 15);
-
-	return *shadow_addr;
+	if (unlikely(shadow_addr[0] || shadow_addr[1])) {
+		return true;
+	} else if (likely(IS_ALIGNED(addr, KASAN_SHADOW_SCALE_SIZE))) {
+		/*
+		 * If two shadow bytes covers 16-byte access, we don't
+		 * need to do anything more. Otherwise, test the last
+		 * shadow byte.
+		 */
+		return false;
+	} else {
+		return memory_is_poisoned_1(addr + 15);
+	}
 }
 
 static __always_inline unsigned long bytes_is_nonzero(const u8 *start,
