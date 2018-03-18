@@ -365,8 +365,9 @@ void kasan_cache_create(struct kmem_cache *cache, size_t *size,
 	if (redzone_adjust > 0)
 		*size += redzone_adjust;
 
-	*size = min(KMALLOC_MAX_SIZE, max(*size, cache->object_size +
-					optimal_redzone(cache->object_size)));
+	*size = min_t(unsigned long, KMALLOC_MAX_SIZE,
+			max(*size, cache->object_size +
+				optimal_redzone(cache->object_size)));
 
 	/*
 	 * If the metadata doesn't fit, don't enable KASAN at all.
