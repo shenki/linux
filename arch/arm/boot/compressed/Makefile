@@ -7,6 +7,8 @@
 
 OBJS		=
 
+UBSAN_SANITIZE	:= n
+
 AFLAGS_head.o += -DTEXT_OFFSET=$(TEXT_OFFSET)
 HEAD	= head.o
 OBJS	+= misc.o decompress.o
