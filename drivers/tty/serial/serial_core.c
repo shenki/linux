@@ -686,7 +686,7 @@ static void uart_throttle(struct tty_struct *tty)
 	if (C_CRTSCTS(tty))
 		mask |= UPSTAT_AUTORTS;
 
-	if (port->status & mask) {
+	if (port->status & (mask | UPSTAT_SYNC_FIFO)) {
 		port->ops->throttle(port);
 		mask &= ~port->status;
 	}
@@ -715,7 +715,7 @@ static void uart_unthrottle(struct tty_struct *tty)
 	if (C_CRTSCTS(tty))
 		mask |= UPSTAT_AUTORTS;
 
-	if (port->status & mask) {
+	if (port->status & (mask | UPSTAT_SYNC_FIFO)) {
 		port->ops->unthrottle(port);
 		mask &= ~port->status;
 	}
