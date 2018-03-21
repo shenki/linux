@@ -916,7 +916,7 @@ static int occ_setup_sensor_attrs(struct occ *occ)
 		/* Special case for many-attribute power sensor. Split it into
 		 * a sensor number per power type, emulating several sensors.
 		 */
-		for (i = 0; i < sensors->power.num_sensors; ) {
+		for (i = 0; i < sensors->power.num_sensors; ++i) {
 			s = (i * 4) + 1;
 
 			snprintf(attr->name, sizeof(attr->name),
