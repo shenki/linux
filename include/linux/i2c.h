@@ -72,6 +72,11 @@ extern int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 extern int __i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 			  int num);
 
+#ifdef CONFIG_AST_I2C_SLAVE_MODE	
+extern int i2c_slave_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+      int num);
+#endif
+
 /* This is the very generalized SMBus access routine. You probably do not
    want to use this, though; one of the functions below may be much easier,
    and probably just as fast.
@@ -413,6 +418,9 @@ struct i2c_algorithm {
 	   processed, or a negative value on error */
 	int (*master_xfer)(struct i2c_adapter *adap, struct i2c_msg *msgs,
 			   int num);
+#ifdef CONFIG_AST_I2C_SLAVE_MODE	
+	int (*slave_xfer)(struct i2c_adapter *adap, struct i2c_msg *msgs);
+#endif	
 	int (*smbus_xfer) (struct i2c_adapter *adap, u16 addr,
 			   unsigned short flags, char read_write,
 			   u8 command, int size, union i2c_smbus_data *data);

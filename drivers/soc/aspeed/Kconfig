@@ -1,0 +1,182 @@
+#
+# MISC configuration for ASPEED SOCs
+#
+
+if ARCH_ASPEED
+menuconfig AST_MISC
+	tristate 'ASPEED SOCs MISC drivers'
+	help
+	  We can select misc drivers for ASPEED SOC in this sub-function.
+
+if AST_MISC
+
+config AST_VGAVIDEO
+	tristate "VGA Video Engine driver"
+
+config AST_VIDEO
+	tristate "ASPEED Video Engine driver"
+	default n
+	help
+	  Driver for AST Video Engine 
+
+# Support LPC
+config AST_LPC
+	bool "AST LPC Driver"
+
+if AST_LPC
+
+choice
+	prompt "AST LPC Mode"
+
+config AST_LPC_SLAVE
+	bool "Slave"
+
+config AST_LPC_MASTER
+	bool "Master"
+
+endchoice
+
+config AST_PCIE2LPC
+	bool "AST PCIe2LPC"
+
+config ARCH_AST1070
+	depends on AST_LPC_MASTER
+	select AST1070_UART_DMA
+	bool "AST1070 Comapnion Chip Combination"
+
+config AST_SNOOP
+	depends on !AST_LPC_MASTER
+	bool "AST SNOOP"
+
+config AST_SNOOP_DMA
+	depends on !AST_LPC_MASTER
+	bool "AST SNOOP DMA"
+
+config AST_IPMI_KCS
+	depends on !AST_LPC_MASTER
+	bool "AST IPMI KCS"
+
+config AST_IPMI_BT
+	depends on !AST_LPC_MASTER
+	bool "AST IPMI BT"
+
+endif 
+
+config AST_ESPI
+	tristate "AST eSPI"
+
+if AST_ESPI
+
+config COLDFIRE_ESPI
+	bool "Coldfire ESPI"
+
+endif
+	
+config ADC_CAT9883
+	tristate "CAT 9883 ADC driver"
+	default n
+	help
+	  Driver for CAT 9883
+
+config AST_PECI
+	tristate "ASPEED PECI Controller"
+	default n
+	help
+	  Driver for PECI Controller
+
+config AST_MBX
+	tristate 'ASPEED MailBox support'
+	help
+	  Support for the Mailbox on the ASPEED chips.
+
+config AST_GPIO
+	tristate "ASPEED GPIO Controller"
+	default n
+	help
+	  Driver for GPIO Controller included in ASPEED SOCs.
+
+config AST_JPEG
+	tristate "ASPEED JPEG Controller"
+	default n
+	help
+	  Driver for JPEG Controller
+
+config AST_JTAG
+	tristate "ASPEED JTAG Controller"
+	default n
+	help
+	  Driver for JTAG Controller
+
+config AST_MCTP
+	tristate "ASPEED MCTP Driver"
+	depends on !(PCI)
+	default n
+	help
+	  Driver for MCTP
+
+config AST_XDMA
+	tristate "ASPEED XDMA Driver"
+	default n
+	help
+	  Driver for XDMA
+
+config AST_VHUB
+	tristate "ASPEED VHUB Driver"
+	depends on !(USB)
+	default n
+	help 
+	  Driver for VHUB
+
+config AST_HID
+	tristate "ASPEED HID Driver"
+	depends on !(USB)
+	default n
+	help 
+	  Driver for HID (phase out)
+
+config AST_CRYPTO
+	tristate "ASPEED Crypto Driver"
+	
+config AST_RFX
+	tristate "ASPEED RFX Driver"
+        default n
+        help
+          Driver for RFX
+
+config AST_ENTROPY
+	tristate "ASPEED Entropy Driver"
+	depends on AST_RFX
+
+config AST_BULK
+        tristate "ASPEED BULK Driver"
+        depends on AST_RFX
+
+config AST_CMDQ
+        tristate "ASPEED CMDQ Driver"
+        depends on AST_RFX
+
+config AST_BITBLT
+        tristate "ASPEED BITBLT Driver"
+        depends on AST_RFX
+
+config AST_RLE
+	tristate "ASPEED RLE Driver"
+	depends on AST_RFX
+
+config AST_EGFX
+        tristate "ASPEED EGFX Driver"
+        depends on AST_RFX
+
+config AST_MASK
+        tristate "ASPEED MASK Driver"
+	depends on AST_RFX
+
+config AST_H264
+	tristate "ASPEED H.264 Driver"
+
+config AST_FORMATTER
+	tristate "ASPEED Formatter Driver"
+
+endif	# CONFIG_AST_MISC
+endif	# CONFIG_AST
+

@@ -5,6 +5,8 @@
 ifeq ($(CONFIG_DDR),y)
 obj-$(CONFIG_OF)		+= of_memory.o
 endif
+obj-$(CONFIG_AST_G5_SDMC)	+= ast-g5-sdmc.o
+obj-$(CONFIG_AST_SDMC)		+= ast-sdmc.o
 obj-$(CONFIG_ARM_PL172_MPMC)	+= pl172.o
 obj-$(CONFIG_ATMEL_SDRAMC)	+= atmel-sdramc.o
 obj-$(CONFIG_ATMEL_EBI)		+= atmel-ebi.o

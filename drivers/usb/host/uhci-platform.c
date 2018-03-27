@@ -6,6 +6,8 @@
  * This file is based on uhci-grlib.c
  * (C) Copyright 2004-2007 Alan Stern, stern@rowland.harvard.edu
  */
+#include <linux/clk.h>
+#include <linux/reset.h>
 
 #include <linux/of.h>
 #include <linux/device.h>
@@ -15,6 +17,8 @@ static int uhci_platform_init(struct usb_hcd *hcd)
 {
 	struct uhci_hcd *uhci = hcd_to_uhci(hcd);
 
+	/* Probe number of ports if not already provided by DT */
+	if (!uhci->rh_numports)
 	uhci->rh_numports = uhci_count_ports(hcd);
 
 	/* Set up pointers to to generic functions */
@@ -63,10 +67,13 @@ static const struct hc_driver uhci_platform_hc_driver = {
 
 static int uhci_hcd_platform_probe(struct platform_device *pdev)
 {
+	struct device_node *np = pdev->dev.of_node;
 	struct usb_hcd *hcd;
 	struct uhci_hcd	*uhci;
 	struct resource *res;
 	int ret;
+	struct reset_control *reset;
+	struct clk 			*clk;
 
 	if (usb_disabled())
 		return -ENODEV;
@@ -94,10 +101,46 @@ static int uhci_hcd_platform_probe(struct platform_device *pdev)
 	hcd->rsrc_start = res->start;
 	hcd->rsrc_len = resource_size(res);
 
+	if (of_device_is_compatible(np, "aspeed,ast-uhci")) {
+		reset = devm_reset_control_get_exclusive(&pdev->dev, "uhci");
+		if (IS_ERR(reset)) {
+			dev_err(&pdev->dev, "can't get uhci reset\n");
+			return PTR_ERR(reset);
+		}
+		
+		clk = devm_clk_get(&pdev->dev, NULL);
+		if (IS_ERR(clk)) {
+			dev_err(&pdev->dev, "no clock defined\n");
+			return -ENODEV;
+		}
+		//scu init
+		reset_control_assert(reset);
+		udelay(100);
+		clk_prepare_enable(clk);
+		mdelay(10);
+		reset_control_deassert(reset);		
+	}
+	
 	uhci = hcd_to_uhci(hcd);
 
 	uhci->regs = hcd->regs;
 
+	/* Grab some things from the device-tree */
+	if (np) {
+		u32 num_ports;
+
+		if (of_property_read_u32(np, "#ports", &num_ports) == 0) {
+			uhci->rh_numports = num_ports;
+			dev_info(&pdev->dev,
+				"Detected %d ports from device-tree\n",
+				num_ports);
+		}
+		if (of_device_is_compatible(np, "aspeed,ast-uhci")) {
+			uhci->is_aspeed = 1;
+			dev_info(&pdev->dev,
+				 "Enabled Aspeed implementation workarounds\n");
+		}
+	}
 	ret = usb_add_hcd(hcd, pdev->resource[1].start, IRQF_SHARED);
 	if (ret)
 		goto err_rmr;

@@ -14,6 +14,11 @@ menuconfig RESET_CONTROLLER
 
 if RESET_CONTROLLER
 
+config RESET_ASPEED
+	bool "ASPEED Reset Driver" if COMPILE_TEST
+	help
+	  This enable the ASPEED SoC reset controller driver
+
 config RESET_ATH79
 	bool "AR71xx Reset Driver" if COMPILE_TEST
 	default ATH79

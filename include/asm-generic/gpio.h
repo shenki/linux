@@ -44,7 +44,8 @@
 
 static inline bool gpio_is_valid(int number)
 {
-	return number >= 0 && number < ARCH_NR_GPIOS;
+	return number >= 0 && number < (ARCH_NR_GPIOS);
+
 }
 
 struct device;

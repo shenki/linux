@@ -2,6 +2,12 @@ config IRQCHIP
 	def_bool y
 	depends on OF_IRQ
 
+config ASPEED_SDHCI_IRQCHIP
+	bool 
+
+config ASPEED_I2C_IRQCHIP
+	bool
+
 config ARM_GIC
 	bool
 	select IRQ_DOMAIN

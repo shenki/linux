@@ -231,7 +231,9 @@ static int ehci_platform_probe(struct platform_device *dev)
 					goto err_put_clks;
 				priv->clks[clk] = NULL;
 				break;
-			}
+			} 
+			clk_prepare_enable(priv->clks[clk]);
+			mdelay(10);
 		}
 	}
 

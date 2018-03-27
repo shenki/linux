@@ -112,6 +112,14 @@ int __weak arch_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 	struct msi_desc *entry;
 	int ret;
 
+#ifdef CONFIG_ARCH_ASPEED
+		/*
+		 * MSI-X is not supported.
+		 */
+		if (type == PCI_CAP_ID_MSIX)
+			return -EINVAL;
+#endif		
+
 	if (chip && chip->setup_irqs)
 		return chip->setup_irqs(chip, dev, nvec, type);
 	/*

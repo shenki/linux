@@ -107,6 +107,10 @@ void sdhci_get_of_property(struct platform_device *pdev)
 	if (of_property_read_bool(np, "wakeup-source") ||
 	    of_property_read_bool(np, "enable-sdio-wakeup")) /* legacy */
 		host->mmc->pm_caps |= MMC_PM_WAKE_SDIO_IRQ;
+
+	if (of_property_read_bool(np, "aspeed,8-bits"))
+		host->mmc->caps |= MMC_CAP_8_BIT_DATA;
+	
 }
 #else
 void sdhci_get_of_property(struct platform_device *pdev) {}

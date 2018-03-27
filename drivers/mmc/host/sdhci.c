@@ -936,6 +936,14 @@ static void sdhci_set_transfer_mode(struct sdhci_host *host,
 	if (host->flags & SDHCI_REQ_USE_DMA)
 		mode |= SDHCI_TRNS_DMA;
 
+#ifdef CONFIG_WO_CD
+	if(sdhci_readl(host, SDHCI_AST_EXT) & SDHCI_EXT_CD_INFO) {
+		sdhci_writel(host, 
+					sdhci_readl(host, SDHCI_AST_EXT) | SDHCI_EXT_CD_DIS(host->slot),
+					SDHCI_AST_EXT);
+	}
+#endif
+
 	sdhci_writew(host, mode, SDHCI_TRANSFER_MODE);
 }
 
@@ -993,6 +1001,14 @@ static void sdhci_finish_data(struct sdhci_host *host)
 {
 	struct mmc_command *data_cmd = host->data_cmd;
 	struct mmc_data *data = host->data;
+
+#ifdef CONFIG_WO_CD
+	if(sdhci_readl(host, SDHCI_AST_EXT) & SDHCI_EXT_CD_INFO) {
+		sdhci_writel(host, 
+					sdhci_readl(host, SDHCI_AST_EXT) & ~(SDHCI_EXT_CD_DIS(host->slot)),
+					SDHCI_AST_EXT);
+	}
+#endif
 
 	host->data = NULL;
 	host->data_cmd = NULL;

@@ -1204,6 +1204,11 @@ config RTC_DRV_ZYNQMP
 
 comment "on-CPU RTC drivers"
 
+config RTC_DRV_AST
+	bool "ASPEED RTC"
+	depends on ARM
+	help
+
 config RTC_DRV_ASM9260
 	tristate "Alphascale asm9260 RTC"
 	depends on MACH_ASM9260 || COMPILE_TEST

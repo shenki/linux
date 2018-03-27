@@ -1,0 +1,763 @@
+#include "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/reset/ast-g5-reset.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "AST2500 SOC";
+	compatible = "aspeed,ast2500";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&vic>;
+
+	memory {
+		reg = <0x80000000 0x10000000>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		
+		cpu@0 {
+			compatible = "arm,arm1176jz-s";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	apb {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ahbc: ahbc@1e600000 {
+			compatible = "aspeed,ast-ahbc";
+			reg = <0x1e600000 0x100>;
+                };
+
+		fmc_spi: fmc_spi@1e620000 {
+			status = "disable";
+			compatible = "aspeed,fmc-spi";
+			number_of_chip_select = /bits/ 8  <2>;
+			/* reg : cs0 : cs1 : cs2 : cs3 : cs4 : cs5 */
+			reg = <0x1e620000 0x100 0x20000000 0x20 0x28000000 0x20>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_ahb>;
+                };
+
+		spi1: spi1@1e630000 {
+		};
+
+		spi2: spi2@1e631000 {
+		};
+
+		mac0: ftgmac@1e660000 {
+			compatible = "aspeed,ast-mac";
+			reg = <0x1e660000 0x180>;
+			interrupts = <2>;
+			pinmux = <0>;
+			resets = <&sys_reset SCU_RESET_MAC0>;
+			reset-names = "mac";
+			clocks = <&clk_mac0>;
+			status = "disabled";
+		};
+
+		mac1: ftgmac@1e680000 {
+			compatible = "aspeed,ast-mac";
+			reg = <0x1e680000 0x180>;
+			interrupts = <3>;
+			pinmux = <1>;
+			resets = <&sys_reset SCU_RESET_MAC1>;
+			reset-names = "mac";
+			clocks = <&clk_mac1>;
+			status = "disabled";
+                };
+
+		gmac0: ethernet@1e660000 {
+			compatible = "aspeed,ast-gmac";
+			reg = <0x1e660000 0x180>;
+			interrupts = <2>;
+			resets = <&sys_reset SCU_RESET_MAC0>;
+			reset-names = "mac";
+			clocks = <&clk_mac0>;
+			pinmux = <0>;
+		};
+
+		gmac1: ethernet@1e680000 {
+			compatible = "aspeed,ast-gmac";
+			reg = <0x1e680000 0x180>;
+			interrupts = <3>;
+			resets = <&sys_reset SCU_RESET_MAC1>;
+			reset-names = "mac";
+			clocks = <&clk_mac1>;
+			pinmux = <1>;
+		};
+
+		ehci0: ehci@0x1e6a1000 {
+			compatible = "aspeed,ast-ehci", "generic-ehci";
+			reg = <0x1e6a1000 0x100>;
+			interrupts = <5>;
+			clocks = <&clk_usb20p1>;
+			resets = <&sys_reset SCU_RESET_USB20>;
+			reset-names = "ehci";
+                };
+
+		ehci1: ehci@0x1e6a3000 {
+			compatible = "aspeed,ast-ehci", "generic-ehci";
+			reg = <0x1e6a3000 0x100>;
+			interrupts = <13>;
+			clocks = <&clk_usb20p2>;
+			resets = <&sys_reset SCU_RESET_USB_P1>;
+			reset-names = "ehci";
+		};
+
+		uhci: uhci@0x1e6b0000 {
+			compatible = "aspeed,ast-uhci", "generic-uhci";
+			reg = <0x1e6b0000 0x100>;
+			interrupts = <14>;
+			#ports = <2>;
+			clocks = <&clk_usb11>;
+			resets = <&sys_reset SCU_RESET_USB11>;
+			reset-names = "uhci";
+		};
+
+		udc: udc@0x1e6a0000 {
+			compatible = "aspeed,ast-udc";
+			reg = <0x1e6a0000 0x300>;
+			interrupts = <5>;
+			clocks = <&clk_usb20p1>;
+			resets = <&sys_reset SCU_RESET_USB20>;
+			reset-names = "udc";
+			status = "disabled";
+		};
+
+		vic: vic@1e6c0080 {
+			compatible = "aspeed,ast-vic";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			valid-sources = <0xfefff7ff 0x0807ffff>;
+			reg = <0x1e6c0080 0x80>;
+                };
+
+		mmc: mmc@1e6e0000 {
+			compatible = "aspeed,ast-g5-sdmc";
+			reg = <0x1e6e0000 0x200>;
+			interrupts = <0>;
+		};
+
+		scu: scu@1e6e2000 {
+			compatible = "aspeed,ast-bmc-scu";
+			reg = <0x1e6e2000 0x200>;
+		};
+
+		syscon: syscon@1e6e2000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "aspeed,g5-scu", "syscon", "simple-mfd";
+			reg = <0x1e6e2000 0x200>;
+			ranges;
+			sys_reset: sys_reset@04 {
+				#reset-cells = <1>;
+				compatible = "aspeed,ast-reset";
+				reg = <0x04 0x04>, <0xD4 0x04>;
+				syscon = <&syscon>;
+			};
+			clk_clkin: clk_clkin@70 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-clkin-clock";
+				div = <0x70 0x0>;
+			};
+			clk_mpll: clk_mpll@20 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-mpll-clock";
+				div = <0x20 0x0>;
+				clocks = <&clk_clkin>;
+			};
+			clk_d2pll: clk_d2pll@1c {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-d2pll-clock";
+				div = <0x1c 0x0>;
+				enable = <0x13c 0x0>;
+				clocks = <&clk_clkin>;
+			};
+			clk_hpll: clk_hpll@24 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-hpll-clock";
+				div = <0x24 0x0>;
+				clocks = <&clk_clkin>;
+			};
+			clk_lhpll: clk_lhpll@08 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-lhpll-clock";
+				div = <0x08 0x0>;
+				clocks = <&clk_hpll>;
+			};
+			clk_dpll: clk_dpll@28 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-dpll-clock";
+				div = <0x28 0x0>;
+				enable = <0x130 0x0>;
+				clocks = <&clk_clkin>;
+			};
+			clk_sd: clk_sd@08 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-sdclock";
+				div = <0x08 0x0>;
+				enable = <0x0C 0x0>;
+				clocks = <&clk_hpll>;
+			};
+			clk_e: clk_e@08 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-eclock";
+				enable = <0x0C 0x0>;
+				div = <0x08 0x0>;
+			};
+			clk_usb11: clk_usb11@0C {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-usb11clock";
+				enable = <0x0C 0x0>;
+			};
+			clk_usb20p1: clk_usb20p1@0C {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-usb20p1clock";
+				enable = <0x0C 0x0>;
+			};
+			clk_usb20p2: clk_usb20p2@0C {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-usb20p2clock";
+				enable = <0x0C 0x0>;
+			};
+			clk_ahb: clk_ahb@70 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-ahb-clock";
+				div = <0x70 0x0>;
+				clocks = <&clk_hpll>;
+			};
+			clk_apb: clk_apb@08 {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-apb-clock";
+				div = <0x08 0x0>;
+				clocks = <&clk_hpll>;
+			};
+			clk_y: clk_y@0c {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-yclock";
+				enable = <0x0C 0x0>;
+				clocks = <&clk_mpll>;
+			};
+			clk_mac0: clk_mac0@0c {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-mac0-clock";
+				enable = <0x0C 0x0>;
+			};
+			clk_mac1: clk_mac1@0c {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-mac1-clock";
+				enable = <0x0C 0x0>;
+			};
+			clk_uart: clk_uart@2c {
+				#clock-cells = <0>;
+				compatible = "aspeed,g5-uart-clock";
+				reg = <0x2c 0x0>;
+			};
+			hwrng@1e6e2078 {
+				compatible = "timeriomem_rng";
+				reg = <0x78 0x4>;
+				period = <1>;
+				quality = <100>;
+			};
+		};
+
+		scu_irq: scu_irq {
+			compatible = "aspeed,ast-scu-irq";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x1e6e2018 0x4>;
+			interrupts = <21>;
+		};
+
+		hace: hace@1e6e3000 {
+			compatible = "aspeed,ast-crypto";
+			reg = <0x1e6e3000 0x200>;
+			interrupts = <4>;
+			clocks = <&clk_y>;
+			resets = <&sys_reset SCU_RESET_HACE>;
+			reset-names = "crypto";
+		};
+
+		jtag: jtag@1e6e4000 {
+			compatible = "aspeed,ast-jtag";
+			reg= <0x1e6e4000 0x20>;
+			interrupts = <43>;
+			clocks = <&clk_apb>;
+			resets = <&sys_reset SCU_RESET_JTAG>;
+			reset-names = "jtag";
+		};
+
+		gfx: display@1e6e6000 {
+			compatible = "aspeed,ast-gfx", "syscon";
+			reg = <0x1e6e6000 0x1000 0x8b000000 0x800000>;
+			interrupts = <25>;
+		};
+
+		xdma: xdma@1e6e7000 {
+			compatible = "aspeed,ast-xdma";
+			reg = <0x1e6e7000 0x80>;
+			interrupts = <6>;
+			resets = <&sys_reset SCU_RESET_XDMA>;
+			reset-names = "xdma";
+		};
+
+		mctp: mctp@1e6e8000 {
+			compatible = "aspeed,ast-g5-mctp";
+			reg = <0x1e6e8000 0x30 0x80000000 0x300>;
+			interrupts = <42>;
+			resets = <&sys_reset SCU_RESET_MCTP>;
+			reset-names = "mctp";
+		};
+
+		adc: adc@1e6e9000 {
+			compatible = "aspeed,ast-g5-adc";
+			reg = <0x1e6e9000 0xb0>;
+			interrupts = <31>;
+			clocks = <&clk_apb>;
+			resets = <&sys_reset SCU_RESET_ADC>;
+			reset-names = "adc";            
+		};
+
+		pcie_host: pcie_host@1e6ed000 {
+			#compatible = "aspeed,ast-pcie";
+			#reg = <0x1e6ed000 0xd0>;
+		};
+
+		espi: espi@1e6ee000 {
+			compatible = "aspeed,ast-espi";
+			reg = <0x1e6ee000 0x200>;
+			interrupts = <23>;
+			resets = <&sys_reset SCU_RESET_ESPI>;
+			reset-names = "espi";
+		};
+
+		video: video@1e700000 {
+			compatible = "aspeed,ast-video";
+			/* 184MB : 40MB*/
+			reg = <0x1e700000 0x300>;
+			interrupts = <7>;
+		};
+
+		sram@1e720000 {
+                        compatible = "mmio-sram";
+                        reg = <0x1e720000 0x9000>;      /* 36K */
+                };
+
+		sdhci_irq: sdhci_irq {
+			compatible = "aspeed,ast-sdhci-irq";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x1e740000 0x100>;
+			interrupts = <26>;
+			slot_num = <2>;
+			resets = <&sys_reset SCU_RESET_SDHCI>;
+			reset-names = "sdhci";
+			clocks = <&clk_sd>;
+		};
+
+		sdhci_slot0: sdhci_slot0@1e740100 {
+			compatible = "aspeed,sdhci-ast";
+			reg = <0x1e740100 0x100>;
+			interrupts = <0>;
+			interrupt-parent = <&sdhci_irq>;
+			slot = <0>;
+			sdhci,auto-cmd12;
+			clocks = <&clk_sd>;
+		};
+
+		sdhci_slot1: sdhci_slot1@1e740200 {
+			compatible = "aspeed,sdhci-ast";
+			reg = <0x1e740200 0x100>;
+			interrupts = <1>;
+			interrupt-parent = <&sdhci_irq>;
+			slot = <1>;
+			sdhci,auto-cmd12;
+			clocks = <&clk_sd>;
+		};
+
+		gpio: gpio@1e780000 {
+			#gpio-cells = <2>;
+			gpio-controller;
+			compatible = "aspeed,ast-g5-gpio";
+			reg = <0x1e780000 0x1000>;
+			interrupts = <20>;
+			interrupt-controller;
+			clocks = <&clk_apb>;
+		 };
+
+		mailbox: ast_mailbox@1e789200 {
+			compatible = "aspeed,ast-mailbox";
+			reg = <0x1e789200 0x80>;
+			interrupts = <46>;
+		};
+
+		ast_rng: rng {
+			compatible = "aspeed,ast-rng";
+		};
+
+		timer:timer@1e782000 {
+			compatible = "aspeed,ast-timer";
+			reg = <0x1e782000 0x1000>;
+			interrupt-parent = <&vic>;
+			interrupts = <16 IRQ_TYPE_EDGE_FALLING>, /* Timer 1 */
+                                     <17 IRQ_TYPE_EDGE_FALLING>, /* Timer 2 */
+                                     <18 IRQ_TYPE_EDGE_FALLING>; /* Timer 3 */
+			clocks = <&clk_apb>;
+			clock-names = "PCLK";
+		};
+
+		uart1: serial@1e783000 {
+			compatible = "ns16550a";
+			reg = <0x1e783000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <9>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+			status = "disabled";
+		};
+
+		uart0: serial@1e784000 {
+			compatible = "ns16550a";
+			reg = <0x1e784000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <10>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+		};
+
+		/* use for sys crash */
+		wdt0: wdt0@1e785000 {
+			compatible = "aspeed,ast-g5-wdt";
+			reg = <0x1e785000 0x1c>;
+			timeout-sec = <60>;
+			reset_mask = <0x23ffff3>;
+		};		
+		/* use for spi 3/4 bytes reboot */
+		wdt1: wdt1@1e785020 {
+			compatible = "aspeed,ast-g5-wdt";
+			reg = <0x1e785020 0x1c>;
+		};
+		/* use for system reboot */
+		wdt2: wdt2@1e785040 {
+			compatible = "aspeed,ast-g5-wdt";
+			reg = <0x1e785040 0x1c>;
+		};
+
+		pwm_techo: pwm_techo@1e7866000 {
+			compatible = "aspeed,ast-pwm-tacho";
+			reg = <0x1e786000 0x80>;
+			interrupts = <28>;
+			clocks = <&clk_mpll>;
+			resets = <&sys_reset SCU_RESET_PWM>;
+			reset-names = "ast_pwm_tacho";
+		};
+
+		vuart: vuart@1e787000 {
+			compatible = "aspeed,ast-vuart";
+			reg = <0x1e787000 0x200>;
+			reg-shift = <2>;
+			interrupts = <2>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+			port_address = <0x3f8>;
+			serial_irq = <4>;
+		};
+
+		lpc:lpc@1e789000 {
+			compatible = "aspeed,ast-lpc";
+			reg = <0x1e789000 0x200>;
+			interrupts = <8>;
+		};
+
+		uart2: serial@1e78d000 {
+			compatible = "ns16550a";
+			reg = <0x1e78d000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <32>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+			status = "disabled";
+		};
+
+		uart3: serial@1e78e000 {
+			compatible = "ns16550a";
+			reg = <0x1e78e000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <33>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+		};
+		uart4: serial@1e78f000 {
+			compatible = "ns16550a";
+			reg = <0x1e78f000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <34>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+		};
+
+		ast_uart_sdma: uart_sdma@1e79e000 {
+			compatible = "aspeed,ast-uart-sdma";
+			reg = <0x1e79e000 0x400>;
+			interrupts = <50>;
+			status = "disabled";
+		};
+		
+		dma_uart0: dma_uart0@1e78e000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e78e000 0x1000>;
+			interrupts = <33>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <2>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart1: dma_uart1@1e78f000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e78f000 0x1000>;
+			interrupts = <34>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <3>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart2: dma_uart2@1e790000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e790000 0x1000>;
+			interrupts = <51>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <4>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart3: dma_uart3@1e791000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e791000 0x1000>;
+			interrupts = <52>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <5>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart4: dma_uart4@1e792000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e792000 0x1000>;
+			interrupts = <53>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <6>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart5: dma_uart5@1e793000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e793000 0x1000>;
+			interrupts = <54>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <7>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart6: dma_uart6@1e794000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e794000 0x1000>;
+			interrupts = <55>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <8>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart7: dma_uart7@1e795000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e795000 0x1000>;
+			interrupts = <56>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <9>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart8: dma_uart8@1e796000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e796000 0x1000>;
+			interrupts = <57>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <10>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		dma_uart9: dma_uart9@1e797000{
+			compatible = "aspeed,ast-sdma-uart";
+			reg = <0x1e797000 0x1000>;
+			interrupts = <58>;
+			clocks = <24000000>;
+			reg-shift = <2>;
+			dma-channel = <11>;
+			no-loopback-test;
+			status = "disabled";
+		};
+		i2c: i2c@1e78a000 {
+			compatible = "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0x1e78a000 0x1000>;
+		};
+		peci: peci@1e78b000 {
+			compatible = "aspeed,ast-peci";
+			reg = <0x1e78b000 0x60>;
+			interrupts = <15>;
+			clocks = <&clk_apb>;
+			resets = <&sys_reset SCU_RESET_PECI>;
+			reset-names = "peci";						
+		};
+	};
+
+};
+
+&i2c {
+	i2c_irq: i2c_irq@00 {
+		#interrupt-cells = <1>;
+		compatible = "aspeed,ast-i2c-irq";
+		reg = <0x00 0x10>;
+		interrupts = <12>;
+		interrupt-controller;
+		bus_num = <14>;
+		resets = <&sys_reset SCU_RESET_I2C>;
+		reset-names = "i2c";		
+	};
+
+	i2c0: i2c@40 {
+		reg = <0x40 0x40 0x200 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <0>;
+		interrupt-parent = <&i2c_irq>;
+	};
+
+	i2c1: i2c@80 {
+		reg = <0x80 0x40 0x210 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <1>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c2: i2c@C0 {
+		reg = <0xc0 0x40 0x220 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <2>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c3: i2c@100 {
+		reg = <0x100 0x40 0x230 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <3>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c4: i2c@140 {
+		reg = <0x140 0x40 0x240 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <4>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c5: i2c@180 {
+		reg = <0x180 0x40 0x250 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <5>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c6: i2c@1c0 {
+		reg = <0x1c0 0x40 0x260 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <6>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c7: i2c@300 {
+		reg = <0x300 0x40 0x270 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <7>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c8: i2c@340 {
+		reg = <0x340 0x40 0x280 0x10>;
+		compatible = "aspeed,ast-g5-i2c", "aspeed,ast-buff-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <8>;
+		interrupt-parent = <&i2c_irq>;
+	};
+	i2c9: i2c@380 {
+		reg = <0x380 0x40 0x290 0x10>;
+		compatible = "aspeed,ast-g5-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <9>;
+		interrupt-parent = <&i2c_irq>;
+		status = "disabled";
+	};
+	i2c10: i2c@3C0 {
+		reg = <0x3c0 0x40 0x2a0 0x10>;
+		compatible = "aspeed,ast-g5-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <10>;
+		interrupt-parent = <&i2c_irq>;
+		status = "disabled";
+	};
+	i2c11: i2c@400 {
+		reg = <0x400 0x40 0x2b0 0x10>;
+		compatible = "aspeed,ast-g5-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <11>;
+		interrupt-parent = <&i2c_irq>;
+		status = "disabled";
+	};
+	i2c12: i2c@440 {
+		reg = <0x440 0x40 0x2c0 0x10>;
+		compatible = "aspeed,ast-g5-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <12>;
+		interrupt-parent = <&i2c_irq>;
+		status = "disabled";
+	};
+	i2c13: i2c@480 {
+		reg = <0x480 0x40 0x2d0 0x10>;
+		compatible = "aspeed,ast-g5-i2c";
+		clocks = <&clk_apb>;
+		bus-frequency = <100000>;
+		interrupts = <13>;
+		interrupt-parent = <&i2c_irq>;
+		status = "disabled";
+	};
+};

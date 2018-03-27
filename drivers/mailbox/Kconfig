@@ -7,6 +7,9 @@ menuconfig MAILBOX
 
 if MAILBOX
 
+config AST_COLDFIRE_MBX
+	bool "AST ARM & Coldfire Mailbox"
+
 config ARM_MHU
 	tristate "ARM MHU Mailbox"
 	depends on ARM_AMBA

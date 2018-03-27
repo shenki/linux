@@ -29,6 +29,9 @@ menu "USB Peripheral Controller"
 # Integrated controllers
 #
 
+config USB_AST
+        tristate "AST USB"
+
 config USB_AT91
 	tristate "Atmel AT91 USB Device Port"
 	depends on ARCH_AT91

@@ -3,6 +3,10 @@ config ARM_AMBA
 
 if ARM_AMBA
 
+config AST_AHBC
+	bool
+	default y if ARCH_ASPEED
+
 config TEGRA_AHB
 	bool
 	default y if ARCH_TEGRA

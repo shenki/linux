@@ -67,6 +67,9 @@
  */
 struct i2c_msg {
 	__u16 addr;	/* slave address			*/
+#ifdef CONFIG_AST_I2C_SLAVE_MODE
+#define BUFF_ONGOING	1	/* for AST I2C slave */	
+#endif
 	__u16 flags;
 #define I2C_M_RD		0x0001	/* read data, from slave to master */
 					/* I2C_M_RD is guaranteed to be 0x0001! */
@@ -77,6 +80,11 @@ struct i2c_msg {
 #define I2C_M_REV_DIR_ADDR	0x2000	/* if I2C_FUNC_PROTOCOL_MANGLING */
 #define I2C_M_NOSTART		0x4000	/* if I2C_FUNC_NOSTART */
 #define I2C_M_STOP		0x8000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#ifdef CONFIG_AST_I2C_SLAVE_MODE
+#define BUFF_FULL		0xff00	/* for AST I2C slave */
+#define I2C_S_EN			0x0002	/* Slave mode enable */
+#define I2C_S_ALT		0x0004	/* Slave issue alert */
+#endif
 	__u16 len;		/* msg length				*/
 	__u8 *buf;		/* pointer to msg data			*/
 };

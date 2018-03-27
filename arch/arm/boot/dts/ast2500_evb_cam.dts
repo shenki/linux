@@ -1,0 +1,530 @@
+/dts-v1/;
+
+#include "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+        model = "AST2500 SOC";
+	compatible = "aspeed,ast2500";
+
+        #address-cells = <1>;
+        #size-cells = <1>;
+	interrupt-parent = <&vic>;
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart3;
+		serial2 = &uart4;
+		serial3 = &vuart;
+	};
+
+        chosen {
+                bootargs = "console=ttyS0,115200 root=/dev/ram rw init=/linuxrc";
+        };
+
+        memory {
+                reg = <0x80000000 0x10000000>;
+        };
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			compatible = "arm,arm1176jz-s";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	apb {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		clk_apb: clk_apb {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+                        clock-frequency = <24750000>;
+                };
+                clk_uart: clk_uart {
+                        #clock-cells = <0>;
+                        compatible = "fixed-clock";
+                        clock-frequency = <24000000>;
+                };
+		ahbc: ahbc@1e600000 {
+			compatible = "aspeed,ast-ahbc";
+			reg = <0x1e600000 0x100>;
+		};
+		fmc_spi: fmc_spi@1e620000 {
+			status = "ok";
+			compatible = "aspeed,fmc-spi";
+			number_of_chip_select = /bits/ 8  <2>;
+			/* reg : cs0 : cs1 : cs2 : cs3 : cs4 : cs5 */
+			reg = <0x1e620000 0x100 0x20000000 0x20 0x28000000 0x20>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			flash@0 {
+			        compatible = "mx25l25635e", "m25p80", "jedec,spi-nor";
+			        reg = <0x0>;
+			        #address-cells = <0x1>;
+			        #size-cells = <0x1>;
+			        spi-max-frequency = <50000000>;
+				m25p,fast-read;
+		                partition@0 {
+		                        label = "u-boot";
+		                        reg = <0x000000 0x060000>; /* 384 KiB */
+		                };
+		                partition@1 {
+		                        label = "u-boot-env";
+		                        reg = <0x060000 0x010000>; /* 64 KiB */
+		                };
+				partition@2 {
+					label = "dts";
+					reg = <0x070000 0x010000>; /* 64 Kib */
+				};
+		                partition@3 {
+		                        label = "kernel";
+		                        reg = <0x080000 0x380000>; /* 3.5 MiB */
+		                };
+		                partition@4 {
+		                        label = "rootfs";
+		                        reg = <0x400000 0x400000>; /* 4 MiB */
+		                };
+				partition@5 {
+					label = "pd_rootfs";
+					reg = <0x800000 0x0>; 
+				};
+			};
+		};
+                mac0: ethernet@1e660000 {
+			compatible = "aspeed,ast-gmac";
+			reg = <0x1e660000 0x180>;
+			interrupts = <2>;
+			pinmux = <0>;
+			#status = "disabled";
+		};
+		mac1: ethernet@1e680000 {
+			compatible = "aspeed,ast-gmac";
+			reg = <0x1e680000 0x180>;
+			interrupts = <3>;
+			pinmux = <1>;
+			#status = "disabled";
+		};
+		ehci0: ehci@0x1e6a1000 {
+			compatible = "aspeed,ast-ehci", "generic-ehci";
+			reg = <0x1e6a1000 0x100>;
+			interrupts = <5>;
+			//#clocks = <&ehci_clocks 0>;
+			//phys = <&usbphy 0>;
+			//phy-names = "usb";
+			port = <0>;
+                        #status = "disabled";
+                };
+		ehci1: ehci@0x1e6a3000 {
+			compatible = "aspeed,ast-ehci", "generic-ehci";
+			reg = <0x1e6a3000 0x100>;
+			interrupts = <13>;
+			//#clocks = <&ehci_clocks 1>;
+			//phys = <&usbphy 1>;
+			//phy-names = "usb";
+			port = <1>;
+			#status = "disabled";
+		};
+		uhci: uhci@0x1e6b0000 {
+			compatible = "aspeed,ast-uhci", "generic-uhci";
+			reg = <0x1e6b0000 0x100>;
+			interrupts = <14>;
+			#ports = <2>;
+		};
+		vic: vic@1e6c0080 {
+			compatible = "aspeed,ast-vic";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			valid-sources = <0xfefff7ff 0x0807ffff>;
+			reg = <0x1e6c0080 0x80>;
+		};
+		mmc: mmc@1e6e0000 {
+			compatible = "aspeed,ast-g5-sdmc";
+			reg = <0x1e6e0000 0x200>;
+			#interrupts = <0>;
+		}; 
+		scu: scu@1e6e2000 {
+			compatible = "aspeed,ast-bmc-scu";
+			reg = <0x1e6e2000 0x200>;
+			interrupts = <21>;
+                };
+		hace: hace@1e6e3000 {
+			compatible = "aspeed,ast-crypto";
+			reg = <0x1e6e3000 0x200>;
+			interrupts = <4>;
+		};
+		jtag: jtag@1e6e4000 {
+			compatible = "aspeed,ast-jtag";
+			reg= <0x1e6e4000 0x20>;
+			interrupts = <43>;
+		};
+		gfx: display@1e6e6000 {
+			compatible = "aspeed,ast-gfx", "syscon";
+			reg = <0x1e6e6000 0x1000 0x8b000000 0x800000>;
+			interrupts = <25>;
+		};
+		xdma: xdma@1e6e7000 {
+                        #compatible = "aspeed,ast-xdma";
+                        #reg = <0x1e6e7000 0x80>;
+                        #interrupts = <6>;
+                };
+                mctp: mctp@1e6e8000 {
+                        compatible = "aspeed,ast-mctp";
+                        reg = <0x1e6e8000 0x30 0x80000000 0x300>;
+                        interrupts = <42>;
+                };
+		adc: adc@1e6e9000 {
+                        compatible = "aspeed,ast-adc";
+                        reg = <0x1e6e9000 0xb0>;
+                        interrupts = <31>;
+                        clocks = <&clk_apb>;
+                };
+		espi: espi@1e6ee000 {
+			#compatible = "aspeed,ast-espi";
+			#reg = <0x1e6ee000 0x200>;
+			#interrupts = <23>;
+		};
+		video: video@1e700000 {
+			compatible = "aspeed,ast-video";
+			/* 184MB : 40MB*/
+			reg = <0x1e700000 0x300>;
+			interrupts = <7>;
+		};
+		sram@1e720000 {
+                        compatible = "mmio-sram";
+                        reg = <0x1e720000 0x9000>;      /* 36K */
+                };
+		sdhci_irq: sdhci_irq {
+			compatible = "aspeed,ast-sdhci-irq";
+			interrupt-controller;
+                        #interrupt-cells = <1>;
+			reg = <0x1e740000 0x100>;
+			interrupts = <26>;
+			slot_num = <2>;
+		};
+		sdhci_slot0: sdhci_slot0@1e740100 {
+			compatible = "aspeed,sdhci-ast";
+			reg = <0x1e740100 0x100>;
+			interrupts = <0>;
+			interrupt-parent = <&sdhci_irq>;
+			sdhci,auto-cmd12;
+		};
+		sdhci_slot1: sdhci_slot1@1e740200 {
+			compatible = "aspeed,sdhci-ast";
+			reg = <0x1e740200 0x100>;
+			interrupts = <1>;
+                        interrupt-parent = <&sdhci_irq>;
+			sdhci,auto-cmd12;
+		};
+		gpio: gpio@1e780000 {
+                        #gpio-cells = <2>;
+                        gpio-controller;
+                        compatible = "aspeed,ast-g5-gpio";
+                        reg = <0x1e780000 0x1000>;
+                        interrupts = <20>;
+                        interrupt-controller;
+                };
+		mailbox: ast_mailbox@1e789200 {
+			compatible = "aspeed,ast-mailbox";
+			reg = <0x1e789200 0x80>;
+			interrupts = <46>;
+		};
+                ast_rng: rng {
+                        compatible = "aspeed,ast-rng";
+                };
+		timer:timer@1e782000 {
+			compatible = "aspeed,ast-timer";
+			reg = <0x1e782000 0x1000>;
+			interrupt-parent = <&vic>;
+			interrupts = <16 IRQ_TYPE_EDGE_FALLING>, /* Timer 1 */
+                                     <17 IRQ_TYPE_EDGE_FALLING>, /* Timer 2 */
+                                     <18 IRQ_TYPE_EDGE_FALLING>; /* Timer 3 */
+			clocks = <&clk_apb>;
+                        clock-names = "PCLK";
+		};
+		uart0: serial@1e784000 {
+			compatible = "ns16550a";
+			reg = <0x1e784000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <10>;
+			clocks = <&clk_uart>;
+			no-loopback-test;
+		};
+		/* use for sys crash */
+		wdt0: wdt0@1e785000 {
+			compatible = "aspeed,ast-g5-wdt";
+			reg = <0x1e785000 0x1c>;
+			timeout-sec = <60>;
+			reset_mask = <0x23ffff3>;
+		};		
+		/* use for spi 3/4 bytes reboot */
+		wdt1: wdt1@1e785020 {
+			compatible = "aspeed,ast-g5-wdt";
+			reg = <0x1e785020 0x1c>;
+		};
+		/* use for system reboot */		
+		wdt2: wdt2@1e785040 {
+			compatible = "aspeed,ast-g5-wdt";
+			reg = <0x1e785040 0x1c>;
+		};
+		pwm_techo: pwm_techo@1e7866000 {
+                        compatible = "aspeed,ast-pwm-tacho";
+                        reg = <0x1e786000 0x80>;
+                        interrupts = <28>;
+                        clocks = <&clk_apb>;
+                };
+		vuart: vuart@1e787000 {
+                         compatible = "aspeed,ast-vuart";
+                         reg = <0x1e787000 0x200>;
+                         reg-shift = <2>;
+                         interrupts = <8>;
+                         clocks = <&clk_uart>;
+                         no-loopback-test;
+			 port_address = <0x3f8>;
+			 serial_irq = <4>;
+                };		
+		lpc:lpc@1e789000 {
+			compatible = "aspeed,ast-lpc";
+			reg = <0x1e789000 0x200>;
+			interrupts = <8>;
+		};						
+		uart3: serial@1e78e000 {
+			compatible = "ns16550a";
+			reg = <0x1e78e000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <33>;
+			clocks = <&clk_uart>;
+			pinmux = <0x3>;
+			no-loopback-test;
+		};
+                uart4: serial@1e78f000 {
+			compatible = "ns16550a";
+			reg = <0x1e78f000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <34>;
+			clocks = <&clk_uart>;
+			pinmux = <0x4>;
+			no-loopback-test;
+		};
+		i2c_irq: i2c_irq@1e78a000 {
+			#interrupt-cells = <1>;
+			compatible = "aspeed,ast-i2c-irq";
+			reg = <0x1e78a000 0x10 0x1e78a200 0x800>;
+			interrupts = <12>;
+			interrupt-controller;
+			bus_num = <14>;
+        	};
+	        i2c0: i2c-bus@40 {
+	                #address-cells = <1>;
+        	        #size-cells = <0>;
+               		#interrupt-cells = <1>;
+                	reg = <0x1e78a040 0x40>;
+                	compatible = "aspeed,ast-i2c";
+			clocks = <&clk_apb>;
+			bus-frequency = <100000>;
+			interrupts = <0>;
+			interrupt-parent = <&i2c_irq>;
+			bus = <0>;
+			master-dma =  /bits/ 8  <2>;
+			slave-dma =  /bits/ 8 <2>;
+		};
+		i2c1: i2c-bus@80 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a080 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <1>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <1>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c2: i2c-bus@C0 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a0c0 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <2>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <2>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c3: i2c-bus@100 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a100 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <3>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <3>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c4: i2c-bus@140 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a140 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <4>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <4>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c5: i2c-bus@180 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a180 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <5>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <5>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c6: i2c-bus@1c0 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a1c0 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <6>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <6>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c7: i2c-bus@300 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a300 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <7>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <7>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c8: i2c-bus@340 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a340 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <8>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <8>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c9: i2c-bus@380 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a380 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <9>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <9>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c10: i2c-bus@3C0 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a3c0 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <10>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <10>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c11: i2c-bus@400 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a400 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <11>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <11>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+#if 0
+		i2c12: i2c-bus@440 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a440 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <12>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <12>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };
+		i2c13: i2c-bus@480 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        #interrupt-cells = <1>;
+                        reg = <0x1e78a480 0x40>;
+                        compatible = "aspeed,ast-i2c";
+                        clocks = <&clk_apb>;
+                        bus-frequency = <100000>;
+                        interrupts = <13>;
+                        interrupt-parent = <&i2c_irq>;
+                        bus = <13>;
+			master-dma =  /bits/ 8  <2>;
+                        slave-dma =  /bits/ 8 <2>;
+                };				
+#endif
+		peci: peci@1e78b000 {
+                        compatible = "aspeed,ast-peci";
+                        reg = <0x1e78b000 0x60>;
+                        interrupts = <15>;
+                        clocks = <&clk_apb>;
+                };
+
+	};
+
+};

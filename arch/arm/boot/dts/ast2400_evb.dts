@@ -1,0 +1,73 @@
+/dts-v1/;
+
+#include "ast2400.dtsi"
+
+/ {
+        model = "AST2400 EVB";
+	compatible = "aspeed,ast2400-evb", "aspeed,ast2400";
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart3;
+		serial2 = &uart4;
+		serial3 = &vuart;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+	};
+
+        chosen {
+                bootargs = "console=ttyS0,115200 root=/dev/ram rw init=/linuxrc";
+        };
+
+};
+
+&gmac0 {
+	status = "okay";
+};
+
+&gmac1 {
+	status = "okay";
+};
+
+&fmc_spi {
+	status = "okay";
+	flash: m25p80@0 {
+	compatible = "mx25l25635e", "m25p80", "jedec,spi-nor";
+	reg = <0x0>;
+	#address-cells = <0x1>;
+	#size-cells = <0x1>;
+	spi-max-frequency = <50000000>;
+	m25p,fast-read;
+		partition@0 {
+			label = "u-boot";
+			reg = <0x000000 0x060000>; /* 384 KiB */
+		};
+		partition@1 {
+			label = "u-boot-env";
+			reg = <0x060000 0x010000>; /* 64 KiB */
+		};
+		partition@2 {
+			label = "dts";
+			reg = <0x070000 0x010000>; /* 64 Kib */
+		};
+		partition@3 {
+			label = "kernel";
+			reg = <0x080000 0x380000>; /* 3.5 MiB */
+		};
+		partition@4 {
+			label = "rootfs";
+			reg = <0x400000 0x400000>; /* 4 MiB */
+		};
+		partition@5 {
+			label = "pd_rootfs";
+			reg = <0x800000 0x0>; 
+		};
+	};
+};

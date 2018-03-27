@@ -1,5 +1,9 @@
 obj-$(CONFIG_IRQCHIP)			+= irqchip.o
 
+obj-$(CONFIG_ARCH_ASPEED)		+= irq-ast-vic.o irq-ast-scu.o
+obj-$(CONFIG_ASPEED_SDHCI_IRQCHIP)	+= irq-aspeed-sdhci.o
+obj-$(CONFIG_ASPEED_I2C_IRQCHIP)	+= irq-aspeed-i2c.o
+obj-$(CONFIG_RFX_AST_IRQ)		+= egfx-irq.o
 obj-$(CONFIG_ALPINE_MSI)		+= irq-alpine-msi.o
 obj-$(CONFIG_ATH79)			+= irq-ath79-cpu.o
 obj-$(CONFIG_ATH79)			+= irq-ath79-misc.o
@@ -72,5 +76,4 @@ obj-$(CONFIG_MVEBU_ODMI)		+= irq-mvebu-odmi.o
 obj-$(CONFIG_MVEBU_PIC)			+= irq-mvebu-pic.o
 obj-$(CONFIG_LS_SCFG_MSI)		+= irq-ls-scfg-msi.o
 obj-$(CONFIG_EZNPS_GIC)			+= irq-eznps.o
-obj-$(CONFIG_ARCH_ASPEED)		+= irq-aspeed-vic.o
 obj-$(CONFIG_STM32_EXTI) 		+= irq-stm32-exti.o
