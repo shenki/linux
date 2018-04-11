@@ -325,6 +325,11 @@
 						status = "disabled";
 					};
 
+					sio_scratch: scratch@f0 {
+						compatible = "aspeed,bmc-misc";
+						reg = <0xf0 0x10>;
+					};
+
 					mbox: mbox@180 {
 						compatible = "aspeed,ast2500-mbox";
 						reg = <0x180 0x5c>;
@@ -1470,6 +1475,89 @@
 	vga7 {
 		offset = <0x6c>;
 		bit-mask = <0xffffffff>;
+		bit-shift = <0>;
+	};
+};
+
+&sio_scratch {
+	siorx_2b {
+		offset = <0xf0>;
+		bit-mask = <0xff>;
+		bit-shift = <24>;
+	};
+	siorx_2a {
+		offset = <0xf0>;
+		bit-mask = <0xff>;
+		bit-shift = <16>;
+	};
+	siorx_29 {
+		offset = <0xf0>;
+		bit-mask = <0xff>;
+		bit-shift = <8>;
+	};
+	siorx_28 {
+		offset = <0xf0>;
+		bit-mask = <0xff>;
+		bit-shift = <0>;
+	};
+	siorx_2f {
+		offset = <0xf4>;
+		bit-mask = <0xff>;
+		bit-shift = <24>;
+	};
+	siorx_2e {
+		offset = <0xf4>;
+		bit-mask = <0xff>;
+		bit-shift = <16>;
+	};
+	siorx_2d {
+		offset = <0xf4>;
+		bit-mask = <0xff>;
+		bit-shift = <8>;
+	};
+	siorx_2c {
+		offset = <0xf4>;
+		bit-mask = <0xff>;
+		bit-shift = <0>;
+	};
+	siorx_23 {
+		offset = <0xf8>;
+		bit-mask = <0xff>;
+		bit-shift = <24>;
+	};
+	siorx_22 {
+		offset = <0xf8>;
+		bit-mask = <0xff>;
+		bit-shift = <16>;
+	};
+	siorx_21 {
+		offset = <0xf8>;
+		bit-mask = <0xff>;
+		bit-shift = <8>;
+	};
+	siorx_20 {
+		offset = <0xf8>;
+		bit-mask = <0xff>;
+		bit-shift = <0>;
+	};
+	siorx_27 {
+		offset = <0xfc>;
+		bit-mask = <0xff>;
+		bit-shift = <24>;
+	};
+	siorx_26 {
+		offset = <0xfc>;
+		bit-mask = <0xff>;
+		bit-shift = <16>;
+	};
+	siorx_25 {
+		offset = <0xfc>;
+		bit-mask = <0xff>;
+		bit-shift = <8>;
+	};
+	siorx_24 {
+		offset = <0xfc>;
+		bit-mask = <0xff>;
 		bit-shift = <0>;
 	};
 };
