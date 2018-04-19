@@ -200,6 +200,10 @@ static struct drm_driver aspeed_gfx_driver = {
 	.date = "20180319",
 	.major = 1,
 	.minor = 0,
+
+#if defined(CONFIG_DEBUG_FS)
+	.debugfs_init = aspeed_gfx_debugfs_init,
+#endif
 };
 
 static const struct of_device_id aspeed_gfx_match[] = {
