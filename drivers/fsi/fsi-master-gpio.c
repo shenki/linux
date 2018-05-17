@@ -22,20 +22,23 @@
 #define	FSI_BREAK_CLOCKS	256	/* Number of clocks to issue break */
 #define	FSI_POST_BREAK_CLOCKS	16000	/* Number clocks to set up cfam */
 #define	FSI_INIT_CLOCKS		5000	/* Clock out any old data */
+#define	FSI_GPIO_DPOLL_CLOCKS	50      /* < 21 will cause slave to hang */
+#define	FSI_GPIO_EPOLL_CLOCKS	50      /* Number of clocks for E_POLL retry */
 #define	FSI_GPIO_STD_DELAY	10	/* Standard GPIO delay in nS */
 					/* todo: adjust down as low as */
 					/* possible or eliminate */
+#define FSI_CRC_ERR_RETRIES	10
+
 #define	FSI_GPIO_CMD_DPOLL      0x2
+#define	FSI_GPIO_CMD_EPOLL      0x3
 #define	FSI_GPIO_CMD_TERM	0x3f
 #define FSI_GPIO_CMD_ABS_AR	0x4
 #define FSI_GPIO_CMD_REL_AR	0x5
 #define FSI_GPIO_CMD_SAME_AR	0x3	/* but only a 2-bit opcode... */
 
-
-#define	FSI_GPIO_DPOLL_CLOCKS	50      /* < 21 will cause slave to hang */
-
-/* Bus errors */
-#define	FSI_GPIO_ERR_BUSY	1	/* Slave stuck in busy state */
+/* Slave responses */
+#define	FSI_GPIO_RESP_ACK	0	/* Success */
+#define	FSI_GPIO_RESP_BUSY	1	/* Slave busy */
 #define	FSI_GPIO_RESP_ERRA	2	/* Any (misc) Error */
 #define	FSI_GPIO_RESP_ERRC	3	/* Slave reports master CRC error */
 #define	FSI_GPIO_MTOE		4	/* Master time out error */
@@ -330,6 +333,16 @@ static void build_dpoll_command(struct fsi_gpio_msg *cmd, uint8_t slave_id)
 	msg_push_crc(cmd);
 }
 
+static void build_epoll_command(struct fsi_gpio_msg *cmd, uint8_t slave_id)
+{
+	cmd->bits = 0;
+	cmd->msg = 0;
+
+	msg_push_bits(cmd, slave_id, 2);
+	msg_push_bits(cmd, FSI_GPIO_CMD_EPOLL, 3);
+	msg_push_crc(cmd);
+}
+
 static void echo_delay(struct fsi_master_gpio *master)
 {
 	set_sda_output(master, 1);
@@ -451,10 +464,24 @@ static int poll_for_response(struct fsi_master_gpio *master,
 	unsigned long flags;
 	uint8_t tag;
 	uint8_t *data_byte = data;
-
+	int crc_err_retries = 0;
 retry:
 	rc = read_one_response(master, size, &response, &tag);
-	if (rc)
+
+	/* Handle retries on CRC errors */
+	if (rc == FSI_ERR_RESP_CRC) {
+		if (crc_err_retries++ > FSI_CRC_ERR_RETRIES)
+			goto fail;
+		dev_warn(master->dev,
+			 "CRC error retry %d\n", crc_err_retries);
+		build_epoll_command(&cmd, slave);
+		spin_lock_irqsave(&master->bit_lock, flags);
+		clock_zeros(master, FSI_GPIO_EPOLL_CLOCKS);
+		serial_out(master, &cmd);
+		echo_delay(master);
+		spin_unlock_irqrestore(&master->bit_lock, flags);
+		goto retry;
+	} else if (rc)
 		goto fail;
 
 	switch (tag) {
@@ -539,11 +566,19 @@ static int send_request(struct fsi_master_gpio *master,
 static int fsi_master_gpio_xfer(struct fsi_master_gpio *master, uint8_t slave,
 		struct fsi_gpio_msg *cmd, size_t resp_len, void *resp)
 {
-	int rc;
+	int rc = FSI_ERR_ERRC, retries = 0;
 
-	rc = send_request(master, cmd);
-	if (!rc)
-		rc = poll_for_response(master, slave, resp_len, resp);
+	while ((retries++) < FSI_CRC_ERR_RETRIES) {
+		rc = send_request(master, cmd);
+		if (!rc)
+			rc = poll_for_response(master, slave, resp_len, resp);
+		if (rc != FSI_ERR_ERRC)
+			break;
+		dev_warn(master->dev, "ECRC retry %d\n", retries);
+
+		/* Pace it a bit before retry */
+		msleep(1);
+	}
 
 	return rc;
 }
