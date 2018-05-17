@@ -41,13 +41,6 @@
 #define	FSI_GPIO_RESP_BUSY	1	/* Slave busy */
 #define	FSI_GPIO_RESP_ERRA	2	/* Any (misc) Error */
 #define	FSI_GPIO_RESP_ERRC	3	/* Slave reports master CRC error */
-#define	FSI_GPIO_MTOE		4	/* Master time out error */
-#define	FSI_GPIO_CRC_INVAL	5	/* Master reports slave CRC error */
-
-/* Normal slave responses */
-#define	FSI_GPIO_RESP_BUSY	1
-#define	FSI_GPIO_RESP_ACK	0
-#define	FSI_GPIO_RESP_ACKD	4
 
 #define	FSI_GPIO_MAX_BUSY	200
 #define	FSI_GPIO_MTOE_COUNT	1000
@@ -359,15 +352,6 @@ static void build_term_command(struct fsi_gpio_msg *cmd, uint8_t slave_id)
 	msg_push_crc(cmd);
 }
 
-/*
- * Store information on master errors so handler can detect and clean
- * up the bus
- */
-static void fsi_master_gpio_error(struct fsi_master_gpio *master, int error)
-{
-
-}
-
 static int read_one_response(struct fsi_master_gpio *master,
 		uint8_t data_size, struct fsi_gpio_msg *msgp, uint8_t *tagp)
 {
@@ -390,7 +374,6 @@ static int read_one_response(struct fsi_master_gpio *master,
 	if (i == FSI_GPIO_MTOE_COUNT) {
 		dev_dbg(master->dev,
 			"Master time out waiting for response\n");
-		fsi_master_gpio_error(master, FSI_GPIO_MTOE);
 		spin_unlock_irqrestore(&master->bit_lock, flags);
 		return FSI_ERR_MTOE;
 	}
@@ -416,8 +399,11 @@ static int read_one_response(struct fsi_master_gpio *master,
 	crc = crc4(0, 1, 1);
 	crc = crc4(crc, msg.msg, msg.bits);
 	if (crc) {
-		dev_dbg(master->dev, "ERR response CRC\n");
-		fsi_master_gpio_error(master, FSI_GPIO_CRC_INVAL);
+		/* Check if it's all 1's, that probably means the host is off */
+		if (((~msg.msg) & ((1ull << msg.bits) - 1)) == 0)
+			return FSI_ERR_NO_SLAVE;
+		dev_dbg(master->dev, "ERR response CRC msg: 0x%016llx (%d bits)\n",
+			msg.msg, msg.bits);
 		return FSI_ERR_RESP_CRC;
 	}
 
@@ -524,12 +510,10 @@ retry:
 
 	case FSI_GPIO_RESP_ERRA:
 		dev_dbg(master->dev, "ERRA received: 0x%x\n", (int)response.msg);
-		fsi_master_gpio_error(master, response.msg);
 		rc = FSI_ERR_ERRA;
 		break;
 	case FSI_GPIO_RESP_ERRC:
 		dev_dbg(master->dev, "ERRC received: 0x%x\n", (int)response.msg);
-		fsi_master_gpio_error(master, response.msg);
 		rc = FSI_ERR_ERRC;
 		break;
 	}
