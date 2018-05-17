@@ -379,7 +379,7 @@ static int read_one_response(struct fsi_master_gpio *master,
 			"Master time out waiting for response\n");
 		fsi_master_gpio_error(master, FSI_GPIO_MTOE);
 		spin_unlock_irqrestore(&master->bit_lock, flags);
-		return -EIO;
+		return FSI_ERR_MTOE;
 	}
 
 	msg.bits = 0;
@@ -405,7 +405,7 @@ static int read_one_response(struct fsi_master_gpio *master,
 	if (crc) {
 		dev_dbg(master->dev, "ERR response CRC\n");
 		fsi_master_gpio_error(master, FSI_GPIO_CRC_INVAL);
-		return -EIO;
+		return FSI_ERR_RESP_CRC;
 	}
 
 	if (msgp)
@@ -455,7 +455,7 @@ static int poll_for_response(struct fsi_master_gpio *master,
 retry:
 	rc = read_one_response(master, size, &response, &tag);
 	if (rc)
-		return rc;
+		goto fail;
 
 	switch (tag) {
 	case FSI_GPIO_RESP_ACK:
@@ -492,22 +492,25 @@ retry:
 		clock_zeros(master, FSI_GPIO_DPOLL_CLOCKS);
 		spin_unlock_irqrestore(&master->bit_lock, flags);
 		issue_term(master, slave);
-		rc = -EIO;
+		rc = FSI_ERR_BUSY;
 		break;
 
 	case FSI_GPIO_RESP_ERRA:
-	case FSI_GPIO_RESP_ERRC:
-		dev_dbg(master->dev, "ERR%c received: 0x%x\n",
-			tag == FSI_GPIO_RESP_ERRA ? 'A' : 'C',
-			(int)response.msg);
+		dev_dbg(master->dev, "ERRA received: 0x%x\n", (int)response.msg);
 		fsi_master_gpio_error(master, response.msg);
-		rc = -EIO;
+		rc = FSI_ERR_ERRA;
+		break;
+	case FSI_GPIO_RESP_ERRC:
+		dev_dbg(master->dev, "ERRC received: 0x%x\n", (int)response.msg);
+		fsi_master_gpio_error(master, response.msg);
+		rc = FSI_ERR_ERRC;
 		break;
 	}
 
 	if (busy_count > 0)
 		trace_fsi_master_gpio_poll_response_busy(master, busy_count);
 
+ fail:
 	/* Clock the slave enough to be ready for next operation */
 	spin_lock_irqsave(&master->bit_lock, flags);
 	clock_zeros(master, FSI_GPIO_PRIME_SLAVE_CLOCKS);

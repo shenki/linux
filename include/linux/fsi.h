@@ -17,6 +17,13 @@
 
 #include <linux/device.h>
 
+/* FSI specific error codes */
+#define FSI_ERR_ERRA		-1000
+#define FSI_ERR_ERRC		-1001
+#define FSI_ERR_RESP_CRC	-1002
+#define FSI_ERR_BUSY		-1003
+#define FSI_ERR_MTOE		-1004
+
 struct fsi_device {
 	struct device		dev;
 	u8			engine_type;
