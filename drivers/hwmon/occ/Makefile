@@ -1,7 +1,7 @@
 occ-hwmon-objs := common.o
 
 ifeq ($(CONFIG_SENSORS_OCC_P9_SBE), y)
-occ-hwmon-objs += p9_sbe.o
+#occ-hwmon-objs += p9_sbe.o
 endif
 
 ifeq ($(CONFIG_SENSORS_OCC_P8_I2C), y)
