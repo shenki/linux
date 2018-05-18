@@ -110,6 +110,7 @@ err:
 static int p9_sbe_occ_probe(struct platform_device *pdev)
 {
 	struct occ *occ;
+	int rc;
 	struct p9_sbe_occ *ctx = devm_kzalloc(&pdev->dev,
 						     sizeof(*ctx),
 						     GFP_KERNEL);
@@ -126,7 +127,12 @@ static int p9_sbe_occ_probe(struct platform_device *pdev)
 	occ->poll_cmd_data = 0x20;		/* P9 OCC poll data */
 	occ->send_cmd = p9_sbe_occ_send_cmd;
 
-	return occ_setup(occ, "p9_occ");
+	rc = occ_setup(occ, "p9_occ");
+
+	/* Host is shutdown, don't spew errors */
+	if (rc == -ESHUTDOWN)
+		rc = -ENODEV;
+	return rc;
 }
 
 static int p9_sbe_occ_remove(struct platform_device *pdev)
