@@ -836,6 +836,8 @@ static int occ_probe(struct platform_device *pdev)
 		occ->idx = ida_simple_get(&occ_ida, 1, INT_MAX, GFP_KERNEL);
 	}
 
+	platform_set_drvdata(pdev, occ);
+
 	snprintf(occ->name, sizeof(occ->name), "occ%d", occ->idx);
 	occ->mdev.fops = &occ_fops;
 	occ->mdev.minor = MISC_DYNAMIC_MINOR;
@@ -853,8 +855,6 @@ static int occ_probe(struct platform_device *pdev)
 	hwmon_dev = platform_device_register_full(&hwmon_dev_info);
 	if (!hwmon_dev)
 		dev_warn(dev, "failed to create hwmon device\n");
-
-	platform_set_drvdata(pdev, occ);
 
 	return 0;
 }
