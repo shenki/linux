@@ -484,6 +484,10 @@ static int occ_getsram(struct device *sbefifo, u32 address, u8 *data,
 		rc = sbefifo_submit(sbefifo, cmd, 5, resp, &resp_len);
 		if (rc == 0)
 			rc = sbefifo_parse_status(0xa403, resp, resp_len, &resp_len);
+		if (rc == -ESHUTDOWN) {
+			pr_info("occ: Host not ready\n");
+			return rc;
+		}
 		if (rc) {
 			if (rc < 0)
 				pr_err("occ: FSI error %d, retrying sram read\n", rc);
@@ -548,6 +552,10 @@ static int occ_putsram(struct device *sbefifo, u32 address, u8 *data,
 
 		resp_len = OCC_SBE_STATUS_WORDS;
 		rc = sbefifo_submit(sbefifo, buf, cmd_len, buf, &resp_len);
+		if (rc == -ESHUTDOWN) {
+			pr_info("occ: Host not ready\n");
+			return rc;
+		}
 		if (rc == 0)
 			rc = sbefifo_parse_status(0xa404, buf, resp_len, &resp_len);
 		if (rc) {
@@ -604,6 +612,10 @@ static int occ_trigger_attn(struct device *sbefifo)
 		buf[6] = 0;
 
 		rc = sbefifo_submit(sbefifo, buf, 7, buf, &resp_len);
+		if (rc == -ESHUTDOWN) {
+			pr_info("occ: Host not ready\n");
+			return rc;
+		}
 		if (rc == 0)
 			rc = sbefifo_parse_status(0xa404, buf, resp_len, &resp_len);
 		if (rc) {
