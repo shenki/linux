@@ -652,7 +652,7 @@ static void occ_worker(struct work_struct *work)
 	struct occ_client *client;
 	struct occ *occ = container_of(work, struct occ, work);
 	struct device *sbefifo = occ->sbefifo;
-
+	int retries = 0;
 again:
 	if (occ->cancel)
 		return;
@@ -720,7 +720,10 @@ again:
 	xfr->resp_data_length = resp_data_length + 7;
 
 	rc = occ_verify_checksum(resp, resp_data_length);
-
+	if (rc) {
+		if (retries++ < OCC_COMMAND_RETRIES)
+			goto again;
+	}
 done:
 	mutex_unlock(&occ->occ_lock);
 
@@ -732,6 +735,7 @@ done:
 	clear_bit(XFR_IN_PROGRESS, &xfr->flags);
 	list_del(&xfr->link);
 	empty = list_empty(&occ->xfrs);
+	retries = 0;
 
 	spin_unlock_irqrestore(&occ->list_lock, flags);
 
