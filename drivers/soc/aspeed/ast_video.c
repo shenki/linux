@@ -38,11 +38,12 @@
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
-#include <mach/hardware.h>
-#include <mach/aspeed.h>
-#include <mach/ast-sdmc.h>
-#include <mach/ast-scu.h>
-#include <mach/ast_lcd.h>
+#include <linux/aspeed-sdmc.h>
+#include <linux/ast_lcd.h>
+
+extern void ast_scu_set_vga_display(u8 enable);
+extern u8 ast_scu_get_vga_display(void);
+
 /***********************************************************************/
 /* Register for VIDEO */
 #define AST_VIDEO_PROTECT		0x000		/*	protection key register	*/
@@ -604,6 +605,9 @@ struct ast_video_data {
 	void __iomem		*reg_base;			/* virtual */
 	int 	irq;				//Video IRQ number
 	u8 		ast_g5;
+	struct reset_control *reset;
+	struct clk 			*vclk;
+	struct clk 			*eclk;
 //	compress_header
 	struct compress_header			compress_mode;
 	phys_addr_t             *stream_phy;            /* phy */
@@ -667,6 +671,8 @@ struct rc4_state {
 	int y;
 	int m[256];
 };
+
+extern u32 ast_scu_get_vga_memsize(void);
 
 
 static inline void
@@ -1910,6 +1916,13 @@ static void ast_video_auto_mode_trigger(struct ast_video_data *ast_video, struct
 		} else {
 			auto_mode->total_size = ast_video_read(ast_video, AST_VIDEO_COMPRESS_DATA_COUNT);
 			auto_mode->block_count = ast_video_read(ast_video, AST_VIDEO_COMPRESS_BLOCK_COUNT) >> 16;
+
+			if(ast_video_read(ast_video, AST_VIDEO_SEQ_CTRL) & G5_VIDEO_COMPRESS_JPEG_MODE) {
+				auto_mode->total_size = ast_video_read(ast_video, AST_VIDEO_JPEG_COUNT);
+//				printk("jpeg %d auto_mode->total_size %d , block count %d \n",auto_mode->differential, auto_mode->total_size, auto_mode->block_count);
+			} else {
+//				printk("%d  auto_mode->total_size %d , block count %d \n",auto_mode->differential, auto_mode->total_size, auto_mode->block_count);					
+			}
 		}
 
 		break;
@@ -2131,6 +2144,13 @@ static void ast_video_ctrl_init(struct ast_video_data *ast_video)
 					, AST_VIDEO_MODE_DETECT);
 }
 
+static long ast_scu_reset_video(struct ast_video_data *ast_video)
+{
+	reset_control_assert(ast_video->reset);
+	udelay(100);	
+	reset_control_deassert(ast_video->reset);
+}
+
 static long ast_video_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
 {
 	int ret = 1;
@@ -2149,7 +2169,7 @@ static long ast_video_ioctl(struct file *fp, unsigned int cmd, unsigned long arg
 
 	switch (cmd) {
 	case AST_VIDEO_RESET:
-		ast_scu_reset_video();
+		ast_scu_reset_video(ast_video);
 		//rc4 init reset ..
 		ast_video_write(ast_video, ast_video_read(ast_video, AST_VIDEO_CTRL) | VIDEO_CTRL_RC4_RST , AST_VIDEO_CTRL);
 		ast_video_write(ast_video, ast_video_read(ast_video, AST_VIDEO_CTRL) & ~VIDEO_CTRL_RC4_RST , AST_VIDEO_CTRL);
@@ -2337,7 +2357,7 @@ static ssize_t store_video_reset(struct device *dev,
 	val = simple_strtoul(buf, NULL, 10);
 
 	if (val) {
-		ast_scu_reset_video();
+		ast_scu_reset_video(ast_video);
 		//rc4 init reset ..
 		ast_video_write(ast_video, ast_video_read(ast_video, AST_VIDEO_CTRL) | VIDEO_CTRL_RC4_RST , AST_VIDEO_CTRL);
 		ast_video_write(ast_video, ast_video_read(ast_video, AST_VIDEO_CTRL) & ~VIDEO_CTRL_RC4_RST , AST_VIDEO_CTRL);
@@ -2771,7 +2791,11 @@ static int ast_video_probe(struct platform_device *pdev)
 	struct ast_video_data *ast_video;
 	u32 vga = ast_scu_get_vga_memsize();
 	u32 dram = ast_sdmc_get_mem_size();
-	u32 dram_base = ast_get_dram_base();
+#ifdef CONFIG_MACH_ASPEED_G5
+	u32 dram_base = 0x80000000;
+#else
+	u32 dram_base = 0x40000000;
+#endif
 	u32 video_base = dram - vga - CONFIG_AST_VIDEO_MEM_SIZE + dram_base;
 
 	if (!(ast_video = devm_kzalloc(&pdev->dev, sizeof(struct ast_video_data), GFP_KERNEL))) {
@@ -2832,12 +2856,35 @@ static int ast_video_probe(struct platform_device *pdev)
 		goto out_region0;
 	}
 
+	ast_video->reset = devm_reset_control_get(&pdev->dev, NULL);
+	if (IS_ERR(ast_video->reset)) {
+		dev_err(&pdev->dev, "can't get mctp reset\n");
+		return PTR_ERR(ast_video->reset);
+	}
+
 	if (of_machine_is_compatible("aspeed,ast2500")) {
 		ast_video->ast_g5 = 1;
 	} else {
 		ast_video->ast_g5 = 0;
 	}
-	ast_scu_init_video(0);
+
+	ast_video->eclk = devm_clk_get(&pdev->dev, "eclk");
+	if (IS_ERR(ast_video->eclk)) {
+		dev_err(&pdev->dev, "no eclk clock defined\n");
+		return PTR_ERR(ast_video->eclk);
+	}
+
+	clk_prepare_enable(ast_video->eclk);
+
+	ast_video->vclk = devm_clk_get(&pdev->dev, "vclk");
+	if (IS_ERR(ast_video->vclk)) {
+		dev_err(&pdev->dev, "no vclk clock defined\n");
+		return PTR_ERR(ast_video->vclk);
+	}
+
+	clk_prepare_enable(ast_video->vclk);
+
+//	ast_scu_init_video(0);
 
 	// default config
 	ast_video->input_source = VIDEO_SOURCE_INT_VGA;
@@ -2904,6 +2951,7 @@ out_region0:
 	release_mem_region(res0->start, res0->end - res0->start + 1);
 
 out:
+
 	printk(KERN_WARNING "applesmc: driver init failed (ret=%d)!\n", ret);
 	return ret;
 

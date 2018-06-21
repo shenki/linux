@@ -40,8 +40,8 @@ In ICH7 or newer, choose any 2 of GENx_DEC, set 00040081h & 007C0C81h
 #include <linux/interrupt.h>
 #include <linux/dma-mapping.h>
 
-#include <mach/regs-lpc.h>
-#include <mach/ast-lpc.h>
+#include "regs-lpc.h"
+#include "ast-lpc.h"
 #include <linux/miscdevice.h>
 #include <linux/hwmon-sysfs.h>
 #include <linux/of.h>

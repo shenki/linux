@@ -39,7 +39,7 @@ config HWMON_DEBUG_CHIP
 
 comment "Native drivers"
 
-config SENSORS_AST_ADC
+config SENSORS_ASPEED_ADC
 	tristate "ASPEED ADC Controller Driver"
 	depends on ARCH_ASPEED
 	default n
@@ -55,7 +55,7 @@ config SENSORS_AST1010_ADC
           This driver provides support for the ASPEED ADC
           Controller, which provides an Voltage Sensor.
 
-config SENSORS_AST_PWM_FAN
+config SENSORS_ASPEED_PWM_FAN
         tristate "ASPEED PWM & FAN Tacho Controller Driver"
         depends on ARCH_ASPEED
         default n

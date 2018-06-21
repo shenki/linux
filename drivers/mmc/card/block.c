@@ -2251,6 +2251,7 @@ again:
 	 * and the write protect switch.
 	 */
 	md->read_only = mmc_blk_readonly(card);
+
 	md->disk = alloc_disk(perdev_minors);
 	if (md->disk == NULL) {
 		ret = -ENOMEM;

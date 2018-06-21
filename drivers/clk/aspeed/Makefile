@@ -1,3 +1,0 @@
-obj-y += clk-uart.o clk-aspeed.o clk-g5.o clk-g4.o
-#obj-$(CONFIG_MACH_ASPEED_G4) += clk-g4.o
-#obj-$(CONFIG_MACH_ASPEED_G5) += clk-g5.o

@@ -238,8 +238,8 @@ config CRYPTO_DEV_HIFN_795X_RNG
 
 source drivers/crypto/caam/Kconfig
 
-config CRYPTO_DEV_AST
-	tristate "Support for AST Hash & Crypto Engice (HACE)"
+config CRYPTO_DEV_ASPEED
+	tristate "Support for ASPEED Hash & Crypto Engice (HACE)"
 	depends on ARCH_ASPEED
 	select CRYPTO_CBC
 	select CRYPTO_ECB

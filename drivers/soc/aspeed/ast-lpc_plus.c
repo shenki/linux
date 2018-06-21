@@ -28,10 +28,8 @@
 #include <asm/io.h>
 #include <linux/interrupt.h>
 
-#include <mach/hardware.h>
-
-#include <mach/regs-lpc.h>
-#include <mach/ast-lpc.h>
+#include "regs-lpc.h"
+#include "ast-lpc.h"
 
 //#define AST_LPCP_DEBUG
 

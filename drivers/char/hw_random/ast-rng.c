@@ -24,7 +24,7 @@
 #include <linux/platform_device.h>
 #include <linux/hw_random.h>
 
-#include <mach/ast-scu.h>
+#include <linux/ast-scu.h>
 
 static int ast_rng_data_read(struct hwrng *rng, u32 *data)
 {

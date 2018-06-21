@@ -14,13 +14,11 @@
 #include <linux/init.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include <mach/aspeed.h>
 #include <linux/regmap.h>
 #include <linux/mfd/syscon.h>
 
-#include <mach/ast-bmc-scu.h>
-#include <mach/regs-bmc-scu.h>
-//#include <mach/ast_i2c.h>
+#include <linux/ast-bmc-scu.h>
+#include <linux/regs-bmc-scu.h>
 
 //#define ASPEED_SCU_LOCK
 //#define AST_BMC_SCU_DBG
@@ -110,16 +108,6 @@ static struct soc_id soc_map_table[] = {
 //***********************************Initial control***********************************
 #ifdef SCU_RESET_VIDEO
 extern void
-ast_scu_reset_video(void)
-{
-	ast_scu_write(ast_scu_read(AST_SCU_RESET) | SCU_RESET_VIDEO, AST_SCU_RESET);
-	udelay(100);
-	ast_scu_write(ast_scu_read(AST_SCU_RESET) & ~SCU_RESET_VIDEO, AST_SCU_RESET);
-}
-
-EXPORT_SYMBOL(ast_scu_reset_video);
-
-extern void
 ast_scu_init_video(u8 dynamic_en)
 {
 	//Video Engine Clock Enable and Reset
@@ -141,35 +129,6 @@ ast_scu_init_video(u8 dynamic_en)
 	ast_scu_write(ast_scu_read(AST_SCU_RESET) & ~SCU_RESET_VIDEO, AST_SCU_RESET);
 }
 EXPORT_SYMBOL(ast_scu_init_video);
-#endif
-
-#ifdef SCU_UART1CLK_STOP_EN
-extern void
-ast_scu_init_uart(u8 uart)
-{
-	u32 clk_stop_en = 0;	
-
-	//uart 1
-	if(uart & 0x2) {
-		clk_stop_en |= SCU_UART1CLK_STOP_EN;
-	}
-
-	if(uart & 0x4) {
-		clk_stop_en |= SCU_UART2CLK_STOP_EN;
-	}
-
-	if(uart & 0x8) {
-		clk_stop_en |= SCU_UART3CLK_STOP_EN;
-	}
-
-	if(uart & 0x10) {
-		clk_stop_en |= SCU_UART4CLK_STOP_EN;
-	}
-	
-	ast_scu_write(ast_scu_read(AST_SCU_CLK_STOP) & ~(clk_stop_en), AST_SCU_CLK_STOP);
-	
-}
-EXPORT_SYMBOL(ast_scu_init_uart);
 #endif
 
 
@@ -273,7 +232,7 @@ EXPORT_SYMBOL(ast_scu_init_h264);
 extern void
 ast_scu_spi_master(u8 mode)
 {
-#ifdef AST_SOC_G5
+#ifdef CONFIG_MACH_ASPEED_G5
 	switch(mode) {
 		case 0:
 			ast_scu_write(SCU_HW_STRAP_SPI_MODE_MASK, AST_SCU_REVISION_ID);
@@ -320,7 +279,7 @@ ast_scu_init_crt(void)
 	//ast2500 : VGA use D1 clk, CRT use 40Mhz 
 	//ast3200/ast1520 : VGA use D1 clk, CRT use D1/D2 clk select L: SCU08[bit 8] - H SCU2C[bit 21]
 
-#ifdef AST_SOC_G5
+#ifdef CONFIG_MACH_ASPEED_G5
 
 #ifdef CONFIG_ARCH_AST3200
 	//Select D2 CLK source 00:D-PLL, 01: D2-PLL, 1x : 40Mhz
@@ -453,7 +412,7 @@ FPGA revision starts from 0x08, 8~10 means A0, 11+ means A1, AST2300 should be a
 extern void
 ast_scu_set_lpc_mode(void)
 {
-#ifdef AST_SOC_G5
+#ifdef CONFIG_MACH_ASPEED_G5
 	ast_scu_write(SCU_HW_STRAP_ESPI_MODE , AST_SCU_REVISION_ID);
 #endif
 }
@@ -463,7 +422,7 @@ extern void
 ast_scu_show_system_info (void)
 {
 #if 0
-#ifdef AST_SOC_G5
+#ifdef CONFIG_MACH_ASPEED_G5
 	u32 axi_div, ahb_div, h_pll, pclk_div;
 
 	h_pll = ast_get_h_pll_clk();
@@ -556,7 +515,7 @@ ast_scu_multi_func_uart(u8 uart)
 						SCU_FUC_PIN_UART6, 
 				AST_SCU_FUN_PIN_CTRL5); 
 			break;
-#ifdef AST_SOC_G5			
+#ifdef CONFIG_MACH_ASPEED_G5			
 		case 7:
 			ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL6) |
 						SCU_FUN_PIN_UART7,
@@ -623,7 +582,7 @@ ast_scu_multi_func_eth(u8 num)
 					AST_SCU_FUN_PIN_CTRL1); 
 			}
 
-#ifdef AST_SOC_G5
+#ifdef CONFIG_MACH_ASPEED_G5
 			ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL1) | 
 						SCU_FUN_PIN_MAC0_PHY_LINK, 
 				AST_SCU_FUN_PIN_CTRL1); 
@@ -670,157 +629,6 @@ ast_scu_multi_func_romcs(u8 num)
 		AST_SCU_FUN_PIN_CTRL3);
 }
 
-extern void
-ast_scu_multi_func_i2c(u8 bus_no)
-{
-	//TODO check ... //In AST2400 Due to share pin with SD , please not enable I2C 10 ~14 
-	// AST 2400 have 14 , AST 2300 9 ...
-	u32 pin_ctrl = ast_scu_read(AST_SCU_FUN_PIN_CTRL5);
-	switch(bus_no) {
-		case 0:
-			break;
-		case 1:
-			break;
-		case 2:
-			pin_ctrl |= SCU_FUC_PIN_I2C3;
-			break;
-		case 3:
-			pin_ctrl |= SCU_FUC_PIN_I2C4;			
-			break;
-		case 4:
-			pin_ctrl |= SCU_FUC_PIN_I2C5;			
-			break;
-		case 5:
-			pin_ctrl |= SCU_FUC_PIN_I2C6;			
-			break;
-		case 6:
-			pin_ctrl |= SCU_FUC_PIN_I2C7;			
-			break;
-		case 7:
-			pin_ctrl |= SCU_FUC_PIN_I2C8;			
-			break;
-		case 8:
-			pin_ctrl |= SCU_FUC_PIN_I2C9;	
-			break;
-		case 9:
-			pin_ctrl |= SCU_FUC_PIN_I2C10;
-			pin_ctrl &= ~SCU_FUC_PIN_SD1;
-			break;
-		case 10:
-			pin_ctrl |= SCU_FUC_PIN_I2C11;			
-			pin_ctrl &= ~SCU_FUC_PIN_SD1;
-			break;
-		case 11:
-			pin_ctrl |= SCU_FUC_PIN_I2C12;			
-			pin_ctrl &= ~SCU_FUC_PIN_SD1;		
-			break;
-		case 12:
-			pin_ctrl |= SCU_FUC_PIN_I2C13;			
-			pin_ctrl &= ~SCU_FUC_PIN_SD1;
-			break;
-		case 13:
-			pin_ctrl |= SCU_FUC_PIN_I2C14;	
-			break;
-	}
-
-	ast_scu_write(pin_ctrl, AST_SCU_FUN_PIN_CTRL5);
-}	
-
-EXPORT_SYMBOL(ast_scu_multi_func_i2c);
-
-extern void
-ast_scu_multi_func_pwm_tacho(void)
-{
-	u32 sts = 0;
-	spin_lock(&ast_scu_lock);	
-
-	sts = ast_scu_read(AST_SCU_FUN_PIN_CTRL3) &~0xcfffff;
-	ast_scu_write(sts | 0xc000ff, AST_SCU_FUN_PIN_CTRL3);
-	spin_unlock(&ast_scu_lock);	
-
-}	
-
-EXPORT_SYMBOL(ast_scu_multi_func_pwm_tacho);
-
-//0 : usb 2.0 hub mode, 1:usb 2.0 host2 controller
-extern void
-ast_scu_multi_func_usb_port1_mode(u8 mode)
-{
-	if(mode)
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_USB20_HOST, 
-					AST_SCU_FUN_PIN_CTRL5);
-	else
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) & ~SCU_FUC_PIN_USB20_HOST, 
-					AST_SCU_FUN_PIN_CTRL5);
-}	
-
-EXPORT_SYMBOL(ast_scu_multi_func_usb_port1_mode);
-
-//0 : 1.1 hid 1, 1.1 host , 2, 2.0 host 3, 2.0 device 
-extern void
-ast_scu_multi_func_usb_port2_mode(u8 mode)
-{
-#if defined(AST_SOC_G5)
-	if(mode == 0)
-		ast_scu_write((ast_scu_read(AST_SCU_FUN_PIN_CTRL6) & ~SCU_FUN_PIN_USBP1_MASK), 
-					AST_SCU_FUN_PIN_CTRL6);
-	else if ((mode == 1) || (mode == 2))
-		ast_scu_write((ast_scu_read(AST_SCU_FUN_PIN_CTRL6) & ~SCU_FUN_PIN_USBP1_MASK) |
-					SCU_FUN_PIN_USBP1_MODE(0x2), 
-					AST_SCU_FUN_PIN_CTRL6);
-	else if (mode == 3)
-		ast_scu_write((ast_scu_read(AST_SCU_FUN_PIN_CTRL6) & ~SCU_FUN_PIN_USBP1_MASK) |
-					SCU_FUN_PIN_USBP1_MODE(0x1), 
-					AST_SCU_FUN_PIN_CTRL6);
-	else {
-		printk("nothing\n");
-	}
-#else
-	if(mode == 0)
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) & ~SCU_FUC_PIN_USB11_PORT2, 
-					AST_SCU_FUN_PIN_CTRL5);
-	else if ((mode == 1) || (mode == 2))
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_USB11_PORT2 | SCU_FUC_PIN_USB20_HOST, 
-			AST_SCU_FUN_PIN_CTRL5);
-	else {
-		printk("nothing\n");
-	}
-#endif	
-}	
-
-EXPORT_SYMBOL(ast_scu_multi_func_usb_port2_mode);
-
-//0 : gpioQ6,7 mode , 1: usb1.1 host port 4 mode
-extern void
-ast_scu_multi_func_usb_port34_mode(u8 mode)
-{
-#if defined(AST_SOC_G5)
-	if(mode) {
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_USB11_PORT4, 
-					AST_SCU_FUN_PIN_CTRL5);
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL3) | 
-					(SCU_FUN_PIN_USBP3_DP |SCU_FUN_PIN_USBP3_DN | SCU_FUN_PIN_USBP4_DP | SCU_FUN_PIN_USBP4_DN),
-					AST_SCU_FUN_PIN_CTRL3);		
-	} else {
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) & ~SCU_FUC_PIN_USB11_PORT4, 
-					AST_SCU_FUN_PIN_CTRL5);
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL3) & 
-					~(SCU_FUN_PIN_USBP3_DP |SCU_FUN_PIN_USBP3_DN | SCU_FUN_PIN_USBP4_DP | SCU_FUN_PIN_USBP4_DN),
-					AST_SCU_FUN_PIN_CTRL3);		
-	}
-#else
-	if(mode) {
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_USB11_PORT4, 
-					AST_SCU_FUN_PIN_CTRL5);
-	} else {
-		ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) & ~SCU_FUC_PIN_USB11_PORT4, 
-					AST_SCU_FUN_PIN_CTRL5);
-	}
-#endif
-}	
-
-EXPORT_SYMBOL(ast_scu_multi_func_usb_port34_mode);
-
 //0 : 1: SD1 function 
 extern void
 ast_scu_multi_func_sdhc_8bit_mode(void)
@@ -830,27 +638,6 @@ ast_scu_multi_func_sdhc_8bit_mode(void)
 }	
 
 EXPORT_SYMBOL(ast_scu_multi_func_sdhc_8bit_mode);
-
-extern void
-ast_scu_multi_func_sdhc_slot(u8 slot)
-{
-	switch(slot) {
-		case 0:
-			ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_SD1, 
-						AST_SCU_FUN_PIN_CTRL5);						
-			break;
-		case 1:
-			ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_SD2, 
-						AST_SCU_FUN_PIN_CTRL5);									
-			break;
-		case 3:
-			ast_scu_write(ast_scu_read(AST_SCU_FUN_PIN_CTRL5) | SCU_FUC_PIN_SD1 | SCU_FUC_PIN_SD2, 
-						AST_SCU_FUN_PIN_CTRL5);						
-			break;			
-	}
-}	
-
-EXPORT_SYMBOL(ast_scu_multi_func_sdhc_slot);
 
 //0: VGA , 1 : CRT, 2 : PASS through Port -A, 3 : PASS through Port -B  
 extern void
@@ -967,55 +754,6 @@ ast_scu_sys_rest_info(void)
 }	
 
 extern void
-ast_scu_set_vga_display(u8 enable)
-{
-	if(enable)
-		ast_scu_write(ast_scu_read(AST_SCU_MISC1_CTRL) & ~SCU_MISC_VGA_CRT_DIS, AST_SCU_MISC1_CTRL);
-	else
-		ast_scu_write(ast_scu_read(AST_SCU_MISC1_CTRL) | SCU_MISC_VGA_CRT_DIS, AST_SCU_MISC1_CTRL);
-}
-
-EXPORT_SYMBOL(ast_scu_set_vga_display);
-
-extern u8
-ast_scu_get_vga_display(void)
-{
-	if(ast_scu_read(AST_SCU_MISC1_CTRL) & SCU_MISC_VGA_CRT_DIS)
-		return 0;
-	else
-		return 1;
-}
-
-EXPORT_SYMBOL(ast_scu_get_vga_display);
-
-extern u32
-ast_scu_get_vga_memsize(void)
-{
-	u32 size=0;
-
-	switch(SCU_HW_STRAP_VGA_SIZE_GET(ast_scu_read(AST_SCU_HW_STRAP1))) {
-		case VGA_8M_DRAM:
-			size = 8*1024*1024;
-			break;
-		case VGA_16M_DRAM:
-			size = 16*1024*1024;
-			break;
-		case VGA_32M_DRAM:
-			size = 32*1024*1024;
-			break;
-		case VGA_64M_DRAM:
-			size = 64*1024*1024;
-			break;
-		default:
-			BMC_SCUMSG("error vga size \n");
-			break;
-	}
-	return size;
-}
-
-EXPORT_SYMBOL(ast_scu_get_vga_memsize);
-
-extern void
 ast_scu_get_who_init_dram(void)
 {
 	switch(SCU_VGA_DRAM_INIT_MASK(ast_scu_read(AST_SCU_VGA0))) {
@@ -1035,7 +773,7 @@ EXPORT_SYMBOL(ast_scu_get_who_init_dram);
 extern int
 ast_scu_espi_mode(void)
 {
-#ifdef AST_SOC_G5
+#ifdef CONFIG_MACH_ASPEED_G5
 	return(ast_scu_read(AST_SCU_HW_STRAP1) & SCU_HW_STRAP_ESPI_MODE);
 #else
 	return 0;
@@ -1060,12 +798,6 @@ ast_scu_get_superio_addr_config(void)
 		return 0x2E;
 }
 
-extern u8
-ast_scu_adc_trim_read(void)
-{
-	return (ast_scu_read(AST_SCU_OTP1) >> 28);
-}
-EXPORT_SYMBOL(ast_scu_adc_trim_read);
 
 extern void
 ast_scu_hw_random_enable(u8 enable)
@@ -1110,19 +842,6 @@ ast_scu_otp_read(u8 reg)
 EXPORT_SYMBOL(ast_scu_otp_read);
 #endif
 
-extern u32
-ast_get_dram_base(void)
-{
-#ifdef AST_SOC_G5
-	return 0x80000000;
-#else
-	return 0x40000000;
-#endif
-}
-
-EXPORT_SYMBOL(ast_get_dram_base);
-
-
 static struct regmap *ast_scu_map;
 
 static int ast_bmc_scu_probe(struct platform_device *pdev)
@@ -1142,6 +861,7 @@ static int ast_bmc_scu_probe(struct platform_device *pdev)
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	ast_scu_base = devm_ioremap_resource(&pdev->dev, res);
+	return 0;
 
 #ifdef CONFIG_AST_RUNTIME_DMA_UARTS
 	if(of_machine_is_compatible("aspeed,ast2500")) {
@@ -1149,73 +869,6 @@ static int ast_bmc_scu_probe(struct platform_device *pdev)
 			ast_scu_uartx_init();
 		}
 	}
-#endif
-
-#ifdef CONFIG_SERIAL_AST_DMA_UART
-	//UART Setting 
-	for_each_compatible_node(np, NULL, "aspeed,ast-sdma-uart") {
-		BMC_SCUDBG("np->name %s %s \n", np->name, np->properties->name);
-		idx = of_alias_get_id(np, "serial");
-		if(idx > 0)
-			ast_scu_multi_func_uart(idx);
-	}
-#endif 
-
-	for_each_compatible_node(np, NULL, "ns16550a") {
-		BMC_SCUDBG("np->name %s %s \n", np->name, np->properties->name);
-		idx = of_alias_get_id(np, "serial");
-		if(idx > 0)
-			ast_scu_multi_func_uart(idx);
-	}
-
-	if(of_find_compatible_node(NULL, NULL, "aspeed,ast-pwm-tacho")) {
-		BMC_SCUDBG("aspeed,ast-pwm-tacho found in SCU \n");
-		//SCU Pin-MUX	//PWM & TACHO 
-		ast_scu_multi_func_pwm_tacho();		
-	}
-
-	for_each_compatible_node(np, NULL, "aspeed,ast-mac") {
-		BMC_SCUDBG("aspeed,ast-mac found in SCU, ");
-		if (of_property_read_u32(np, "pinmux", &idx) == 0) {
-			BMC_SCUDBG("pinmux = %d \n", idx);
-			ast_scu_multi_func_eth(idx);
-		}
-	}
-
-	for_each_compatible_node(np, NULL, "aspeed,ast-i2c") {
-		BMC_SCUDBG("aspeed,ast-i2c found in SCU, ");
-		idx = of_alias_get_id(np, "i2c");		
-		BMC_SCUDBG("bus = %d ", idx);
-		if(idx > 0)
-			ast_scu_multi_func_i2c(idx);
-		BMC_SCUDBG("\n");
-	}
-
-	for_each_compatible_node(np, NULL, "aspeed,sdhci-ast") {
-		BMC_SCUDBG("aspeed,sdhci-ast found in SCU, ");
-		if (of_property_read_u32(np, "slot", &idx) == 0) {
-			BMC_SCUDBG("slot = %d ", idx);
-			ast_scu_multi_func_sdhc_slot(idx);
-		}
-		BMC_SCUDBG("\n");
-	}
-
-	if(of_find_compatible_node(NULL, NULL, "aspeed,ast-udc")) {
-		BMC_SCUDBG("aspeed,ast-udc found in SCU \n");
-		ast_scu_multi_func_usb_port1_mode(0);
-	}
-#if 1
-	if((of_find_compatible_node(NULL, NULL, "aspeed,ast-uhci")) || (of_find_compatible_node(NULL, NULL, "aspeed,ast-ehci"))) {
-		BMC_SCUDBG("aspeed,usb host found in SCU \n");
-		ast_scu_multi_func_usb_port1_mode(1);
-		ast_scu_multi_func_usb_port2_mode(2);
-#ifdef AST_SOC_G4		
-		ast_scu_multi_func_usb_port34_mode(1);
-#endif
-	} 
-#else
-	ast_scu_multi_func_usb_port1_mode(0);
-
 #endif
 
 //TODO Fix for ast2400

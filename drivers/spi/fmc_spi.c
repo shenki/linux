@@ -25,10 +25,6 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 
-//#include <asm/io.h>
-//#include <mach/ast_spi.h>
-#include <mach/ast-scu.h>
-
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
@@ -114,7 +110,6 @@ struct fmc_spi_host {
 	spinlock_t			lock;
 };
 
-
 static u32 ast_spi_calculate_divisor(struct fmc_spi_host *host, u32 max_speed_hz)
 {
 	// [0] ->15 : HCLK , HCLK/16
@@ -127,7 +122,7 @@ static u32 ast_spi_calculate_divisor(struct fmc_spi_host *host, u32 max_speed_hz
 			break;
 		}
 	}
-		
+
 //	printk("hclk is %d, divisor is %d, target :%d , cal speed %d\n", host->ahb_clk, spi_cdvr, spi->max_speed_hz, hclk/i);
 	return spi_cdvr;
 }
@@ -143,17 +138,16 @@ fmc_spi_setup(struct spi_device *spi)
 	u32 fmc_config = 0;
 	u32 spi_ctrl = 0;
 	u32 divisor;
-	
+
 //	dev_dbg(host->dev, "fmc_spi_setup() cs: %d, spi->mode %d \n", spi->chip_select, spi->mode);
 //	printk("fmc_spi_setup() cs: %d, spi->mode %d spi->max_speed_hz %d , spi->bits_per_word %d \n", spi->chip_select, spi->mode, spi->max_speed_hz, spi->bits_per_word);
-			
+
 	switch(spi->chip_select) {
 		case 0:
 			fmc_config |= FMC_CONF_CE0_WEN | FMC_CONF_CE0_SPI;
 			host->ctrl_reg = host->base + FMC_SPI_CE0_CTRL;
 			break;
 		case 1:
-			ast_scu_multi_func_romcs(1);
 			fmc_config |= FMC_CONF_CE1_WEN | FMC_CONF_CE1_SPI;
 			host->ctrl_reg = host->base + FMC_SPI_CE0_CTRL;
 			break;
@@ -169,7 +163,7 @@ fmc_spi_setup(struct spi_device *spi)
 
 	if (bits == 0)
 			bits = 8;
-	
+
 	if (bits < 8 || bits > 16) {
 			dev_dbg(&spi->dev,
 					"setup: invalid bits_per_word %u (8 to 16)\n",
@@ -182,7 +176,7 @@ fmc_spi_setup(struct spi_device *spi)
 					spi->mode & ~MODEBITS);
 			return -EINVAL;
 	}
-	
+
 	/* see notes above re chipselect */
 	if((spi->chip_select == 0) && (spi->mode & SPI_CS_HIGH)) {
 			dev_dbg(&spi->dev, "setup: can't be active-high\n");
@@ -193,7 +187,7 @@ fmc_spi_setup(struct spi_device *spi)
 	 * Pre-new_1 chips start out at half the peripheral
 	 * bus speed.
 	 */
-	 
+
 	if (spi->max_speed_hz) {
 		/* Set the SPI slaves select and characteristic control register */
 		divisor = ast_spi_calculate_divisor(host, spi->max_speed_hz);
@@ -208,14 +202,14 @@ fmc_spi_setup(struct spi_device *spi)
 	spi_ctrl |= SPI_CLK_DIV(divisor);
 
 /*  only support mode 0 (CPOL=0, CPHA=0) and cannot support mode 1 ~ mode 3 */
-	
+
 #if 0	
 	if (SPI_CPHA & spi->mode)
 		cpha = SPI_CPHA_1;
 	else
 		cpha = SPI_CPHA_0;
 #endif
-	
+
 //	if (SPI_CPOL & spi->mode) 
 //		spi_ctrl |= SPI_CPOL_1;
 //	else
@@ -233,7 +227,7 @@ fmc_spi_setup(struct spi_device *spi)
 
 	/* Configure SPI controller */	
 	writel(spi_ctrl, host->ctrl_reg);
-		
+
 //	printk("ctrl  %x, ", spi_ctrl);
 	return 0;
 }
@@ -257,7 +251,7 @@ static int fmc_spi_transfer(struct spi_device *spi, struct spi_message *msg)
 	writel(readl(host->ctrl_reg) | SPI_CMD_USER_MODE, host->ctrl_reg);
 	msg->actual_length = 0;
 	msg->status = 0;
-	
+
 	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
 			dev_dbg(host->dev,
 					"xfer[%d] %p: width %d, len %u, tx %p/%08x, rx %p/%08x\n",
@@ -271,11 +265,11 @@ static int fmc_spi_transfer(struct spi_device *spi, struct spi_message *msg)
 
 
 		if(tx_buf != 0) {
-#if 0			
+#if 0
 			printk("tx : ");
 			if(xfer->len > 10) {
 				for(i=0;i<10;i++) 
-					printk("%x ",tx_buf[i]);				
+					printk("%x ",tx_buf[i]);
 			} else {
 				for(i=0;i<xfer->len;i++) 
 					printk("%x ",tx_buf[i]);
@@ -292,7 +286,7 @@ static int fmc_spi_transfer(struct spi_device *spi, struct spi_message *msg)
 			for(i=0;i<xfer->len;i++) {
 				rx_buf[i] = readb(host->buff[host->spi_dev->chip_select]);
 			}
-#if 0			
+#if 0
 			printk("rx : ");
 			if(xfer->len > 10) {
 				for(i=0;i<10;i++) 
@@ -302,7 +296,7 @@ static int fmc_spi_transfer(struct spi_device *spi, struct spi_message *msg)
 					printk(" %x",rx_buf[i]);
 			}
 			printk("\n");
-#endif			
+#endif
 		}
 		dev_dbg(host->dev,"old msg->actual_length %d , +len %d \n",msg->actual_length, xfer->len);
 		msg->actual_length += xfer->len;
@@ -321,8 +315,8 @@ static int fmc_spi_transfer(struct spi_device *spi, struct spi_message *msg)
 	spin_unlock_irqrestore(&host->lock, flags);
 
 	return 0;
-	
 }
+
 static void fmc_spi_cleanup(struct spi_device *spi)
 {
         struct fmc_spi_host     *host = spi_master_get_devdata(spi->master);
@@ -373,14 +367,14 @@ static int fmc_spi_probe(struct platform_device *pdev)
 	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH |
 			    SPI_RX_DUAL | SPI_TX_DUAL;
 	master->bits_per_word_mask = SPI_BPW_MASK(8);
-	
+
 	 master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH | SPI_RX_DUAL;
 //	 master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 16);
 	 master->dev.of_node = pdev->dev.of_node;
 	 master->bus_num = pdev->id;
 //	 master->num_chipselect = master->dev.of_node ? 0 : 4;
 	 platform_set_drvdata(pdev, master);
-	
+
 	host = spi_master_get_devdata(master);
 	memset(host, 0, sizeof(struct fmc_spi_host));
 
@@ -396,7 +390,7 @@ static int fmc_spi_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "cannot remap register\n");
 		err = -EIO;
 		goto err_no_io_res;
-	}	
+	}
 
 	clk = devm_clk_get(&pdev->dev, NULL);
 	if (IS_ERR(clk)) {
@@ -408,10 +402,10 @@ static int fmc_spi_probe(struct platform_device *pdev)
 	dev_dbg(&pdev->dev, "remap phy %x, virt %x \n",(u32)res->start, (u32)host->base);
 
 	host->master = spi_master_get(master);
-	
+
 	if(of_property_read_u8(pdev->dev.of_node, "number_of_chip_select", &host->master->num_chipselect))
 		goto err_register;
-	
+
 	for(cs_num = 0; cs_num < host->master->num_chipselect ; cs_num++) {
 		res = platform_get_resource(pdev, IORESOURCE_MEM, cs_num + 1);
 		if (!res) {
@@ -424,11 +418,11 @@ static int fmc_spi_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "cannot remap buffer \n");
 			err = -EIO;
 			goto err_no_io_res;
-		}		
+		}
 
 		dev_dbg(&pdev->dev, "remap io phy %x, virt %x \n",(u32)res->start, (u32)host->buff[cs_num]);	
 	}
-	
+
 	host->master->bus_num = pdev->id;
 	host->dev = &pdev->dev;
 
@@ -481,7 +475,7 @@ fmc_spi_remove(struct platform_device *pdev)
 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	release_mem_region(res0->start, res0->end - res0->start + 1);
 	iounmap(host->base);
-	iounmap(host->buff);		
+	iounmap(host->buff);
 
 	platform_set_drvdata(pdev, NULL);
 	spi_unregister_master(host->master);
@@ -514,10 +508,10 @@ static const struct of_device_id fmc_spi_of_match[] = {
 static struct platform_driver fmc_spi_driver = {
 	.probe = fmc_spi_probe,
 	.remove = fmc_spi_remove,
-#ifdef CONFIG_PM		
+#ifdef CONFIG_PM
 	.suspend = fmc_spi_suspend,
 	.resume = fmc_spi_resume,
-#endif	
+#endif
 	.driver = {
 		.name		= KBUILD_MODNAME,
 		.of_match_table = fmc_spi_of_match,

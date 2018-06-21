@@ -59,7 +59,7 @@ o 80 0
 #include <asm/io.h>
 #include <asm/uaccess.h>
 
-#include <mach/ast-lpc.h>
+#include "ast-lpc.h"
 
 #define CONFIG_AST_SNOOP_DEBUG
 

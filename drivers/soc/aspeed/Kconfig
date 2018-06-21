@@ -3,12 +3,12 @@
 #
 
 if ARCH_ASPEED
-menuconfig AST_MISC
+menuconfig ASPEED_MISC
 	tristate 'ASPEED SOCs MISC drivers'
 	help
 	  We can select misc drivers for ASPEED SOC in this sub-function.
 
-if AST_MISC
+if ASPEED_MISC
 
 config AST_VGAVIDEO
 	tristate "VGA Video Engine driver"
@@ -62,8 +62,8 @@ config AST_IPMI_BT
 
 endif 
 
-config AST_ESPI
-	tristate "AST eSPI"
+config ASPEED_ESPI
+	tristate "ASPEED eSPI"
 
 if AST_ESPI
 
@@ -78,7 +78,7 @@ config ADC_CAT9883
 	help
 	  Driver for CAT 9883
 
-config AST_PECI
+config ASPEED_PECI
 	tristate "ASPEED PECI Controller"
 	default n
 	help
@@ -101,20 +101,20 @@ config AST_JPEG
 	help
 	  Driver for JPEG Controller
 
-config AST_JTAG
+config ASPEED_JTAG
 	tristate "ASPEED JTAG Controller"
 	default n
 	help
 	  Driver for JTAG Controller
 
-config AST_MCTP
+config ASPEED_MCTP
 	tristate "ASPEED MCTP Driver"
 	depends on !(PCI)
 	default n
 	help
 	  Driver for MCTP
 
-config AST_XDMA
+config ASPEED_XDMA
 	tristate "ASPEED XDMA Driver"
 	default n
 	help

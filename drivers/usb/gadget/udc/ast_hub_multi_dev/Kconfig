@@ -1,0 +1,9 @@
+config AST_USB_HUB_MULTI_DEV
+        boolean "ASpeed AST Multi Hub device support"
+	depends on ARCH_ASPEED
+        select USB_GADGET_SELECTED
+        select USB_GADGET_DUALSPEED
+	help
+		This option adds the HUB and multi devices behind
+		the HUB for the AST2500.
+		

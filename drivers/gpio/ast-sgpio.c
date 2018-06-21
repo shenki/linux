@@ -330,7 +330,18 @@ static struct irq_chip ast_sgpio_irq_chip = {
 	.irq_set_type		= ast_sgpio_irq_type,
 };
 
-/*---------------------------------------------------------------------*/
+/*---------------------------------------------------------------------
+	Read / Write is not consistence in clock division write width is 31~16, 
+	read width is 31~17, and highest bit is miss
+	It only affects when reading the div (0x1e780254 bit 31 ~ 16) back.
+	Writing and operating are following datasheet. Bit 31 ~ 16 belongs to clock div.
+	However when trying to read clock div back, it locates at bit 31 ~ 17, left-shift 1 bit like you found out.
+
+	For example, if div is written by 2, that means writing 0x2 to 0x1e780254 bit 31 ~ 16.
+	And SGPIO clock frequency is (frequency of PCLK) * 2 * (2 + 1).
+	Reading 0x1e780254, bit 31 ~ 16 will be 0x4, left-shift 1 bit of 0x2.
+*/
+
 static int 
 ast_sgpio_probe(struct platform_device *pdev)
 {

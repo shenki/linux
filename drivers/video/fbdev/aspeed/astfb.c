@@ -1298,12 +1298,13 @@ static int astfb_probe(struct platform_device *pdev)
 			return -ENOMEM;
 	}
 
+	sfb = info->par;
+
 	if(of_device_is_compatible(pdev->dev.of_node, "aspeed,ast-g5-gfx"))
 		sfb->ast_g5 = 1;
 	else 
 		sfb->ast_g5 = 0;
 
-	sfb = info->par;
 	sfb->info = info;
 
 	switch(dev->id) {
@@ -1440,7 +1441,7 @@ static int astfb_probe(struct platform_device *pdev)
 			return -ENOMEM;
 
 		info->fix.smem_start = fb_dma;
-		info->fix.smem_len = SZ_8M;
+		info->fix.smem_len = SZ_2M;
 
 	}
 
