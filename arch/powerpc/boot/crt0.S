@@ -80,7 +80,7 @@ p_base:	mflr	r10		/* r10 now points to runtime addr of p_base */
 	lwz	r9,4(r12)	/* get RELA pointer in r9 */
 	b	12f
 11:	addis	r8,r8,(-RELACOUNT)@ha
-	cmpwi	r8,RELACOUNT@l
+	cmpwi	r8,(RELACOUNT)@l
 	bne	12f
 	lwz	r0,4(r12)	/* get RELACOUNT value in r0 */
 12:	addi	r12,r12,8
@@ -165,7 +165,7 @@ p_base:	mflr	r10		/* r10 now points to runtime addr of p_base */
 	ld	r13,8(r11)       /* get RELA pointer in r13 */
 	b	11f
 10:	addis	r12,r12,(-RELACOUNT)@ha
-	cmpdi	r12,RELACOUNT@l
+	cmpdi	r12,(RELACOUNT)@l
 	bne	11f
 	ld	r8,8(r11)       /* get RELACOUNT value in r8 */
 11:	addi	r11,r11,16
