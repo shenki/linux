@@ -14,6 +14,9 @@ ccflags-$(CONFIG_PPC64) := $(NO_MINIMAL_TOC)
 
 obj-y			+= xmon.o nonstdio.o spr_access.o
 
+# Disable clang warning for using setjmp without setjmp.h header
+subdir-ccflags-y := $(call cc-disable-warning, builtin-requires-header) 
+
 ifdef CONFIG_XMON_DISASSEMBLY
 obj-y			+= ppc-dis.o ppc-opc.o
 obj-$(CONFIG_SPU_BASE)	+= spu-dis.o spu-opc.o
