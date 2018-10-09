@@ -22,7 +22,7 @@ struct addr_range {
 	unsigned long size;
 };
 
-#undef DEBUG
+#define DEBUG 1
 
 static struct addr_range prep_kernel(void)
 {
@@ -188,12 +188,22 @@ struct dt_ops dt_ops;
 struct console_ops console_ops;
 struct loader_info loader_info;
 
+static inline unsigned long mftb(void)
+{
+        unsigned long low;
+
+        asm volatile("mftb %0" : "=r" (low));
+
+        return low;
+}
+
 void start(void)
 {
 	struct addr_range vmlinux, initrd;
 	kernel_entry_t kentry;
 	unsigned long ft_addr = 0;
 	void *chosen;
+	long start, end;
 
 	/* Do this first, because malloc() could clobber the loader's
 	 * command line.  Only use the loader command line if a
@@ -215,9 +225,19 @@ void start(void)
 	if (!chosen)
 		chosen = create_node(NULL, "chosen");
 
+	start = mftb();
 	vmlinux = prep_kernel();
+	end = mftb();
+	printf("zImage decompressed in %lu tb\n",
+			end - start);
+
+	start = mftb();
 	initrd = prep_initrd(vmlinux, chosen,
 			     loader_info.initrd_addr, loader_info.initrd_size);
+	end = mftb();
+	printf("initrd decompressed in %lu tb\n",
+			end - start);
+
 	prep_cmdline(chosen);
 
 	printf("Finalizing device tree...");
