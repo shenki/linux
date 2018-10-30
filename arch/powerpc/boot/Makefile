@@ -31,6 +31,7 @@ else
     BOOTAR := $(AR)
 endif
 
+
 BOOTCFLAGS    := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		 -fno-strict-aliasing -O2 -msoft-float -mno-altivec -mno-vsx \
 		 -pipe -fomit-frame-pointer -fno-builtin -fPIC -nostdinc \
@@ -54,6 +55,13 @@ endif
 BOOTAFLAGS	:= -D__ASSEMBLY__ $(BOOTCFLAGS) -traditional -nostdinc
 
 BOOTARFLAGS	:= -cr$(KBUILD_ARFLAGS)
+
+ifdef CONFIG_CC_IS_CLANG
+BOOTCFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC) $(CLANG_PREFIX)
+BOOTAFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC) $(CLANG_PREFIX)
+BOOTCFLAGS += $(call cc-option, -no-integrated-as)
+BOOTAFLAGS += $(call cc-option, -no-integrated-as)
+endif
 
 ifdef CONFIG_DEBUG_INFO
 BOOTCFLAGS	+= -g
