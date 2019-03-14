@@ -1,0 +1,117 @@
+/dts-v1/;
+// SPDX-License-Identifier: GPL-2.0+
+#include <dt-bindings/clock/aspeed-clock.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "AST2600 ARM11 FPGA";
+	compatible = "aspeed,ast2600";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&vic>;
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 root=/dev/ram";
+	};
+
+	aliases {
+		serial0 = &uart5;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x20000000>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,arm1176jz-s";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	ahb {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+
+		mac0: ftgmac@1e660000 {
+			compatible = "aspeed,ast2600-mac", "faraday,ftgmac100";
+			reg = <0x1e660000 0x180>, <0x1e650000 0x4>;
+			#address-cells = <1>;
+                        #size-cells = <0>;
+
+			interrupts = <2>;
+		};
+
+		vic: interrupt-controller@1e6c0080 {
+			compatible = "aspeed,ast2500-vic";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			valid-sources = <0xfefff7ff 0x0807ffff>;
+			reg = <0x1e6c0080 0x80>;
+		};
+
+		syscon: syscon@1e6e2000 {
+			compatible = "aspeed,ast2500-scu", "syscon", "simple-mfd";
+			reg = <0x1e6e2000 0x1000>;
+			ranges = <0 0x1e6e2000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+
+			scu_ic: interrupt-controller@0 {
+				#interrupt-cells = <1>;
+				compatible = "aspeed,ast2600-scu-ic";
+				reg = <0x560 0x20>;
+				interrupts = <12>;
+				interrupt-controller;
+			};
+		};
+
+		timer: timer@1e782000 {
+			compatible = "aspeed,ast2600-timer";
+			reg = <0x1e782000 0x90>;
+			interrupts = <16 17 18 35 36 37 38 39>;
+			clocks = <&syscon ASPEED_CLK_APB>;
+			clock-names = "PCLK";
+		};
+
+		uart5: serial@1e784000 {
+			compatible = "ns16550a";
+			reg = <0x1e784000 0x1000>;
+			reg-shift = <2>;
+			interrupts = <8>;
+			clock-frequency = <1846154>;
+			no-loopback-test;
+		};
+
+		wdt1: watchdog@1e785000 {
+			compatible = "aspeed,ast2500-wdt";
+			reg = <0x1e785000 0x20>;
+			clocks = <&syscon ASPEED_CLK_APB>;
+		};
+
+		wdt2: watchdog@1e785020 {
+			compatible = "aspeed,ast2500-wdt";
+			reg = <0x1e785020 0x20>;
+			clocks = <&syscon ASPEED_CLK_APB>;
+		};
+
+		wdt3: watchdog@1e785040 {
+			compatible = "aspeed,ast2500-wdt";
+			reg = <0x1e785040 0x20>;
+			clocks = <&syscon ASPEED_CLK_APB>;
+			status = "disabled";
+		};
+	};
+
+};
