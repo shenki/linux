@@ -158,12 +158,60 @@ static void avic_mask_ack_irq(struct irq_data *d)
 		writel(sbit, vic->base + AVIC_EDGE_CLR + sidx * 4);
 }
 
+static int avic_set_type(struct irq_data *d, unsigned int type)
+{
+
+	struct aspeed_vic *vic = irq_data_get_irq_chip_data(d);
+	unsigned int sidx = d->hwirq >> 5;
+	unsigned int sbit = 1u << (d->hwirq & 0x1f);
+
+	/* Check if interrupt exists */
+	if (sidx > 1)
+		return -EPERM;
+
+	switch (type) {
+	case IRQ_TYPE_NONE:
+		break;
+	case IRQ_TYPE_EDGE_RISING:
+		writel(readl(vic->base + AVIC_INT_SENSE + sidx * 4) & ~sbit,
+		       vic->base + AVIC_INT_SENSE + sidx * 4);
+		writel(sbit, vic->base + AVIC_INT_EVENT + sidx * 4);
+		irq_set_handler(d->hwirq, handle_edge_irq);
+		break;
+	case IRQ_TYPE_EDGE_FALLING:
+		writel(readl(vic->base + AVIC_INT_SENSE + sidx * 4) & ~sbit,
+		       vic->base + AVIC_INT_SENSE + sidx * 4);
+		writel(readl(vic->base + AVIC_INT_EVENT + sidx * 4) & ~sbit,
+		       vic->base + AVIC_INT_EVENT + sidx * 4);
+		irq_set_handler(d->hwirq, handle_edge_irq);
+		break;
+	case IRQ_TYPE_EDGE_BOTH:
+		writel(readl(vic->base + AVIC_INT_SENSE + sidx * 4) & ~sbit,
+		       vic->base + AVIC_INT_SENSE + sidx * 4);
+		writel(readl(vic->base + AVIC_INT_DUAL_EDGE + sidx * 4) & ~sbit,
+		       vic->base + AVIC_INT_DUAL_EDGE + sidx * 4);
+		irq_set_handler(d->hwirq, handle_edge_irq);
+		break;
+	case IRQ_TYPE_LEVEL_HIGH:
+		writel(readl(vic->base + AVIC_INT_SENSE + sidx * 4) | sbit,
+		       vic->base + AVIC_INT_SENSE + sidx * 4);
+		writel(sbit, vic->base + AVIC_INT_EVENT + sidx * 4);
+		irq_set_handler(d->hwirq, handle_level_irq);
+		break;
+	default:
+		pr_err("No such irq type %d", type);
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static struct irq_chip avic_chip = {
 	.name		= "AVIC",
 	.irq_ack	= avic_ack_irq,
 	.irq_mask	= avic_mask_irq,
 	.irq_unmask	= avic_unmask_irq,
 	.irq_mask_ack	= avic_mask_ack_irq,
+	.irq_set_type	= avic_set_type,
 };
 
 static int avic_map(struct irq_domain *d, unsigned int irq,
