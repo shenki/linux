@@ -98,6 +98,7 @@ struct fttmr010 {
 	unsigned int tick_rate;
 	bool is_aspeed;
 	u32 t1_enable_val;
+	int aspeed_version;
 	struct clock_event_device clkevt;
 #ifdef CONFIG_ARM
 	struct delay_timer delay_timer;
@@ -276,6 +277,10 @@ static int fttmr010_timer_set_periodic(struct clock_event_device *evt)
 static irqreturn_t fttmr010_timer_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = dev_id;
+	struct fttmr010 *fttmr010 = to_fttmr010(evt);
+
+	if (fttmr010->aspeed_version == 6)
+		writel(0x1, fttmr010->base + TIMER_INTR_STATE);
 
 	evt->event_handler(evt);
 	return IRQ_HANDLED;
@@ -333,6 +338,10 @@ static int __init fttmr010_common_init(struct device_node *np, bool is_aspeed)
 		fttmr010->t1_enable_val = TIMER_1_CR_ASPEED_ENABLE |
 			TIMER_1_CR_ASPEED_INT;
 		fttmr010->is_aspeed = true;
+		if (of_device_is_compatible(np, "aspeed,ast2600-timer")) {
+			fttmr010->aspeed_version = 6;
+			printk("ast2600 timer\n");
+		}
 	} else {
 		fttmr010->t1_enable_val = TIMER_1_CR_ENABLE | TIMER_1_CR_INT;
 
