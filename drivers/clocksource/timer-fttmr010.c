@@ -36,6 +36,8 @@
 #define TIMER3_MATCH1		(0x28)
 #define TIMER3_MATCH2		(0x2c)
 #define TIMER_CR		(0x30)
+#define TIMER_CR3		(0x38)
+#define TIMER_CR_CLR		(0x3C)
 
 /*
  * Control register (TMC30) bit fields for fttmr010/gemini/moxart timers.
@@ -137,12 +139,20 @@ static int fttmr010_timer_set_next_event(unsigned long cycles,
 				       struct clock_event_device *evt)
 {
 	struct fttmr010 *fttmr010 = to_fttmr010(evt);
+	u32 cr3 = readl(fttmr010->base + TIMER_CR3);
 	u32 cr;
 
 	/* Stop */
+	readl(fttmr010->base + TIMER_CR);
 	cr = readl(fttmr010->base + TIMER_CR);
-	cr &= ~fttmr010->t1_enable_val;
-	writel(cr, fttmr010->base + TIMER_CR);
+
+	if (cr3 & 0x1) {
+		cr = fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR_CLR);
+	} else {
+		cr &= ~fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR);
+	}
 
 	if (fttmr010->is_aspeed) {
 		/*
@@ -167,12 +177,19 @@ static int fttmr010_timer_set_next_event(unsigned long cycles,
 static int fttmr010_timer_shutdown(struct clock_event_device *evt)
 {
 	struct fttmr010 *fttmr010 = to_fttmr010(evt);
+	u32 cr3 = readl(fttmr010->base + TIMER_CR3);
 	u32 cr;
 
 	/* Stop */
 	cr = readl(fttmr010->base + TIMER_CR);
-	cr &= ~fttmr010->t1_enable_val;
-	writel(cr, fttmr010->base + TIMER_CR);
+
+	if (cr3 & 0x1) {
+		cr = fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR_CLR);
+	} else {
+		cr &= ~fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR);
+	}
 
 	return 0;
 }
@@ -180,12 +197,21 @@ static int fttmr010_timer_shutdown(struct clock_event_device *evt)
 static int fttmr010_timer_set_oneshot(struct clock_event_device *evt)
 {
 	struct fttmr010 *fttmr010 = to_fttmr010(evt);
+	u32 cr3 = readl(fttmr010->base + TIMER_CR3);
 	u32 cr;
 
 	/* Stop */
 	cr = readl(fttmr010->base + TIMER_CR);
 	cr &= ~fttmr010->t1_enable_val;
-	writel(cr, fttmr010->base + TIMER_CR);
+
+	if(cr3 & 0x1) {
+		cr = fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR_CLR);
+	} else {
+		cr &= ~fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR);
+	}
+
 
 	/* Setup counter start from 0 or ~0 */
 	writel(0, fttmr010->base + TIMER1_COUNT);
@@ -208,12 +234,18 @@ static int fttmr010_timer_set_periodic(struct clock_event_device *evt)
 {
 	struct fttmr010 *fttmr010 = to_fttmr010(evt);
 	u32 period = DIV_ROUND_CLOSEST(fttmr010->tick_rate, HZ);
+	u32 cr3 = readl(fttmr010->base + TIMER_CR3);
 	u32 cr;
 
 	/* Stop */
 	cr = readl(fttmr010->base + TIMER_CR);
-	cr &= ~fttmr010->t1_enable_val;
-	writel(cr, fttmr010->base + TIMER_CR);
+	if(cr3 & 0x1) {
+		cr = fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR_CLR);
+	} else {
+		cr &= ~fttmr010->t1_enable_val;
+		writel(cr, fttmr010->base + TIMER_CR);
+	}
 
 	/* Setup timer to fire at 1/HZ intervals. */
 	if (fttmr010->is_aspeed) {
