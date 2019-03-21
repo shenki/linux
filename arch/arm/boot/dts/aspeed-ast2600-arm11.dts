@@ -77,6 +77,17 @@
 			};
 		};
 
+		fsim0: fsi@1e79b000 {
+			compatible = "aspeed,fsi-master-ast2600", "fsi-master";
+			reg = <0x1e79b000 0x94>;
+			status = "disabled";
+		};
+
+		fsim1: fsi@1e79b100 {
+			compatible = "aspeed,fsi-master-ast2600", "fsi-master";
+			reg = <0x1e79b100 0x94>;
+		};
+
 		timer: timer@1e782000 {
 			compatible = "aspeed,ast2600-timer";
 			reg = <0x1e782000 0x90>;
