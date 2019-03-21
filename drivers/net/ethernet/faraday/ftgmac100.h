@@ -22,6 +22,67 @@
 #ifndef __FTGMAC100_H
 #define __FTGMAC100_H
 
+struct ftgmac100 {
+	/* Registers */
+	void __iomem *base;
+	void __iomem *mdio_base;
+	int aspeed_version;
+	/* Rx ring */
+	unsigned int rx_q_entries;
+	struct ftgmac100_rxdes *rxdes;
+	dma_addr_t rxdes_dma;
+	struct sk_buff **rx_skbs;
+	unsigned int rx_pointer;
+	u32 rxdes0_edorr_mask;
+
+	/* Tx ring */
+	unsigned int tx_q_entries;
+	struct ftgmac100_txdes *txdes;
+	dma_addr_t txdes_dma;
+	struct sk_buff **tx_skbs;
+	unsigned int tx_clean_pointer;
+	unsigned int tx_pointer;
+	u32 txdes0_edotr_mask;
+
+	/* Used to signal the reset task of ring change request */
+	unsigned int new_rx_q_entries;
+	unsigned int new_tx_q_entries;
+
+	/* Scratch page to use when rx skb alloc fails */
+	void *rx_scratch;
+	dma_addr_t rx_scratch_dma;
+
+	/* Component structures */
+	struct net_device *netdev;
+	struct device *dev;
+	struct ncsi_dev *ndev;
+	struct napi_struct napi;
+	struct work_struct reset_task;
+	struct mii_bus *mii_bus;
+	struct clk *clk;
+
+	/* Link management */
+	int cur_speed;
+	int cur_duplex;
+	bool use_ncsi;
+
+	/* Multicast filter settings */
+	u32 maht0;
+	u32 maht1;
+
+	/* Flow control settings */
+	bool tx_pause;
+	bool rx_pause;
+	bool aneg_pause;
+
+	/* Misc */
+	bool need_mac_restart;
+	bool is_aspeed;
+
+	struct phy_device *phydev;
+	struct device_node *phy_node;
+};
+
 #define FTGMAC100_OFFSET_ISR		0x00
 #define FTGMAC100_OFFSET_IER		0x04
 #define FTGMAC100_OFFSET_MAC_MADR	0x08
