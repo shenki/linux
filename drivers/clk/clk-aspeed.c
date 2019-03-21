@@ -725,6 +725,8 @@ static void __init aspeed_cc_init(struct device_node *np)
 		aspeed_ast2400_cc(map);
 	else if (of_device_is_compatible(np, "aspeed,ast2500-scu"))
 		aspeed_ast2500_cc(map);
+	else if (of_device_is_compatible(np, "aspeed,ast2600-scu"))
+		aspeed_ast2500_cc(map);
 	else
 		pr_err("unknown platform, failed to add clocks\n");
 
@@ -733,5 +735,6 @@ static void __init aspeed_cc_init(struct device_node *np)
 	if (ret)
 		pr_err("failed to add DT provider: %d\n", ret);
 };
+CLK_OF_DECLARE_DRIVER(aspeed_cc_g6, "aspeed,ast2600-scu", aspeed_cc_init);
 CLK_OF_DECLARE_DRIVER(aspeed_cc_g5, "aspeed,ast2500-scu", aspeed_cc_init);
 CLK_OF_DECLARE_DRIVER(aspeed_cc_g4, "aspeed,ast2400-scu", aspeed_cc_init);
