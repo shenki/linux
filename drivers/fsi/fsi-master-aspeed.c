@@ -318,6 +318,8 @@ static int fsi_master_aspeed_probe(struct platform_device *pdev)
 
 	/* SCU enable */
 	scu = syscon_regmap_lookup_by_compatible("aspeed,ast2600-scu");
+	if (IS_ERR(scu))
+		return PTR_ERR(scu);
 	regmap_write(scu, 0x94, 0xffffffff); // SCU     - clk enable
 	regmap_write(scu, 0x54, 0xffffffff); // SCU[27] - reset
 
