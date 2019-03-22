@@ -147,7 +147,7 @@ static u32 opb_read(void __iomem *base, uint32_t addr, size_t size)
 	uint32_t result;
 
 	/* TODO: implement other sizes, see 0x18 */
-	BUG_ON(size != 4);
+	WARN_ON(size != 4);
 
 	writel(0x1, base + OPB0_SELECT);
 	writel(CMD_READ, base + OPB0_RW);
