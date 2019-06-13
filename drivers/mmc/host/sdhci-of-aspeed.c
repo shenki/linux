@@ -1,14 +1,11 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * ASPEED Secure Digital Host Controller Interface.
  * Copyright (C) ASPEED Technology Inc.
  * Ryan Chen <ryan_chen@aspeedtech.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
- * your option) any later version.
- *
+ * Copyright 2019 IBM Corp.
+  *
  */
 
 #include <linux/dma-mapping.h>
@@ -18,9 +15,19 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
-#include <linux/mmc/sdhci-aspeed-data.h>
 #include <linux/reset.h>
+#include <linux/regmap.h>
+#include <linux/mfd/syscon.h>
+
 #include "sdhci-pltfm.h"
+
+#define SDIO_GEN_INFO	0x00
+#define  ASPEED_SDHCI_S0MMC8                      BIT(24)
+
+struct sdhci_aspeed {
+	struct clk *extclk;
+	struct regmap *regmap;
+};
 
 static void sdhci_aspeed_set_clock(struct sdhci_host *host, unsigned int clock)
 {
@@ -69,26 +76,26 @@ out:
 static void sdhci_aspeed_set_bus_width(struct sdhci_host *host, int width)
 {
 	struct sdhci_pltfm_host *pltfm_priv = sdhci_priv(host);
-	struct aspeed_sdhci_irq *sdhci_irq = sdhci_pltfm_priv(pltfm_priv);
+	struct sdhci_aspeed *sdhci_aspeed = sdhci_pltfm_priv(pltfm_priv);
+	u8 ctrl;
+	bool mode = width == MMC_BUS_WIDTH_8 ? ASPEED_SDHCI_S0MMC8 : 0;
 
-	u8 ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
+	/* Set/clear 8 bit mode */
+	regmap_update_bits(sdhci_aspeed->regmap, SDIO_GEN_INFO,
+			ASPEED_SDHCI_S0MMC8, mode);
 
-	if (sdhci_irq->regs) {
-		if (width == MMC_BUS_WIDTH_8)
-			aspeed_sdhci_set_8bit_mode(sdhci_irq, 1);
-		else
-			aspeed_sdhci_set_8bit_mode(sdhci_irq, 0);
-	}
+	/* Set/clear 1 or 4 bit mode */
+	ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
+
 	if (width == MMC_BUS_WIDTH_4)
 		ctrl |= SDHCI_CTRL_4BITBUS;
 	else
 		ctrl &= ~SDHCI_CTRL_4BITBUS;
 
 	sdhci_writeb(host, ctrl, SDHCI_HOST_CONTROL);
-
 }
 
-static struct sdhci_ops  sdhci_aspeed_ops = {
+static struct sdhci_ops sdhci_aspeed_ops = {
 	.set_clock = sdhci_aspeed_set_clock,
 	.get_max_clock = sdhci_pltfm_clk_get_max_clock,
 	.set_bus_width = sdhci_aspeed_set_bus_width,
@@ -106,34 +113,48 @@ static struct sdhci_pltfm_data sdhci_aspeed_pdata = {
 static int sdhci_aspeed_probe(struct platform_device *pdev)
 {
 	struct sdhci_host *host;
-	struct device_node *pnode;
-	struct device_node *np = pdev->dev.of_node;
 	struct sdhci_pltfm_host *pltfm_host;
-	struct aspeed_sdhci_irq *sdhci_irq;
-	struct clk *clk;
+	struct sdhci_aspeed *sdhci_aspeed;
 
 	int ret;
 
-	host = sdhci_pltfm_init(pdev, &sdhci_aspeed_pdata, sizeof(struct aspeed_sdhci_irq));
+	host = sdhci_pltfm_init(pdev, &sdhci_aspeed_pdata,
+			sizeof(*sdhci_aspeed));
 	if (IS_ERR(host))
 		return PTR_ERR(host);
 
 	pltfm_host = sdhci_priv(host);
-	sdhci_irq = sdhci_pltfm_priv(pltfm_host);
+	sdhci_aspeed = sdhci_pltfm_priv(pltfm_host);
 
 	sdhci_get_of_property(pdev);
 
-	clk = devm_clk_get(&pdev->dev, "sdclk_ext");
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
-	clk_prepare_enable(clk);
+	sdhci_aspeed->regmap = syscon_regmap_lookup_by_compatible(
+			"aspeed,aspeed-sdhci-irq");
+	if (IS_ERR(sdhci_aspeed->regmap)) {
+		dev_err(&pdev->dev, "Unable find sdhci syscon\n");
+		ret = PTR_ERR(sdhci_aspeed->regmap);
+		goto err_pltfm_free;
+	}
 
-	clk = devm_clk_get(&pdev->dev, "sdclk");
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
-	clk_prepare_enable(clk);
+	sdhci_aspeed->extclk = devm_clk_get(&pdev->dev, "sdclk_ext");
+	if (IS_ERR(sdhci_aspeed->extclk))
+		return PTR_ERR(sdhci_aspeed->extclk);
 
-	pltfm_host->clk = clk;
+	pltfm_host->clk = devm_clk_get(&pdev->dev, "sdclk");
+	if (IS_ERR(pltfm_host->clk))
+		return PTR_ERR(pltfm_host->clk);
+
+	ret = clk_prepare_enable(sdhci_aspeed->extclk);
+	if (ret) {
+		dev_err(&pdev->dev, "Unable to enable sdclk_ext\n");
+		goto err_pltfm_free;
+	}
+
+	clk_prepare_enable(pltfm_host->clk);
+	if (ret) {
+		dev_err(&pdev->dev, "Unable to enable sdclk\n");
+		goto err_clk;
+	}
 
 	ret = mmc_of_parse(host->mmc);
 	if (ret)
@@ -146,6 +167,10 @@ static int sdhci_aspeed_probe(struct platform_device *pdev)
 	return 0;
 
 err_sdhci_add:
+	clk_disable_unprepare(pltfm_host->clk);
+err_clk:
+	clk_disable_unprepare(sdhci_aspeed->extclk);
+err_pltfm_free:
 	sdhci_pltfm_free(pdev);
 	return ret;
 }
