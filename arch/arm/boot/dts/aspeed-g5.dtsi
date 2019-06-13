@@ -543,7 +543,7 @@
 
 	sdhci_ic: interrupt-controller@0 {
 		#interrupt-cells = <1>;
-		compatible = "aspeed,aspeed-sdhci-irq";
+		compatible = "aspeed,aspeed-sdhci-irq", "syscon";
 		reg = <0x0 0x100>;
 		interrupts = <26>;
 		interrupt-controller;
