@@ -128,6 +128,8 @@ static int sdhci_aspeed_probe(struct platform_device *pdev)
 
 	sdhci_get_of_property(pdev);
 
+	printk("%s %d\n", __func__, __LINE__);
+
 	sdhci_aspeed->regmap = syscon_regmap_lookup_by_compatible(
 			"aspeed,aspeed-sdhci-irq");
 	if (IS_ERR(sdhci_aspeed->regmap)) {
@@ -135,14 +137,19 @@ static int sdhci_aspeed_probe(struct platform_device *pdev)
 		ret = PTR_ERR(sdhci_aspeed->regmap);
 		goto err_pltfm_free;
 	}
+	printk("%s %d\n", __func__, __LINE__);
 
 	sdhci_aspeed->extclk = devm_clk_get(&pdev->dev, "sdclk_ext");
 	if (IS_ERR(sdhci_aspeed->extclk))
 		return PTR_ERR(sdhci_aspeed->extclk);
 
+	printk("%s %d\n", __func__, __LINE__);
+
 	pltfm_host->clk = devm_clk_get(&pdev->dev, "sdclk");
 	if (IS_ERR(pltfm_host->clk))
 		return PTR_ERR(pltfm_host->clk);
+
+	printk("%s %d\n", __func__, __LINE__);
 
 	ret = clk_prepare_enable(sdhci_aspeed->extclk);
 	if (ret) {
@@ -150,11 +157,14 @@ static int sdhci_aspeed_probe(struct platform_device *pdev)
 		goto err_pltfm_free;
 	}
 
-	clk_prepare_enable(pltfm_host->clk);
+	printk("%s %d\n", __func__, __LINE__);
+
+	ret = clk_prepare_enable(pltfm_host->clk);
 	if (ret) {
 		dev_err(&pdev->dev, "Unable to enable sdclk\n");
 		goto err_clk;
 	}
+	printk("%s %d\n", __func__, __LINE__);
 
 	ret = mmc_of_parse(host->mmc);
 	if (ret)
