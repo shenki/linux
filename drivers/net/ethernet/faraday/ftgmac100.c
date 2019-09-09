@@ -647,6 +647,9 @@ static bool ftgmac100_tx_complete_packet(struct ftgmac100 *priv)
 	if (ctl_stat & FTGMAC100_TXDES0_TXDMA_OWN)
 		return false;
 
+	if ((ctl_stat & ~(priv->txdes0_edotr_mask)) == 0)
+		return false;
+
 	skb = priv->tx_skbs[pointer];
 	netdev->stats.tx_packets++;
 	netdev->stats.tx_bytes += skb->len;
@@ -756,6 +759,9 @@ static netdev_tx_t ftgmac100_hard_start_xmit(struct sk_buff *skb,
 	pointer = priv->tx_pointer;
 	txdes = first = &priv->txdes[pointer];
 
+	if (le32_to_cpu(txdes->txdes0) & ~priv->txdes0_edotr_mask)
+		goto drop;
+
 	/* Setup it up with the packet head. Don't write the head to the
 	 * ring just yet
 	 */
@@ -787,6 +793,10 @@ static netdev_tx_t ftgmac100_hard_start_xmit(struct sk_buff *skb,
 		/* Setup descriptor */
 		priv->tx_skbs[pointer] = skb;
 		txdes = &priv->txdes[pointer];
+
+		if (le32_to_cpu(txdes->txdes0) & ~priv->txdes0_edotr_mask)
+			goto dma_err;
+
 		ctl_stat = ftgmac100_base_tx_ctlstat(priv, pointer);
 		ctl_stat |= FTGMAC100_TXDES0_TXDMA_OWN;
 		ctl_stat |= FTGMAC100_TXDES0_TXBUF_SIZE(len);
