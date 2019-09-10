@@ -52,3 +52,13 @@
 &fsim0 {
 	status = "okay";
 };
+
+&i2c0 {
+	status = "okay";
+
+	/* Place jumper on J52 for group 1 and J50 pin 1-2, J53 pin 1-2 */
+	adt7490@2e {
+		compatible = "adi,adt7490";
+		reg = <0x2e>;
+	};
+};
