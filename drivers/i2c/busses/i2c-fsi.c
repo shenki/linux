@@ -597,7 +597,7 @@ static int fsi_i2c_wait(struct fsi_i2c_port *port, struct i2c_msg *msg,
 			continue;
 		}
 
-		usleep_range(I2C_CMD_SLEEP_MIN_US, I2C_CMD_SLEEP_MAX_US);
+		udelay(I2C_CMD_SLEEP_MIN_US);
 	} while (time_after(start + timeout, jiffies));
 
 	return -ETIMEDOUT;
