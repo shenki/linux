@@ -492,18 +492,6 @@
 				};
 			};
 
-			peci: peci-bus@100000 {
-				cmd-timeout-ms = <1000>;
-				pull-down = <0>;
-				host-neg-bit-rate = <15>;
-				status = "okay";
-				intel-peci-dimmtemp@30 {
-					compatible = "intel,peci-client";
-					reg = <0x30>;
-					status = "okay";
-				};
-			};
-
 			spi0: spi@200000 {
 				cs-gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
 				status = "okay";
@@ -608,5 +596,18 @@
 
 		mux-reg-masks = <0x38 0x07>;
 		idle-states = <2>; /* Serial port mode 3 (takeover) */
+	};
+};
+
+&peci0 {
+	cmd-timeout-ms = <1000>;
+	pull-down = <0>;
+	host-neg-bit-rate = <15>;
+	status = "okay";
+
+	intel-peci-dimmtemp@30 {
+		compatible = "intel,peci-client";
+		reg = <0x30>;
+		status = "okay";
 	};
 };
