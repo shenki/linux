@@ -345,14 +345,11 @@
 				};
 			};
 
-			peci: peci-bus@100000 {
-				compatible = "nuvoton,npcm750-peci";
-				reg = <0x100000 0x200>;
+			peci: bus@100000 {
+				compatible = "simple-bus";
 				#address-cells = <1>;
-				#size-cells = <0>;
-				interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
-				clocks = <&clk NPCM7XX_CLK_APB3>;
-				status = "disabled";
+				#size-cells = <1>;
+				ranges = <0x0 0x100000 0x200>;
 			};
 
 			spi0: spi@200000 {
@@ -1255,5 +1252,17 @@
 			groups = "hgpio7";
 			function = "hgpio7";
 		};
+	};
+};
+
+&peci {
+	peci0: peci-bus@0 {
+		compatible = "nuvoton,npcm750-peci";
+		reg = <0x0 0x200>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&clk NPCM7XX_CLK_APB3>;
+		status = "disabled";
 	};
 };
