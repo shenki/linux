@@ -445,7 +445,7 @@ static int sbefifo_wait(struct sbefifo *sbefifo, bool up,
 
 	end_time = jiffies + timeout;
 	while (!time_after(jiffies, end_time)) {
-		cond_resched();
+	//	cond_resched();
 		rc = sbefifo_regr(sbefifo, addr, &sts);
 		if (rc < 0) {
 			dev_err(dev, "FSI error %d reading status register\n", rc);
