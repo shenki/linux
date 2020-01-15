@@ -4,6 +4,7 @@
 
 #include <linux/clk.h>
 #include <linux/delay.h>
+#include <linux/debugfs.h>
 #include <linux/fsi.h>
 #include <linux/io.h>
 #include <linux/mfd/syscon.h>
@@ -21,6 +22,7 @@ struct fsi_master_aspeed {
 	struct device		*dev;
 	void __iomem		*base;
 	struct clk		*clk;
+	struct dentry           *debugfs_dir;
 };
 
 #define to_fsi_master_aspeed(m) \
@@ -419,6 +421,50 @@ static int aspeed_master_init(struct fsi_master_aspeed *aspeed)
 	return 0;
 }
 
+static int fsi_master_aspeed_clock_debugfs_get(void *data, u64 *val)
+{
+       struct fsi_master_aspeed *aspeed = data;
+       __be32 out;
+       int rc;
+
+       rc = opb_readl(aspeed, ctrl_base, &out);
+       if (rc)
+               return rc;
+
+       *val = (be32_to_cpu(out) >> FSI_MMODE_CRS0SHFT) & FSI_MMODE_CRS0MASK;
+
+       return 0;
+}
+
+static int fsi_master_aspeed_clock_debugfs_set(void *data, u64 val)
+{
+       struct fsi_master_aspeed *aspeed = data;
+       u32 reg, rc;
+       __be32 raw;
+
+       if (val > 0x3ff)
+               return -EINVAL;
+
+       rc = opb_readl(aspeed, ctrl_base, &raw);
+       if (rc)
+               return rc;
+
+       reg = be32_to_cpu(raw);
+
+
+       reg &= ~(FSI_MMODE_CRS0MASK << FSI_MMODE_CRS0SHFT);
+       reg |= fsi_mmode_crs0(val);
+
+       rc = opb_writel(aspeed, ctrl_base, cpu_to_be32(reg));
+       if (rc)
+               return rc;
+
+       return 0;
+}
+DEFINE_DEBUGFS_ATTRIBUTE(fsi_master_aspeed_clock_debugfs_ops,
+                        fsi_master_aspeed_clock_debugfs_get,
+                        fsi_master_aspeed_clock_debugfs_set, "0x%llx\n");
+
 static int fsi_master_aspeed_probe(struct platform_device *pdev)
 {
 	struct fsi_master_aspeed *aspeed;
@@ -509,6 +555,11 @@ static int fsi_master_aspeed_probe(struct platform_device *pdev)
 	 * we're ready.
 	 */
 	get_device(&aspeed->master.dev);
+
+	aspeed->debugfs_dir = debugfs_create_dir("fsi-master-aspeed", NULL);
+        debugfs_create_file("clock_div", 0644, aspeed->debugfs_dir,
+                aspeed, &fsi_master_aspeed_clock_debugfs_ops);
+
 	return 0;
 
 err_release:
@@ -522,6 +573,8 @@ static int fsi_master_aspeed_remove(struct platform_device *pdev)
 
 	fsi_master_unregister(&aspeed->master);
 	clk_disable_unprepare(aspeed->clk);
+
+	debugfs_remove_recursive(aspeed->debugfs_dir);
 
 	return 0;
 }
