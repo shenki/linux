@@ -1089,6 +1089,11 @@
 	memory-region = <&flash_memory>;
 };
 
+&kcs4 {
+	compatible = "openbmc,mctp-lpc";
+	status = "okay";
+};
+
 &mac2 {
 	status = "okay";
 	pinctrl-names = "default";
