@@ -879,3 +879,8 @@
 	status = "okay";
 	memory-region = <&vga_memory>;
 };
+
+&kcs4 {
+	compatible = "openbmc,mctp-lpc";
+	status = "okay";
+};
