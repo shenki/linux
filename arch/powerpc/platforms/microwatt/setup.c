@@ -12,6 +12,8 @@
 #include <linux/of_platform.h>
 
 #include <asm/machdep.h>
+#include <asm/udbg.h>
+#include <asm/reg.h>
 #include <asm/time.h>
 #include <asm/xics.h>
 
@@ -40,5 +42,6 @@ define_machine(microwatt) {
 	.probe			= microwatt_probe,
 	.setup_arch		= microwatt_setup_arch,
 	.init_IRQ		= microwatt_init_IRQ,
+	.progress		= udbg_progress,
 	.calibrate_decr		= generic_calibrate_decr,
 };
