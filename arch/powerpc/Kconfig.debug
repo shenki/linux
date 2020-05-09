@@ -277,6 +277,12 @@ config PPC_EARLY_DEBUG_MEMCONS
 	  This console provides input and output buffers stored within the
 	  kernel BSS and should be safe to select on any system. A debugger
 	  can then be used to read kernel output or send input to the console.
+
+config PPC_EARLY_DEBUG_MICROWATT
+       bool "Microwatt potato UART"
+       help
+         Select this to enable early debugging using the potato UART
+	 included in the Microwatt SOC.
 endchoice
 
 config PPC_MEMCONS_OUTPUT_SIZE
