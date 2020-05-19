@@ -162,7 +162,7 @@ src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
 src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
 src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
 
-src-plat-$(CONFIG_PPC_MICROWATT) += microwatt.c
+src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
 
 src-wlib := $(sort $(src-wlib-y))
 src-plat := $(sort $(src-plat-y))
