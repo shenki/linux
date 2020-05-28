@@ -18,7 +18,7 @@
 _GLOBAL_TOC_KASAN(memcpy)
 BEGIN_FTR_SECTION
 #ifdef __LITTLE_ENDIAN__
-	cmpdi	cr7,r5,0
+	clrldi	r6,r5,60
 #else
 	std	r3,-STACKFRAMESIZE+STK_REG(R31)(r1)	/* save destination pointer for return value */
 #endif
@@ -29,13 +29,24 @@ FTR_SECTION_ELSE
 ALT_FTR_SECTION_END_IFCLR(CPU_FTR_VMX_COPY)
 #ifdef __LITTLE_ENDIAN__
 	/* dumb little-endian memcpy that will get replaced at runtime */
-	addi r9,r3,-1
-	addi r4,r4,-1
-	beqlr cr7
-	mtctr r5
-1:	lbzu r10,1(r4)
-	stbu r10,1(r9)
-	bdnz 1b
+	addi	r9,r3,-8
+	addi	r4,r4,-8
+	srdi.	r0,r5,4
+	beq	2f
+	mtctr	r0
+3:	ld	r10,8(r4)
+	std	r10,8(r9)
+	ldu	r10,16(r4)
+	stdu	r10,16(r9)
+	bdnz	3b
+2:	cmpwi	r6,0
+	beqlr
+	addi	r9,r9,7
+	addi	r4,r4,7
+	mtctr	r6
+1:	lbzu	r10,1(r4)
+	stbu	r10,1(r9)
+	bdnz	1b
 	blr
 #else
 	PPC_MTOCRF(0x01,r5)
