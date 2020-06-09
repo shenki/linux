@@ -117,6 +117,8 @@ void do_feature_fixups(unsigned long value, void *fixup_start, void *fixup_end)
 	}
 }
 
+#ifdef CONFIG_PPC_BARRIER_NOSPEC
+
 #ifdef CONFIG_PPC_BOOK3S_64
 static void do_stf_entry_barrier_fixups(enum stf_barrier_type types)
 {
@@ -527,7 +529,6 @@ void do_barrier_nospec_fixups_range(bool enable, void *fixup_start, void *fixup_
 
 #endif /* CONFIG_PPC_BOOK3S_64 */
 
-#ifdef CONFIG_PPC_BARRIER_NOSPEC
 void do_barrier_nospec_fixups(bool enable)
 {
 	void *start, *end;
@@ -537,7 +538,6 @@ void do_barrier_nospec_fixups(bool enable)
 
 	do_barrier_nospec_fixups_range(enable, start, end);
 }
-#endif /* CONFIG_PPC_BARRIER_NOSPEC */
 
 #ifdef CONFIG_PPC_FSL_BOOK3E
 void do_barrier_nospec_fixups_range(bool enable, void *fixup_start, void *fixup_end)
@@ -592,6 +592,10 @@ void do_btb_flush_fixups(void)
 		patch_btb_flush_section(start);
 }
 #endif /* CONFIG_PPC_FSL_BOOK3E */
+
+#else
+void do_rfi_flush_fixups(enum l1d_flush_type types) {}
+#endif /* CONFIG_PPC_BARRIER_NOSPEC */
 
 void do_lwsync_fixups(unsigned long value, void *fixup_start, void *fixup_end)
 {
