@@ -10,8 +10,10 @@
 #include <linux/init.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
+
 #include <asm/machdep.h>
 #include <asm/time.h>
+#include <asm/xics.h>
 
 static void __init microwatt_setup_arch(void)
 {
@@ -19,6 +21,7 @@ static void __init microwatt_setup_arch(void)
 
 static void __init microwatt_init_IRQ(void)
 {
+	xics_init();
 }
 
 static int __init microwatt_probe(void)
