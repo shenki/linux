@@ -1148,7 +1148,7 @@ static struct pmbus_sensor *pmbus_add_sensor(struct pmbus_data *data,
 
 static int pmbus_add_label(struct pmbus_data *data,
 			   const char *name, int seq,
-			   const char *lstring, int index)
+			   const char *lstring, int index, int phase)
 {
 	struct pmbus_label *label;
 	struct device_attribute *a;
@@ -1160,11 +1160,21 @@ static int pmbus_add_label(struct pmbus_data *data,
 	a = &label->attribute;
 
 	snprintf(label->name, sizeof(label->name), "%s%d_label", name, seq);
-	if (!index)
-		strncpy(label->label, lstring, sizeof(label->label) - 1);
-	else
-		snprintf(label->label, sizeof(label->label), "%s%d", lstring,
-			 index);
+	if (!index) {
+		if (phase == 0xff)
+			strncpy(label->label, lstring,
+				sizeof(label->label) - 1);
+		else
+			snprintf(label->label, sizeof(label->label), "%s.%d",
+				 lstring, phase);
+	} else {
+		if (phase == 0xff)
+			snprintf(label->label, sizeof(label->label), "%s%d",
+				 lstring, index);
+		else
+			snprintf(label->label, sizeof(label->label), "%s%d.%d",
+				 lstring, index, phase);
+	}
 
 	pmbus_dev_attr_init(a, label->name, 0444, pmbus_show_label, NULL);
 	return pmbus_add_attribute(data, &a->attr);
@@ -1266,7 +1276,7 @@ static int pmbus_add_sensor_attrs_one(struct i2c_client *client,
 
 	if (attr->label) {
 		ret = pmbus_add_label(data, name, index, attr->label,
-				      paged ? page + 1 : 0);
+				      paged ? page + 1 : 0, phase);
 		if (ret)
 			return ret;
 	}
