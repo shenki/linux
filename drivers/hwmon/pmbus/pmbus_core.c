@@ -1286,7 +1286,8 @@ static int pmbus_add_sensor_attrs_one(struct i2c_client *client,
 				attr->reg, attr->class, true, true, true);
 	if (!base)
 		return -ENOMEM;
-	if (attr->sfunc) {
+	/* No limit and alarm attributes for phase specific sensors */
+	if (attr->sfunc && phase == 0xff) {
 		ret = pmbus_add_limit_attrs(client, data, info, name,
 					    index, page, base, attr);
 		if (ret < 0)
