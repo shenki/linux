@@ -153,10 +153,14 @@ int pmbus_set_page(struct i2c_client *client, int page, int phase)
 	struct pmbus_data *data = i2c_get_clientdata(client);
 	int rv;
 
-	if (page < 0 || page == data->currpage)
+	if (page < 0)
 		return 0;
 
-	if (!(data->info->func[page] & PMBUS_PAGE_VIRTUAL)) {
+	if (!(data->info->func[page] & PMBUS_PAGE_VIRTUAL) &&
+	    data->info->pages > 1 && page != data->currpage) {
+		dev_dbg(&client->dev, "Want page %u, %u cached\n", page,
+			data->currpage);
+
 		rv = i2c_smbus_write_byte_data(client, PMBUS_PAGE, page);
 		if (rv < 0) {
 			rv = i2c_smbus_write_byte_data(client, PMBUS_PAGE,
@@ -175,8 +179,16 @@ int pmbus_set_page(struct i2c_client *client, int page, int phase)
 		if (rv != page)
 			return -EIO;
 	}
-
 	data->currpage = page;
+
+	if (data->info->phases[page] && data->currphase != phase &&
+	    !(data->info->func[page] & PMBUS_PHASE_VIRTUAL)) {
+		rv = i2c_smbus_write_byte_data(client, PMBUS_PHASE,
+					       phase);
+		if (rv)
+			return rv;
+	}
+	data->currphase = phase;
 
 	return 0;
 }
