@@ -49,6 +49,7 @@ struct pmbus_sensor {
 	char name[PMBUS_NAME_SIZE];	/* sysfs sensor name */
 	struct device_attribute attribute;
 	u8 page;		/* page number */
+	u8 phase;		/* phase number, 0xff for all phases */
 	u16 reg;		/* register */
 	enum pmbus_sensor_classes class;	/* sensor class */
 	bool update;		/* runtime sensor update needed */
@@ -109,6 +110,7 @@ struct pmbus_data {
 	int (*read_status)(struct i2c_client *client, int page);
 
 	u8 currpage;
+	u8 currphase;	/* current phase, 0xff for all */
 };
 
 struct pmbus_debugfs_entry {
