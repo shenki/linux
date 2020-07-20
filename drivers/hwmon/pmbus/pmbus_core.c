@@ -49,7 +49,6 @@ struct pmbus_sensor {
 	char name[PMBUS_NAME_SIZE];	/* sysfs sensor name */
 	struct device_attribute attribute;
 	u8 page;		/* page number */
-	u8 phase;		/* phase number, 0xff for all phases */
 	u16 reg;		/* register */
 	enum pmbus_sensor_classes class;	/* sensor class */
 	bool update;		/* runtime sensor update needed */
@@ -110,7 +109,6 @@ struct pmbus_data {
 	int (*read_status)(struct i2c_client *client, int page);
 
 	u8 currpage;
-	u8 currphase;	/* current phase, 0xff for all */
 };
 
 struct pmbus_debugfs_entry {
@@ -623,7 +621,7 @@ static struct pmbus_data *pmbus_update_device(struct device *dev)
 				sensor->data
 				    = _pmbus_read_word_data(client,
 							    sensor->page,
-							    sensor->phase,
+							    0xff,
 							    sensor->reg);
 		}
 		pmbus_clear_faults(client);
@@ -1105,8 +1103,7 @@ static int pmbus_add_boolean(struct pmbus_data *data,
 
 static struct pmbus_sensor *pmbus_add_sensor(struct pmbus_data *data,
 					     const char *name, const char *type,
-					     int seq, int page, int phase,
-					     int reg,
+					     int seq, int page, int reg,
 					     enum pmbus_sensor_classes class,
 					     bool update, bool readonly,
 					     bool convert)
@@ -1130,7 +1127,6 @@ static struct pmbus_sensor *pmbus_add_sensor(struct pmbus_data *data,
 		readonly = true;
 
 	sensor->page = page;
-	sensor->phase = phase;
 	sensor->reg = reg;
 	sensor->class = class;
 	sensor->update = update;
@@ -1150,7 +1146,7 @@ static struct pmbus_sensor *pmbus_add_sensor(struct pmbus_data *data,
 
 static int pmbus_add_label(struct pmbus_data *data,
 			   const char *name, int seq,
-			   const char *lstring, int index, int phase)
+			   const char *lstring, int index)
 {
 	struct pmbus_label *label;
 	struct device_attribute *a;
@@ -1162,21 +1158,11 @@ static int pmbus_add_label(struct pmbus_data *data,
 	a = &label->attribute;
 
 	snprintf(label->name, sizeof(label->name), "%s%d_label", name, seq);
-	if (!index) {
-		if (phase == 0xff)
-			strncpy(label->label, lstring,
-				sizeof(label->label) - 1);
-		else
-			snprintf(label->label, sizeof(label->label), "%s.%d",
-				 lstring, phase);
-	} else {
-		if (phase == 0xff)
-			snprintf(label->label, sizeof(label->label), "%s%d",
-				 lstring, index);
-		else
-			snprintf(label->label, sizeof(label->label), "%s%d.%d",
-				 lstring, index, phase);
-	}
+	if (!index)
+		strncpy(label->label, lstring, sizeof(label->label) - 1);
+	else
+		snprintf(label->label, sizeof(label->label), "%s%d", lstring,
+			 index);
 
 	pmbus_dev_attr_init(a, label->name, 0444, pmbus_show_label, NULL);
 	return pmbus_add_attribute(data, &a->attr);
@@ -1241,7 +1227,7 @@ static int pmbus_add_limit_attrs(struct i2c_client *client,
 	for (i = 0; i < nlimit; i++) {
 		if (pmbus_check_word_register(client, page, l->reg)) {
 			curr = pmbus_add_sensor(data, name, l->attr, index,
-						page, 0xff, l->reg, attr->class,
+						page, l->reg, attr->class,
 						attr->update || l->update,
 						false, true);
 			if (!curr)
@@ -1268,7 +1254,7 @@ static int pmbus_add_sensor_attrs_one(struct i2c_client *client,
 				      struct pmbus_data *data,
 				      const struct pmbus_driver_info *info,
 				      const char *name,
-				      int index, int page, int phase,
+				      int index, int page,
 				      const struct pmbus_sensor_attr *attr,
 				      bool paged)
 {
@@ -1278,16 +1264,15 @@ static int pmbus_add_sensor_attrs_one(struct i2c_client *client,
 
 	if (attr->label) {
 		ret = pmbus_add_label(data, name, index, attr->label,
-				      paged ? page + 1 : 0, phase);
+				      paged ? page + 1 : 0);
 		if (ret)
 			return ret;
 	}
-	base = pmbus_add_sensor(data, name, "input", index, page, phase,
-				attr->reg, attr->class, true, true, true);
+	base = pmbus_add_sensor(data, name, "input", index, page, attr->reg,
+				attr->class, true, true, true);
 	if (!base)
 		return -ENOMEM;
-	/* No limit and alarm attributes for phase specific sensors */
-	if (attr->sfunc && phase == 0xff) {
+	if (attr->sfunc) {
 		ret = pmbus_add_limit_attrs(client, data, info, name,
 					    index, page, base, attr);
 		if (ret < 0)
@@ -1357,25 +1342,10 @@ static int pmbus_add_sensor_attrs(struct i2c_client *client,
 				continue;
 			ret = pmbus_add_sensor_attrs_one(client, data, info,
 							 name, index, page,
-							 0xff, attrs, paged);
+							 attrs, paged);
 			if (ret)
 				return ret;
 			index++;
-			if (info->phases[page]) {
-				int phase;
-
-				for (phase = 0; phase < info->phases[page];
-				     phase++) {
-					if (!(info->pfunc[phase] & attrs->func))
-						continue;
-					ret = pmbus_add_sensor_attrs_one(client,
-						data, info, name, index, page,
-						phase, attrs, paged);
-					if (ret)
-						return ret;
-					index++;
-				}
-			}
 		}
 		attrs++;
 	}
@@ -1879,7 +1849,7 @@ static int pmbus_add_fan_ctrl(struct i2c_client *client,
 	struct pmbus_sensor *sensor;
 
 	sensor = pmbus_add_sensor(data, "fan", "target", index, page,
-				  PMBUS_VIRT_FAN_TARGET_1 + id, 0xff, PSC_FAN,
+				  PMBUS_VIRT_FAN_TARGET_1 + id, PSC_FAN,
 				  false, false, true);
 
 	if (!sensor)
@@ -1890,14 +1860,14 @@ static int pmbus_add_fan_ctrl(struct i2c_client *client,
 		return 0;
 
 	sensor = pmbus_add_sensor(data, "pwm", NULL, index, page,
-				  PMBUS_VIRT_PWM_1 + id, 0xff, PSC_PWM,
+				  PMBUS_VIRT_PWM_1 + id, PSC_PWM,
 				  false, false, true);
 
 	if (!sensor)
 		return -ENOMEM;
 
 	sensor = pmbus_add_sensor(data, "pwm", "enable", index, page,
-				  PMBUS_VIRT_PWM_ENABLE_1 + id, 0xff, PSC_PWM,
+				  PMBUS_VIRT_PWM_ENABLE_1 + id, PSC_PWM,
 				  true, false, false);
 
 	if (!sensor)
@@ -1939,7 +1909,7 @@ static int pmbus_add_fan_attributes(struct i2c_client *client,
 				continue;
 
 			if (pmbus_add_sensor(data, "fan", "input", index,
-					     page, pmbus_fan_registers[f], 0xff,
+					     page, pmbus_fan_registers[f],
 					     PSC_FAN, true, true, true) == NULL)
 				return -ENOMEM;
 
@@ -2539,8 +2509,6 @@ int pmbus_do_probe(struct i2c_client *client, const struct i2c_device_id *id,
 	if (pdata)
 		data->flags = pdata->flags;
 	data->info = info;
-	data->currpage = 0xff;
-	data->currphase = 0xfe;
 
 	ret = pmbus_init_common(client, data, info);
 	if (ret < 0)
