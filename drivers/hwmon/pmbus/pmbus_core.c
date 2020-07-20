@@ -1130,6 +1130,7 @@ static struct pmbus_sensor *pmbus_add_sensor(struct pmbus_data *data,
 		readonly = true;
 
 	sensor->page = page;
+	sensor->phase = phase;
 	sensor->reg = reg;
 	sensor->class = class;
 	sensor->update = update;
