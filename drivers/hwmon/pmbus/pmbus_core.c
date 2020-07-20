@@ -623,7 +623,7 @@ static struct pmbus_data *pmbus_update_device(struct device *dev)
 				sensor->data
 				    = _pmbus_read_word_data(client,
 							    sensor->page,
-							    0xff,
+							    sensor->phase,
 							    sensor->reg);
 		}
 		pmbus_clear_faults(client);
@@ -2511,6 +2511,8 @@ int pmbus_do_probe(struct i2c_client *client, const struct i2c_device_id *id,
 	if (pdata)
 		data->flags = pdata->flags;
 	data->info = info;
+	data->currpage = 0xff;
+	data->currphase = 0xfe;
 
 	ret = pmbus_init_common(client, data, info);
 	if (ret < 0)
