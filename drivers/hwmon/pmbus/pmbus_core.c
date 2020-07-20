@@ -1266,7 +1266,7 @@ static int pmbus_add_sensor_attrs_one(struct i2c_client *client,
 				      struct pmbus_data *data,
 				      const struct pmbus_driver_info *info,
 				      const char *name,
-				      int index, int page,
+				      int index, int page, int phase,
 				      const struct pmbus_sensor_attr *attr,
 				      bool paged)
 {
@@ -1354,7 +1354,7 @@ static int pmbus_add_sensor_attrs(struct i2c_client *client,
 				continue;
 			ret = pmbus_add_sensor_attrs_one(client, data, info,
 							 name, index, page,
-							 attrs, paged);
+							 0xff, attrs, paged);
 			if (ret)
 				return ret;
 			index++;
