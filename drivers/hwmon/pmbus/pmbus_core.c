@@ -1361,6 +1361,21 @@ static int pmbus_add_sensor_attrs(struct i2c_client *client,
 			if (ret)
 				return ret;
 			index++;
+			if (info->phases[page]) {
+				int phase;
+
+				for (phase = 0; phase < info->phases[page];
+				     phase++) {
+					if (!(info->pfunc[phase] & attrs->func))
+						continue;
+					ret = pmbus_add_sensor_attrs_one(client,
+						data, info, name, index, page,
+						phase, attrs, paged);
+					if (ret)
+						return ret;
+					index++;
+				}
+			}
 		}
 		attrs++;
 	}
