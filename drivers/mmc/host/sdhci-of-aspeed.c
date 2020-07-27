@@ -74,10 +74,6 @@ static void aspeed_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 	}
 	div >>= 1;
 
-	/* Aspeed forbids a clock div of 0 */
-	if (!div)
-		div = 1;
-
 	clk = div << SDHCI_DIVIDER_SHIFT;
 
 	sdhci_enable_clk(host, clk);
