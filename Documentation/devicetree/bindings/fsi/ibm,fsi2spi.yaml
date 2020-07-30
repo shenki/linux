@@ -24,6 +24,16 @@ properties:
     items:
       - description: FSI slave address
 
+patternProperties:
+  "^spi(@.*|-[0-9a-f])*$":
+    type: object
+
+    properties:
+      fsi2spi,restricted:
+        description: indicates the controller should not use looping in the
+          sequencer and therefore has a smaller maximum transfer size
+        type: boolean
+
 required:
   - compatible
   - reg
