@@ -756,7 +756,7 @@ static const struct genl_ops ncsi_ops[] = {
 	},
 };
 
-static struct genl_family ncsi_genl_family __ro_after_init = {
+static struct genl_family ncsi_genl_family = {
 	.name = "NCSI",
 	.version = 0,
 	.maxattr = NCSI_ATTR_MAX,
