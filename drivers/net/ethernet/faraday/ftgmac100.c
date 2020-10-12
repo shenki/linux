@@ -97,6 +97,7 @@ struct ftgmac100 {
 	int cur_duplex;
 	bool use_ncsi;
 
+
 	/* Multicast filter settings */
 	u32 maht0;
 	u32 maht1;
@@ -1902,7 +1903,10 @@ err_register_netdev:
 	clk_disable_unprepare(priv->rclk);
 	clk_disable_unprepare(priv->clk);
 err_ncsi_dev:
-	ftgmac100_destroy_mdio(netdev);
+	if (priv->mii_bus)
+		ftgmac100_destroy_mdio(netdev);
+	else if (netdev->phydev)
+		phy_disconnect(netdev->phydev);
 err_setup_mdio:
 	iounmap(priv->base);
 err_ioremap:
@@ -1921,6 +1925,12 @@ static int ftgmac100_remove(struct platform_device *pdev)
 	netdev = platform_get_drvdata(pdev);
 	priv = netdev_priv(netdev);
 
+	if (priv->ndev)
+		ncsi_unregister_dev(priv->ndev);
+	else if (netdev->phydev)
+		phy_disconnect(netdev->phydev);
+	else if (priv->mii_bus)
+		ftgmac100_destroy_mdio(netdev);
 	unregister_netdev(netdev);
 
 	clk_disable_unprepare(priv->rclk);
@@ -1931,12 +1941,9 @@ static int ftgmac100_remove(struct platform_device *pdev)
 	 */
 	cancel_work_sync(&priv->reset_task);
 
-	ftgmac100_destroy_mdio(netdev);
-
 	iounmap(priv->base);
 	release_resource(priv->res);
 
-	netif_napi_del(&priv->napi);
 	free_netdev(netdev);
 	return 0;
 }
