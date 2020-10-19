@@ -1325,6 +1325,12 @@ static int ftgmac100_poll(struct napi_struct *napi, int budget)
 	 * after an RX overflow
 	 */
 	if (unlikely(priv->need_mac_restart)) {
+		/* Clear status again */
+		u32 reg = ioread32(priv->base + FTGMAC100_OFFSET_ISR);
+		iowrite32(reg & FTGMAC100_INT_BAD,
+			  priv->base + FTGMAC100_OFFSET_ISR);
+		ioread32(priv->base + FTGMAC100_OFFSET_ISR);
+
 		ftgmac100_start_hw(priv);
 		priv->need_mac_restart = false;
 
