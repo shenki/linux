@@ -126,7 +126,8 @@ static irqreturn_t aspeed_gfx_irq_handler(int irq, void *data)
 
 	if (reg & CRT_CTRL_VERTICAL_INTR_STS) {
 		drm_crtc_handle_vblank(&priv->pipe.crtc);
-		writel(reg, priv->base + CRT_CTRL1);
+		/* TODO */
+		writel(CRT_CTRL_VERTICAL_INTR_STS, priv->base + CRT_STATUS);
 		return IRQ_HANDLED;
 	}
 
