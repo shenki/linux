@@ -7,7 +7,7 @@
 
 /dts-v1/;
 / {
-	compatible = "opencores,or1ksim";
+	compatible = "opencores,or1klitex";
 	#address-cells = <1>;
 	#size-cells = <1>;
 	interrupt-parent = <&pic>;
