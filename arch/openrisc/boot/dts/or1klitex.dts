@@ -53,11 +53,11 @@
 		reg = <0xe0000000 0xc>;
 	};
 
-	mac0: mac@e0006000 {
+	mac0: mac@e0004800 {
 		compatible = "litex,liteeth";
-		reg = <0xe0006000 0x7c
-		       0xe0005800 0x0a
-		       0xb0000000 0x2000>;
+		reg = <0xe0004800 0x7c
+		       0xe0004000 0x0a
+		       0x80000000 0x2000>;
 		tx-fifo-depth = <2>;
 		rx-fifo-depth = <2>;
 		interrupts = <2>;
