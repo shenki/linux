@@ -51,7 +51,6 @@
 	soc_ctrl0: soc_controller@e0000000 {
 		compatible = "litex,soc-controller";
 		reg = <0xe0000000 0xc>;
-		status = "okay";
 	};
 
 	mac0: mac@e0006000 {
