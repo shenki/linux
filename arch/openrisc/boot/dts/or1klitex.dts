@@ -6,6 +6,9 @@
  */
 
 /dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+
 / {
 	compatible = "opencores,or1klitex";
 	#address-cells = <1>;
@@ -32,6 +35,32 @@
 			compatible = "opencores,or1200-rtlsvn481";
 			reg = <0>;
 			clock-frequency = <100000000>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		ld0 {
+			label = "arty:green:ld0";
+			linux,default-trigger = "heartbeat";
+			gpios = <&green_led_gpios 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		ld1 {
+			label = "arty:green:ld1";
+			gpios = <&green_led_gpios 1 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		ld2 {
+			label = "arty:green:ld2";
+			gpios = <&green_led_gpios 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		ld3 {
+			label = "arty:green:ld3";
+			gpios = <&green_led_gpios 3 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -63,4 +92,13 @@
 		interrupts = <2>;
 	};
 
+	green_led_gpios: gpio@e0005000 {
+		compatible = "wd,mbl-gpio", "basic-mmio-gpio";
+		reg = <0xe0005000 0x1>;
+		reg-names = "dat";
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-line-names = "ld0", "ld1", "ld2", "ld3", "", "", "", "";
+	};
 };
