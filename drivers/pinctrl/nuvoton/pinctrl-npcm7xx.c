@@ -503,6 +503,15 @@ static const int lkgpo2_pins[] = { 9 };
 
 static const int nprd_smi_pins[] = { 190 };
 
+static const int hgpio0_pins[] = { 20 };
+static const int hgpio1_pins[] = { 21 };
+static const int hgpio2_pins[] = { 22 };
+static const int hgpio3_pins[] = { 23 };
+static const int hgpio4_pins[] = { 24 };
+static const int hgpio5_pins[] = { 25 };
+static const int hgpio6_pins[] = { 59 };
+static const int hgpio7_pins[] = { 60 };
+
 /*
  * pin:	     name, number
  * group:    name, npins,   pins
@@ -630,6 +639,14 @@ struct npcm7xx_group {
 	NPCM7XX_GRP(lkgpo1), \
 	NPCM7XX_GRP(lkgpo2), \
 	NPCM7XX_GRP(nprd_smi), \
+	NPCM7XX_GRP(hgpio0), \
+	NPCM7XX_GRP(hgpio1), \
+	NPCM7XX_GRP(hgpio2), \
+	NPCM7XX_GRP(hgpio3), \
+	NPCM7XX_GRP(hgpio4), \
+	NPCM7XX_GRP(hgpio5), \
+	NPCM7XX_GRP(hgpio6), \
+	NPCM7XX_GRP(hgpio7), \
 	\
 
 enum {
@@ -773,6 +790,14 @@ NPCM7XX_SFUNC(lkgpo0);
 NPCM7XX_SFUNC(lkgpo1);
 NPCM7XX_SFUNC(lkgpo2);
 NPCM7XX_SFUNC(nprd_smi);
+NPCM7XX_SFUNC(hgpio0);
+NPCM7XX_SFUNC(hgpio1);
+NPCM7XX_SFUNC(hgpio2);
+NPCM7XX_SFUNC(hgpio3);
+NPCM7XX_SFUNC(hgpio4);
+NPCM7XX_SFUNC(hgpio5);
+NPCM7XX_SFUNC(hgpio6);
+NPCM7XX_SFUNC(hgpio7);
 
 /* Function names */
 static struct npcm7xx_func npcm7xx_funcs[] = {
@@ -891,6 +916,14 @@ static struct npcm7xx_func npcm7xx_funcs[] = {
 	NPCM7XX_MKFUNC(lkgpo1),
 	NPCM7XX_MKFUNC(lkgpo2),
 	NPCM7XX_MKFUNC(nprd_smi),
+	NPCM7XX_MKFUNC(hgpio0),
+	NPCM7XX_MKFUNC(hgpio1),
+	NPCM7XX_MKFUNC(hgpio2),
+	NPCM7XX_MKFUNC(hgpio3),
+	NPCM7XX_MKFUNC(hgpio4),
+	NPCM7XX_MKFUNC(hgpio5),
+	NPCM7XX_MKFUNC(hgpio6),
+	NPCM7XX_MKFUNC(hgpio7),
 };
 
 #define NPCM7XX_PINCFG(a, b, c, d, e, f, g, h, i, j, k) \
@@ -1187,12 +1220,12 @@ static const struct pinctrl_pin_desc npcm7xx_pins[] = {
 	PINCTRL_PIN(17, "GPIO17/PSPI2DI/SMB4DEN"),
 	PINCTRL_PIN(18, "GPIO18/PSPI2D0/SMB4BSDA"),
 	PINCTRL_PIN(19, "GPIO19/PSPI2CK/SMB4BSCL"),
-	PINCTRL_PIN(20, "GPIO20/SMB4CSDA/SMB15SDA"),
-	PINCTRL_PIN(21, "GPIO21/SMB4CSCL/SMB15SCL"),
-	PINCTRL_PIN(22, "GPIO22/SMB4DSDA/SMB14SDA"),
-	PINCTRL_PIN(23, "GPIO23/SMB4DSCL/SMB14SCL"),
-	PINCTRL_PIN(24, "GPIO24/IOXHDO"),
-	PINCTRL_PIN(25, "GPIO25/IOXHDI"),
+	PINCTRL_PIN(20, "GPIO20/HGPIO0/SMB4CSDA/SMB15SDA"),
+	PINCTRL_PIN(21, "GPIO21/HGPIO1/SMB4CSCL/SMB15SCL"),
+	PINCTRL_PIN(22, "GPIO22/HGPIO2/SMB4DSDA/SMB14SDA"),
+	PINCTRL_PIN(23, "GPIO23/HGPIO3/SMB4DSCL/SMB14SCL"),
+	PINCTRL_PIN(24, "GPIO24/HGPIO4/IOXHDO"),
+	PINCTRL_PIN(25, "GPIO25/HGPIO5/IOXHDI"),
 	PINCTRL_PIN(26, "GPIO26/SMB5SDA"),
 	PINCTRL_PIN(27, "GPIO27/SMB5SCL"),
 	PINCTRL_PIN(28, "GPIO28/SMB4SDA"),
@@ -1225,8 +1258,8 @@ static const struct pinctrl_pin_desc npcm7xx_pins[] = {
 	PINCTRL_PIN(56, "GPIO56/R1RXERR"),
 	PINCTRL_PIN(57, "GPIO57/R1MDC"),
 	PINCTRL_PIN(58, "GPIO58/R1MDIO"),
-	PINCTRL_PIN(59, "GPIO59/SMB3DSDA"),
-	PINCTRL_PIN(60, "GPIO60/SMB3DSCL"),
+	PINCTRL_PIN(59, "GPIO59/HGPIO6/SMB3DSDA"),
+	PINCTRL_PIN(60, "GPIO60/HGPIO7/SMB3DSCL"),
 	PINCTRL_PIN(61, "GPO61/nDTR1_BOUT1/STRAP6"),
 	PINCTRL_PIN(62, "GPO62/nRTST1/STRAP5"),
 	PINCTRL_PIN(63, "GPO63/TXD1/STRAP4"),
