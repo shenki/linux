@@ -22,16 +22,32 @@
 #include <asm/kprobes.h>
 
 #include <asm/paca.h>
+#include <asm/switch_to.h>
 
 /*
  * Save stack-backtrace addresses into a stack_trace buffer.
  */
-static void save_context_stack(struct stack_trace *trace, unsigned long sp,
-			struct task_struct *tsk, int savesched)
+static void save_entry(struct stack_trace *trace, unsigned long ip, int savesched)
 {
+	if (savesched || !in_sched_functions(ip)) {
+		if (!trace->skip)
+			trace->entries[trace->nr_entries++] = ip;
+		else
+			trace->skip--;
+	}
+}
+
+static void save_context_stack(struct stack_trace *trace, unsigned long sp,
+			       unsigned long ip, struct task_struct *tsk, int savesched)
+{
+	save_entry(trace, ip, savesched);
+
+	if (trace->nr_entries >= trace->max_entries)
+		return;
+
 	for (;;) {
 		unsigned long *stack = (unsigned long *) sp;
-		unsigned long newsp, ip;
+		unsigned long newsp;
 
 		if (!validate_sp(sp, tsk, STACK_FRAME_OVERHEAD))
 			return;
@@ -39,12 +55,7 @@ static void save_context_stack(struct stack_trace *trace, unsigned long sp,
 		newsp = stack[0];
 		ip = stack[STACK_FRAME_LR_SAVE];
 
-		if (savesched || !in_sched_functions(ip)) {
-			if (!trace->skip)
-				trace->entries[trace->nr_entries++] = ip;
-			else
-				trace->skip--;
-		}
+		save_entry(trace, ip, savesched);
 
 		if (trace->nr_entries >= trace->max_entries)
 			return;
@@ -59,23 +70,26 @@ void save_stack_trace(struct stack_trace *trace)
 
 	sp = current_stack_frame();
 
-	save_context_stack(trace, sp, current, 1);
+	save_context_stack(trace, sp, (unsigned long)save_stack_trace, current, 1);
 }
 EXPORT_SYMBOL_GPL(save_stack_trace);
 
 void save_stack_trace_tsk(struct task_struct *tsk, struct stack_trace *trace)
 {
-	unsigned long sp;
+	unsigned long sp, ip;
 
 	if (!try_get_task_stack(tsk))
 		return;
 
-	if (tsk == current)
+	if (tsk == current) {
+		ip = (unsigned long)save_stack_trace_tsk;
 		sp = current_stack_frame();
-	else
+	} else {
+		ip = (unsigned long)_switch;
 		sp = tsk->thread.ksp;
+	}
 
-	save_context_stack(trace, sp, tsk, 0);
+	save_context_stack(trace, sp, ip, tsk, 0);
 
 	put_task_stack(tsk);
 }
@@ -84,7 +98,7 @@ EXPORT_SYMBOL_GPL(save_stack_trace_tsk);
 void
 save_stack_trace_regs(struct pt_regs *regs, struct stack_trace *trace)
 {
-	save_context_stack(trace, regs->gpr[1], current, 0);
+	save_context_stack(trace, regs->gpr[1], regs->nip, current, 0);
 }
 EXPORT_SYMBOL_GPL(save_stack_trace_regs);
 
