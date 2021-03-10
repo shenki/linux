@@ -15,17 +15,19 @@
 #define ARCH_FUNC_PREFIX "."
 #endif
 
+bool hash__kfence_protect_page(unsigned long addr, bool protect);
+
 static inline bool arch_kfence_init_pool(void)
 {
 	return true;
 }
 
-#ifdef CONFIG_PPC64
-bool kfence_protect_page(unsigned long addr, bool protect);
-#else
 static inline bool kfence_protect_page(unsigned long addr, bool protect)
 {
 	pte_t *kpte = virt_to_kpte(addr);
+
+	if (IS_ENABLED(CONFIG_BOOK3S_64) && !radix_enabled())
+		return hash__kfence_protect_page(addr, protect);
 
 	if (protect) {
 		pte_update(&init_mm, addr, kpte, _PAGE_PRESENT, 0, 0);
@@ -36,6 +38,5 @@ static inline bool kfence_protect_page(unsigned long addr, bool protect)
 
 	return true;
 }
-#endif
 
 #endif /* __ASM_POWERPC_KFENCE_H */

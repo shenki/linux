@@ -1983,7 +1983,7 @@ static void kernel_unmap_linear_page(unsigned long vaddr, unsigned long lmi)
 }
 
 #ifdef CONFIG_KFENCE
-bool kfence_protect_page(unsigned long addr, bool protect)
+bool hash__kfence_protect_page(unsigned long addr, bool protect)
 {
 	unsigned long lmi = __pa(addr) >> PAGE_SHIFT;
 
