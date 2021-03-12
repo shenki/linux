@@ -287,7 +287,15 @@ static int __meminit create_physical_mapping(unsigned long start,
 		previous_size = mapping_size;
 		prev_exec = exec;
 
-		if (IS_ALIGNED(addr, PUD_SIZE) && gap >= PUD_SIZE &&
+		/*
+		 * KFENCE requires linear map to be mapped at page granularity,
+		 * so that it is possible to protect/unprotect single pages in
+		 * the KFENCE pool.
+		 */
+		if (IS_ENABLED(CONFIG_KFENCE)) {
+			mapping_size = PAGE_SIZE;
+			psize = mmu_virtual_psize;
+		} else if (IS_ALIGNED(addr, PUD_SIZE) && gap >= PUD_SIZE &&
 		    mmu_psize_defs[MMU_PAGE_1G].shift) {
 			mapping_size = PUD_SIZE;
 			psize = MMU_PAGE_1G;
