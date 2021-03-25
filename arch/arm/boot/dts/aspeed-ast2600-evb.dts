@@ -21,6 +21,17 @@
 		device_type = "memory";
 		reg = <0x80000000 0x80000000>;
 	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		hacks: framebuffer@90000000 {
+			no-map;
+			reg = <0x90000000 0x08000000>; /* 128M */
+		};
+	};
 };
 
 &mdio0 {
