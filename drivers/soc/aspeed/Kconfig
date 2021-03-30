@@ -22,6 +22,15 @@ config ASPEED_LPC_SNOOP
 	  allows the BMC to listen on and save the data written by
 	  the host to an arbitrary LPC I/O port.
 
+config ASPEED_OTP
+	tristate "ASPEED OTP configuration"
+	select REGMAP
+	select MFD_SYSCON
+	help
+	 A driver to expose configuration of the OTP (One Time Programmable) device
+	 in the ASPEED BMC SoC. The OTP is used for strapping of the processor
+	 and secure boot related functions.
+
 config ASPEED_P2A_CTRL
 	tristate "ASPEED P2A (VGA MMIO to BMC) bridge control"
 	select REGMAP
