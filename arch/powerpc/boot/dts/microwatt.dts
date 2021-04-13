@@ -139,6 +139,18 @@
 			litex,slot-size = <0x800>;
 			interrupts = <0x11 0x1>;
 		};
+
+		litex-mmc@8040000 {
+			compatible = "litex,mmc";
+			reg = <0x8042800 0x800
+			       0x8041000 0x800
+			       0x8040800 0x800
+			       0x8042000 0x800
+			       0x8041800 0x800>;
+			bus-width = <4>;
+			interrupts = <0x13 1>;
+			cap-sd-highspeed;
+		};
 	};
 
 	chosen {
