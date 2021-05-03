@@ -59,9 +59,13 @@ int machine_kexec_prepare(struct kimage *image)
 					       current_segment->memsz))
 			return -EINVAL;
 
-		err = get_user(header, (__be32*)current_segment->buf);
-		if (err)
-			return err;
+		if (image->file_mode)
+			memcpy(&header, current_segment->kbuf, 4);
+		else {
+			err = get_user(header, (__be32*)current_segment->buf);
+			if (err)
+				return err;
+		}
 
 		if (header == cpu_to_be32(OF_DT_HEADER))
 			image->arch.kernel_r2 = current_segment->mem;
