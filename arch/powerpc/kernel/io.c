@@ -153,23 +153,35 @@ void _memcpy_fromio(void *dest, const volatile void __iomem *src,
 	void *vsrc = (void __force *) src;
 
 	__asm__ __volatile__ ("sync" : : : "memory");
-	while(n && (!IO_CHECK_ALIGN(vsrc, 4) || !IO_CHECK_ALIGN(dest, 4))) {
+	while(n && (!IO_CHECK_ALIGN(vsrc, 4))) {
 		*((u8 *)dest) = *((volatile u8 *)vsrc);
-		eieio();
 		vsrc++;
 		dest++;
 		n--;
 	}
+	while(n >= 16) {
+		u32 a = *((volatile u32 *)(vsrc+0));
+		u32 b = *((volatile u32 *)(vsrc+4));
+		u32 c = *((volatile u32 *)(vsrc+8));
+		u32 d = *((volatile u32 *)(vsrc+12));
+		vsrc += 16;
+
+		*((u32 *)(dest+0)) = a;
+		*((u32 *)(dest+4)) = b;
+		*((u32 *)(dest+8)) = c;
+		*((u32 *)(dest+12)) = d;
+		dest += 16;
+
+		n-=16;
+	}
 	while(n >= 4) {
 		*((u32 *)dest) = *((volatile u32 *)vsrc);
-		eieio();
 		vsrc += 4;
 		dest += 4;
 		n -= 4;
 	}
 	while(n) {
 		*((u8 *)dest) = *((volatile u8 *)vsrc);
-		eieio();
 		vsrc++;
 		dest++;
 		n--;
@@ -183,11 +195,26 @@ void _memcpy_toio(volatile void __iomem *dest, const void *src, unsigned long n)
 	void *vdest = (void __force *) dest;
 
 	__asm__ __volatile__ ("sync" : : : "memory");
-	while(n && (!IO_CHECK_ALIGN(vdest, 4) || !IO_CHECK_ALIGN(src, 4))) {
+	while(n && (!IO_CHECK_ALIGN(vdest, 4))) {
 		*((volatile u8 *)vdest) = *((u8 *)src);
 		src++;
 		vdest++;
 		n--;
+	}
+	while(n >= 16) {
+		u32 a = *((volatile u32 *)(src+0));
+		u32 b = *((volatile u32 *)(src+4));
+		u32 c = *((volatile u32 *)(src+8));
+		u32 d = *((volatile u32 *)(src+12));
+		src += 16;
+
+		*((volatile u32 *)(vdest+0)) = a;
+		*((volatile u32 *)(vdest+4)) = b;
+		*((volatile u32 *)(vdest+8)) = c;
+		*((volatile u32 *)(vdest+12)) = d;
+		vdest += 16;
+
+		n-=16;
 	}
 	while(n >= 4) {
 		*((volatile u32 *)vdest) = *((volatile u32 *)src);
