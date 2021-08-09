@@ -69,18 +69,15 @@ static int liteeth_rx(struct net_device *netdev)
 	int len;
 
 	rx_slot = readb(priv->base + LITEETH_WRITER_SLOT);
-	len = readl(priv->base + LITEETH_WRITER_LENGTH);
+	len = le32_to_cpu(readl(priv->base + LITEETH_WRITER_LENGTH));
 
-	if (len == 0 || len > 2048) {
-		netdev->stats.rx_dropped++;
-		return NET_RX_DROP;
-	}
+	if (len == 0 || len > 2048)
+		goto rx_drop;
 
 	skb = netdev_alloc_skb_ip_align(netdev, len);
 	if (!skb) {
 		netdev_err(netdev, "couldn't get memory\n");
-		netdev->stats.rx_dropped++;
-		return NET_RX_DROP;
+		goto rx_drop;
 	}
 
 	data = skb_put(skb, len);
@@ -91,6 +88,12 @@ static int liteeth_rx(struct net_device *netdev)
 	netdev->stats.rx_bytes += len;
 
 	return netif_rx(skb);
+
+rx_drop:
+	netdev->stats.rx_dropped++;
+	netdev->stats.rx_errors++;
+
+	return NET_RX_DROP;
 }
 
 static irqreturn_t liteeth_interrupt(int irq, void *dev_id)
@@ -101,7 +104,8 @@ static irqreturn_t liteeth_interrupt(int irq, void *dev_id)
 
 	reg = readb(priv->base + LITEETH_READER_EV_PENDING);
 	if (reg) {
-		netdev->stats.tx_packets++;
+		if (netif_queue_stopped(netdev))
+			netif_wake_queue(netdev);
 		writeb(reg, priv->base + LITEETH_READER_EV_PENDING);
 	}
 
@@ -158,26 +162,32 @@ static int liteeth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
 	struct liteeth *priv = netdev_priv(netdev);
 	void __iomem *txbuffer;
-	int ret;
-	u8 val;
 
 	if (!readb(priv->base + LITEETH_READER_READY)) {
 		if (net_ratelimit())
 			netdev_err(netdev, "LITEETH_READER_READY not ready\n");
-		goto drop;
+
+		netif_stop_queue(netdev);
+
+		return NETDEV_TX_BUSY;
 	}
 
 	/* Reject oversize packets */
 	if (unlikely(skb->len > MAX_PKT_SIZE)) {
 		if (net_ratelimit())
 			netdev_err(netdev, "tx packet too big\n");
-		goto drop;
+
+		dev_kfree_skb_any(skb);
+		netdev->stats.tx_dropped++;
+		netdev->stats.tx_errors++;
+
+		return NETDEV_TX_OK;
 	}
 
 	txbuffer = priv->tx_base + priv->tx_slot * LITEETH_BUFFER_SIZE;
 	memcpy_toio(txbuffer, skb->data, skb->len);
 	writeb(priv->tx_slot, priv->base + LITEETH_READER_SLOT);
-	writew(skb->len, priv->base + LITEETH_READER_LENGTH);
+	writew(cpu_to_le16(skb->len), priv->base + LITEETH_READER_LENGTH);
 	writeb(1, priv->base + LITEETH_READER_START);
 
 	netdev->stats.tx_bytes += skb->len;
@@ -185,11 +195,6 @@ static int liteeth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 
 	priv->tx_slot = (priv->tx_slot + 1) % priv->num_tx_slots;
 	dev_kfree_skb_any(skb);
-	return NETDEV_TX_OK;
-drop:
-	/* Drop the packet */
-	dev_kfree_skb_any(skb);
-	netdev->stats.tx_dropped++;
 
 	return NETDEV_TX_OK;
 }
@@ -202,10 +207,9 @@ static const struct net_device_ops liteeth_netdev_ops = {
 
 static void liteeth_reset_hw(struct liteeth *priv)
 {
-	/* Reset, twice */
-	writeb(0, priv->base + LITEETH_PHY_CRG_RESET);
-	udelay(10);
 	writeb(1, priv->base + LITEETH_PHY_CRG_RESET);
+	udelay(10);
+	writeb(0, priv->base + LITEETH_PHY_CRG_RESET);
 	udelay(10);
 }
 
@@ -232,7 +236,6 @@ static int liteeth_probe(struct platform_device *pdev)
 		goto err;
 	}
 
-//	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac");
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	priv->base = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(priv->base)) {
