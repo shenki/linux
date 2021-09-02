@@ -222,6 +222,8 @@ dtb-$(CONFIG_ARCH_GEMINI) += \
 	gemini-sq201.dtb \
 	gemini-wbd111.dtb \
 	gemini-wbd222.dtb
+dtb-$(CONFIG_ARCH_HPE) += \
+	gxp.dtb
 dtb-$(CONFIG_ARCH_HI3xxx) += \
 	hi3620-hi4511.dtb
 dtb-$(CONFIG_ARCH_HIGHBANK) += \
