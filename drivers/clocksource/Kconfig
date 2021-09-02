@@ -612,6 +612,11 @@ config CLKSRC_ST_LPC
 	  Enable this option to use the Low Power controller timer
 	  as clocksource.
 
+config GXP_TIMER
+	bool "GXP timer driver"
+	depends on ARCH_HPE
+	default y
+
 config ATCPIT100_TIMER
 	bool "ATCPIT100 timer driver"
 	depends on NDS32 || COMPILE_TEST
