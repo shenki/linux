@@ -434,6 +434,13 @@ config SPI_JCORE
 	  This enables support for the SPI master controller in the J-Core
 	  synthesizable, open source SoC.
 
+config SPI_MICROWATT
+	tristate "Microwatt SPI Flash controller"
+	depends on PPC_MICROWATT
+	help
+	  This driver supports the Microwatt SPI Flash controller as found
+	  on the Microwatt SoC.
+
 config SPI_LM70_LLP
 	tristate "Parallel port adapter for LM70 eval board (DEVELOPMENT)"
 	depends on PARPORT
