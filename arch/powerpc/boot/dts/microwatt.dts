@@ -127,6 +127,32 @@
 				reg = < 0 >;
 				compatible = "jedec,spi-nor";
 				spi-max-frequency = <50000000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					gateware@0 {
+						reg = <0x0 0x400000>; // 4M
+						label = "gateware";
+					};
+
+					u-boot@400000 {
+						reg = <0x400000 0x400000>; // 4M
+						label = "u-boot";
+					};
+
+					spare@800000 {
+						reg = <0x800000 0x7f0000>; // 7.9M
+						label = "spare";
+					};
+
+					u-boot-env@400000 {
+						reg = <0xff0000 0x10000>; // 64K
+						label = "u-boot-env";
+					};
+				};
 			};
 		};
 
