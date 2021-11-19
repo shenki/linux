@@ -186,6 +186,7 @@
 			       0x8040800 0x800
 			       0x8042000 0x800
 			       0x8041800 0x800>;
+			reg-names = "phy", "core", "reader", "writer", "irq";
 			bus-width = <4>;
 			interrupts = <0x13 1>;
 			cap-sd-highspeed;
