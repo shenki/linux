@@ -43,8 +43,42 @@
 #include <linux/dma-mapping.h>
 #include <linux/sched/clock.h>
 #include <linux/interrupt.h>
+#include <linux/iopoll.h>
+#include <linux/litex.h>
 
-#include "litex_mmc.h"
+#define LITEX_MMC_SDPHY_CARDDETECT  0x00
+#define LITEX_MMC_SDPHY_CLOCKERDIV  0x04
+#define LITEX_MMC_SDPHY_INITIALIZE  0x08
+#define LITEX_MMC_SDPHY_WRITESTATUS 0x0C
+
+#define LITEX_MMC_SDCORE_CMDARG     0x00
+#define LITEX_MMC_SDCORE_CMDCMD     0x04
+#define LITEX_MMC_SDCORE_CMDSND     0x08
+#define LITEX_MMC_SDCORE_CMDRSP     0x0C
+#define LITEX_MMC_SDCORE_CMDEVT     0x1C
+#define LITEX_MMC_SDCORE_DATAEVT    0x20
+#define LITEX_MMC_SDCORE_BLKLEN     0x24
+#define LITEX_MMC_SDCORE_BLKCNT     0x28
+
+/* sdreader */
+#define LITEX_MMC_SDBLK2MEM_BASE    0x00
+#define LITEX_MMC_SDBLK2MEM_LEN     0x08
+#define LITEX_MMC_SDBLK2MEM_ENA     0x0C
+#define LITEX_MMC_SDBLK2MEM_DONE    0x10
+#define LITEX_MMC_SDBLK2MEM_LOOP    0x14
+
+/* sdwriter */
+#define LITEX_MMC_SDMEM2BLK_BASE    0x00
+#define LITEX_MMC_SDMEM2BLK_LEN     0x08
+#define LITEX_MMC_SDMEM2BLK_ENA     0x0C
+#define LITEX_MMC_SDMEM2BLK_DONE    0x10
+#define LITEX_MMC_SDMEM2BLK_LOOP    0x14
+#define LITEX_MMC_SDMEM2BLK     0x18
+
+/* sdirq */
+#define LITEX_MMC_SDIRQ_STATUS	0x00
+#define LITEX_MMC_SDIRQ_PENDING     0x04
+#define LITEX_MMC_SDIRQ_ENABLE      0x08
 
 #define SDCARD_CTRL_DATA_TRANSFER_NONE  0
 #define SDCARD_CTRL_DATA_TRANSFER_READ  1
@@ -93,25 +127,25 @@ struct litex_mmc_host {
 };
 
 
-void sdclk_set_clk(struct litex_mmc_host *host, unsigned int clk_freq) {
+static void sdclk_set_clk(struct litex_mmc_host *host, unsigned int clk_freq) {
 	u32 div = clk_freq ? host->freq / clk_freq : 256;
 	div = roundup_pow_of_two(div);
 	div = min(max(div, (u32)2), (u32)256);
-	dev_info(&host->dev->dev,
-		"Requested clk_freq=%d: set to %d via div=%d\n",
+	dev_info(mmc_dev(host->mmc), "Requested clk_freq=%d: set to %d via div=%d\n",
 		clk_freq, host->freq / div, div);
-	litex_write16(host->sdphy + LITEX_MMC_SDPHY_CLOCKERDIV_OFF, div);
+	litex_write16(host->sdphy + LITEX_MMC_SDPHY_CLOCKERDIV, div);
 }
 
 
 static int sdcard_wait_done(void __iomem *reg) {
 	u8 evt;
-	for (;;) {
-		evt = litex_read8(reg);
-		if (evt & 0x1)
-			break;
-		udelay(5);
-	}
+	int rc;
+
+	/* Wait two seconds */
+	rc = readx_poll_timeout(litex_read8, reg, evt, evt & BIT(0), 5, 2000000);
+	if (rc)
+		return SD_TIMEOUT;
+
 	if (evt == 0x1)
 		return SD_OK;
 	if (evt & 0x2)
@@ -131,10 +165,10 @@ static int send_cmd(struct litex_mmc_host *host, u8 cmd, u32 arg,
 	u8 i;
 	int status;
 
-	litex_write32(host->sdcore + LITEX_MMC_SDCORE_CMDARG_OFF, arg);
-	litex_write32(host->sdcore + LITEX_MMC_SDCORE_CMDCMD_OFF,
+	litex_write32(host->sdcore + LITEX_MMC_SDCORE_CMDARG, arg);
+	litex_write32(host->sdcore + LITEX_MMC_SDCORE_CMDCMD,
 			 cmd << 8 | transfer << 5 | response_len);
-	litex_write8(host->sdcore + LITEX_MMC_SDCORE_CMDSND_OFF, 1);
+	litex_write8(host->sdcore + LITEX_MMC_SDCORE_CMDSND, 1);
 
 	/*
 	 * Wait for an interrupt if we have an interrupt and either there is
@@ -144,20 +178,20 @@ static int send_cmd(struct litex_mmc_host *host, u8 cmd, u32 arg,
 	    (transfer != SDCARD_CTRL_DATA_TRANSFER_NONE ||
 	     response_len == SDCARD_CTRL_RESPONSE_SHORT_BUSY)) {
 		reinit_completion(&host->cmd_done);
-		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_ENABLE_OFF,
+		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_ENABLE,
 			      SDIRQ_CMD_DONE | SDIRQ_CARD_DETECT);
 		wait_for_completion(&host->cmd_done);
 	}
 
-	status = sdcard_wait_done(host->sdcore + LITEX_MMC_SDCORE_CMDEVT_OFF);
+	status = sdcard_wait_done(host->sdcore + LITEX_MMC_SDCORE_CMDEVT);
 
 	if (status != SD_OK) {
-		pr_err("Command (cmd %d) failed, status %d\n", cmd, status);
+		dev_err(mmc_dev(host->mmc), "Command (cmd %d) failed, status %d\n", cmd, status);
 		return status;
 	}
 
 	if (response_len != SDCARD_CTRL_RESPONSE_NONE) {
-		reg = host->sdcore + LITEX_MMC_SDCORE_CMDRSP_OFF;
+		reg = host->sdcore + LITEX_MMC_SDCORE_CMDRSP;
 		for (i = 0; i < 4; i++) {
 			host->resp[i] = litex_read32(reg);
 			reg += 0x4;
@@ -173,16 +207,16 @@ static int send_cmd(struct litex_mmc_host *host, u8 cmd, u32 arg,
 	if (transfer == SDCARD_CTRL_DATA_TRANSFER_NONE)
 		return status; /* SD_OK from prior sdcard_wait_done(cmd_evt) */
 
-	status = sdcard_wait_done(host->sdcore + LITEX_MMC_SDCORE_DATAEVT_OFF);
+	status = sdcard_wait_done(host->sdcore + LITEX_MMC_SDCORE_DATAEVT);
 	if (status != SD_OK){
-		pr_err("Data xfer (cmd %d) failed, status %d\n", cmd, status);
+		dev_err(mmc_dev(host->mmc), "Data xfer (cmd %d) failed, status %d\n", cmd, status);
 		return status;
 	}
 
 	/* wait for completion of (read or write) DMA transfer */
 	reg = (transfer == SDCARD_CTRL_DATA_TRANSFER_READ) ?
-		host->sdreader + LITEX_MMC_SDBLK2MEM_DONE_OFF :
-		host->sdwriter + LITEX_MMC_SDMEM2BLK_DONE_OFF;
+		host->sdreader + LITEX_MMC_SDBLK2MEM_DONE :
+		host->sdwriter + LITEX_MMC_SDMEM2BLK_DONE;
 	n = jiffies + (HZ << 1);
 	while ((litex_read8(reg) & 0x01) == 0)
 		if (time_after(jiffies, n)) {
@@ -241,7 +275,7 @@ static int litex_get_cd(struct mmc_host *mmc)
 	else
 		/* use gateware card-detect bit by default */
 		ret = !litex_read8(host->sdphy +
-				       LITEX_MMC_SDPHY_CARDDETECT_OFF);
+				       LITEX_MMC_SDPHY_CARDDETECT);
 
 	/* ensure bus width will be set (again) upon card (re)insertion */
 	if (ret == 0)
@@ -254,11 +288,11 @@ static irqreturn_t litex_mmc_interrupt(int irq, void *arg)
 {
 	struct mmc_host *mmc = arg;
 	struct litex_mmc_host *host = mmc_priv(mmc);
-	u32 pending = litex_read32(host->sdirq + LITEX_MMC_SDIRQ_PENDING_OFF);
+	u32 pending = litex_read32(host->sdirq + LITEX_MMC_SDIRQ_PENDING);
 
 	/* Check for card change interrupt */
 	if (pending & SDIRQ_CARD_DETECT) {
-		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_PENDING_OFF,
+		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_PENDING,
 			      SDIRQ_CARD_DETECT);
 		mmc_detect_change(mmc, msecs_to_jiffies(10));
 	}
@@ -266,7 +300,7 @@ static irqreturn_t litex_mmc_interrupt(int irq, void *arg)
 	/* Check for command completed */
 	if (pending & SDIRQ_CMD_DONE) {
 		/* Disable it so it doesn't keep interrupting */
-		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_ENABLE_OFF,
+		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_ENABLE,
 			      SDIRQ_CARD_DETECT);
 		complete(&host->cmd_done);
 	}
@@ -399,15 +433,15 @@ static void litex_request(struct mmc_host *mmc, struct mmc_request *mrq)
 
 		if (data->flags & MMC_DATA_READ) {
 			litex_write8(host->sdreader +
-					 LITEX_MMC_SDBLK2MEM_ENA_OFF, 0);
+					 LITEX_MMC_SDBLK2MEM_ENA, 0);
 			litex_write64(host->sdreader +
-					 LITEX_MMC_SDBLK2MEM_BASE_OFF,
+					 LITEX_MMC_SDBLK2MEM_BASE,
 					 dma_handle);
 			litex_write32(host->sdreader +
-					 LITEX_MMC_SDBLK2MEM_LEN_OFF,
+					 LITEX_MMC_SDBLK2MEM_LEN,
 					 length);
 			litex_write8(host->sdreader +
-					 LITEX_MMC_SDBLK2MEM_ENA_OFF, 1);
+					 LITEX_MMC_SDBLK2MEM_ENA, 1);
 
 			transfer = SDCARD_CTRL_DATA_TRANSFER_READ;
 
@@ -417,15 +451,15 @@ static void litex_request(struct mmc_host *mmc, struct mmc_request *mrq)
 					host->buffer, length);
 
 			litex_write8(host->sdwriter +
-					 LITEX_MMC_SDMEM2BLK_ENA_OFF, 0);
+					 LITEX_MMC_SDMEM2BLK_ENA, 0);
 			litex_write64(host->sdwriter +
-					 LITEX_MMC_SDMEM2BLK_BASE_OFF,
+					 LITEX_MMC_SDMEM2BLK_BASE,
 					 dma_handle);
 			litex_write32(host->sdwriter +
-					 LITEX_MMC_SDMEM2BLK_LEN_OFF,
+					 LITEX_MMC_SDMEM2BLK_LEN,
 					 length);
 			litex_write8(host->sdwriter +
-					 LITEX_MMC_SDMEM2BLK_ENA_OFF, 1);
+					 LITEX_MMC_SDMEM2BLK_ENA, 1);
 
 			transfer = SDCARD_CTRL_DATA_TRANSFER_WRITE;
 		} else {
@@ -433,9 +467,9 @@ static void litex_request(struct mmc_host *mmc, struct mmc_request *mrq)
 			// Intentionally continue: set cmd status, mark req done
 		}
 
-		litex_write16(host->sdcore + LITEX_MMC_SDCORE_BLKLEN_OFF,
+		litex_write16(host->sdcore + LITEX_MMC_SDCORE_BLKLEN,
 				 data->blksz);
-		litex_write32(host->sdcore + LITEX_MMC_SDCORE_BLKCNT_OFF,
+		litex_write32(host->sdcore + LITEX_MMC_SDCORE_BLKCNT,
 				 data->blocks);
 	}
 
@@ -626,8 +660,8 @@ static int litex_mmc_probe(struct platform_device *pdev)
 	}
 
 	/* ensure DMA bus masters are disabled */
-	litex_write8(host->sdreader + LITEX_MMC_SDBLK2MEM_ENA_OFF, 0);
-	litex_write8(host->sdwriter + LITEX_MMC_SDMEM2BLK_ENA_OFF, 0);
+	litex_write8(host->sdreader + LITEX_MMC_SDBLK2MEM_ENA, 0);
+	litex_write8(host->sdwriter + LITEX_MMC_SDMEM2BLK_ENA, 0);
 
 	/* set up interrupt handler */
 	if (host->irq > 0) {
@@ -642,9 +676,9 @@ static int litex_mmc_probe(struct platform_device *pdev)
 
 	/* enable card-change interrupts, or else ask for polling */
 	if (host->irq > 0) {
-		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_PENDING_OFF,
+		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_PENDING,
 			      SDIRQ_CARD_DETECT);	/* clears it */
-		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_ENABLE_OFF,
+		litex_write32(host->sdirq + LITEX_MMC_SDIRQ_ENABLE,
 			      SDIRQ_CARD_DETECT);
 	} else {
 		mmc->caps |= MMC_CAP_NEEDS_POLL;
