@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 #include <dt-bindings/clock/aspeed-clock.h>
 #include <dt-bindings/interrupt-controller/aspeed-scu-ic.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
 
 / {
 	model = "Aspeed BMC";
@@ -341,6 +343,25 @@
 					sdhci,auto-cmd12;
 					clocks = <&syscon ASPEED_CLK_SDIO>;
 					status = "disabled";
+				};
+			};
+
+			espi: espi@1e6ee000 {
+				compatible = "aspeed,ast2500-espi", "simple-mfd", "syscon";
+				reg = <0x1e6ee000 0x1000>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x1e6ee000 0x1000>;
+
+				espi_ctrl: espi-ctrl@0 {
+					compatible = "aspeed,ast2500-espi-ctrl";
+					reg = <0x0 0x800>;
+					interrupts = <23>;
+					clocks = <&syscon ASPEED_CLK_GATE_ESPICLK>;
+					status = "disabled";
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_espi_default>;
 				};
 			};
 
