@@ -87,6 +87,7 @@ struct max6639_data {
 	u8 ppr[2];		/* Pulses per rotation 0..3 for 1..4 ppr */
 	u8 rpm_range[2];	/* Index in above rpm_ranges table */
 	u8 pwm_polarity[2];	/* Fans PWM polarity, 0..1 */
+	bool disable_therm_full_speed[2];	/* disable THERM full speed assertion */
 
 	/* Optional regulator for FAN supply */
 	struct regulator *reg;
@@ -440,7 +441,8 @@ static int max6639_init_client(struct i2c_client *client,
 		 */
 		err = i2c_smbus_write_byte_data(client,
 			MAX6639_REG_FAN_CONFIG3(i),
-			MAX6639_FAN_CONFIG3_THERM_FULL_SPEED | 0x03);
+			(data->disable_therm_full_speed[i] ?
+			 0 : MAX6639_FAN_CONFIG3_THERM_FULL_SPEED) | 0x03);
 		if (err)
 			goto exit;
 
@@ -558,6 +560,9 @@ static int max6639_probe_child_from_dt(struct i2c_client *client,
 	if (!err && val >= 0 && val < 256)
 		data->pwm[i] = (u8)(val * 120 / 255);
 
+	data->disable_therm_full_speed[i] = of_property_read_bool(child,
+			"maxim,disable-therm-full-speed");
+
 	return 0;
 }
 
@@ -636,6 +641,7 @@ static int max6639_probe(struct i2c_client *client)
 		data->temp_ot[i] = 100;
 		/* PWM 120/120 (i.e. 100%) */
 		data->pwm[i] = 120;
+		data->disable_therm_full_speed[i] = false;
 	}
 
 	err = max6639_probe_from_dt(client, data);
