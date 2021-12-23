@@ -554,6 +554,10 @@ static int max6639_probe_child_from_dt(struct i2c_client *client,
 	}
 	data->pwm_polarity[i] = val;
 
+	err = of_property_read_u32(child, "pwm-init", &val);
+	if (!err && val >= 0 && val < 256)
+		data->pwm[i] = (u8)(val * 120 / 255);
+
 	return 0;
 }
 
