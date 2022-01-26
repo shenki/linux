@@ -29,6 +29,7 @@ struct userspace_consumer_data {
 	bool enabled;
 	bool no_autoswitch;
 	unsigned long events;
+	struct kobject *kobj;
 
 	int num_supplies;
 	struct regulator_bulk_data *supplies;
@@ -147,6 +148,8 @@ static int regulator_userspace_notify(struct notifier_block *nb,
 	data->events |= event;
 	mutex_unlock(&events_lock);
 
+	sysfs_notify(data->kobj, NULL, dev_attr_events.attr.name);
+
 	return NOTIFY_OK;
 }
 
@@ -211,6 +214,7 @@ static int regulator_userspace_consumer_probe(struct platform_device *pdev)
 	drvdata->num_supplies = pdata->num_supplies;
 	drvdata->supplies = pdata->supplies;
 	drvdata->no_autoswitch = pdata->no_autoswitch;
+	drvdata->kobj = &pdev->dev.kobj;
 
 	mutex_init(&drvdata->lock);
 
