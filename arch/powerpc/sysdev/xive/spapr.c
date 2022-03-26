@@ -398,8 +398,12 @@ static int xive_spapr_populate_irq_data(u32 hw_irq, struct xive_irq_data *data)
 
 	if (flags & XIVE_SRC_H_INT_ESB)
 		data->flags  |= XIVE_IRQ_FLAG_H_INT_ESB;
-	if (flags & XIVE_SRC_STORE_EOI)
-		data->flags  |= XIVE_IRQ_FLAG_STORE_EOI;
+	if (flags & XIVE_SRC_STORE_EOI) {
+		if (xive_store_eoi_capable)
+			data->flags |= XIVE_IRQ_FLAG_STORE_EOI;
+		else
+			pr_warn("Ignoring StoreEOI for HW 0x%x\n", hw_irq);
+	}
 	if (flags & XIVE_SRC_LSI)
 		data->flags  |= XIVE_IRQ_FLAG_LSI;
 	data->eoi_page  = eoi_page;

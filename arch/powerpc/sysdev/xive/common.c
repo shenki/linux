@@ -88,6 +88,7 @@ static DEFINE_PER_CPU(struct xive_cpu *, xive_cpu);
  * Global toggle to switch on/off StoreEOI
  */
 static bool xive_store_eoi = true;
+bool xive_store_eoi_capable;
 
 static bool xive_is_store_eoi(struct xive_irq_data *xd)
 {
@@ -1720,6 +1721,12 @@ bool __init xive_core_init(struct device_node *np, const struct xive_ops *ops,
 
 	ppc_md.get_irq = xive_get_irq;
 	__xive_enabled = true;
+
+	/*
+	 * Only P10 and above processors have a correct StoreEOI
+	 * implementation
+	 */
+	xive_store_eoi_capable = cpu_has_feature(CPU_FTR_ARCH_31);
 
 	pr_debug("Initializing host..\n");
 	xive_init_host(np);
