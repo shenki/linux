@@ -1161,10 +1161,63 @@ static void xive_irq_data_debug_show(struct seq_file *m, struct xive_irq_data *x
 			seq_printf(m, "%*s%s\n", ind + 12, "", xive_irq_flags[i].name);
 	}
 }
+
+static void xive_ipi_irq_domain_debug_show_all(struct seq_file *m, int ind)
+{
+	int cpu;
+
+	seq_printf(m, "%*s| CPU | Chip | IPI |   HWIRQ  | PP | CCPR | flags | PQ | ESB pages\n",
+		   ind, " ");
+	for_each_online_cpu(cpu) {
+		struct xive_cpu *xc = per_cpu(xive_cpu, cpu);
+		struct xive_irq_data *xd = &xc->ipi_data;
+		unsigned int xive_ipi_irq = xive_ipi_cpu_to_irq(cpu);
+		u64 val = xive_esb_read(xd, XIVE_ESB_GET);
+
+		seq_printf(m, "%*s %4d  %4d   %4d   %08x   %2x     %2x", ind, "",
+			   cpu, xc->chip_id, xive_ipi_irq, xc->hw_ipi,
+			   xc->pending_prio, xc->cppr);
+		seq_printf(m, "    %c%c%c    %c%c   0x%016llx 0x%016llx\n",
+			   xive_is_store_eoi(xd) ? 'S' : ' ',
+			   xd->flags & XIVE_IRQ_FLAG_LSI ? 'L' : ' ',
+			   xd->flags & XIVE_IRQ_FLAG_H_INT_ESB ? 'H' : ' ',
+			   val & XIVE_ESB_VAL_P ? 'P' : '-',
+			   val & XIVE_ESB_VAL_Q ? 'Q' : '-',
+			   xd->trig_page, xd->eoi_page);
+	}
+}
+
+static void xive_ipi_irq_domain_debug_show(struct seq_file *m, struct irq_domain *d,
+					   struct irq_data *irqd, int ind)
+{
+	unsigned int nid;
+	int cpu;
+
+	/* Same output in a more concise way */
+	if (!irqd) {
+		xive_ipi_irq_domain_debug_show_all(m, ind);
+		return;
+	}
+
+	nid = (unsigned int)irqd_to_hwirq(irqd);
+	for_each_cpu(cpu, cpumask_of_node(nid)) {
+		struct xive_cpu *xc = per_cpu(xive_cpu, cpu);
+
+		seq_printf(m, "%*sCPU %d:\n", ind, "", cpu);
+		seq_printf(m, "%*sChip:    %d\n", ind + 1, "", xc->chip_id);
+		seq_printf(m, "%*shwirq:   0x%x\n", ind + 1, "", xc->hw_ipi);
+		seq_printf(m, "%*sPending: 0x%02x\n", ind + 1, "", xc->pending_prio);
+		seq_printf(m, "%*sCPPR:    0x%02x\n", ind + 1, "", xc->cppr);
+		xive_irq_data_debug_show(m, &xc->ipi_data, ind + 1);
+	}
+}
 #endif
 
 static const struct irq_domain_ops xive_ipi_irq_domain_ops = {
 	.alloc  = xive_ipi_irq_domain_alloc,
+#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+	.debug_show = xive_ipi_irq_domain_debug_show,
+#endif
 };
 
 static int __init xive_init_ipis(void)
