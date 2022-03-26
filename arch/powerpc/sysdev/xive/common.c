@@ -1875,6 +1875,30 @@ static int xive_eq_debug_show(struct seq_file *m, void *private)
 }
 DEFINE_SHOW_ATTRIBUTE(xive_eq_debug);
 
+static int xive_ipi_cause_debug_set(void *data, u64 val)
+{
+	static void (*do_ipi)(int cpu);
+
+	if (val) {
+		do_ipi = smp_ops->cause_ipi;
+		smp_ops->cause_ipi = xive_cause_ipi;
+	} else {
+		if (do_ipi)
+			smp_ops->cause_ipi = do_ipi;
+	}
+
+	return 0;
+}
+
+static int xive_ipi_cause_debug_get(void *data, u64 *val)
+{
+	*val = xive_cause_ipi == smp_ops->cause_ipi;
+	return 0;
+}
+
+DEFINE_DEBUGFS_ATTRIBUTE(xive_ipi_cause_debug_fops, xive_ipi_cause_debug_get,
+			 xive_ipi_cause_debug_set, "%llu\n");
+
 static void xive_core_debugfs_create(void)
 {
 	struct dentry *xive_dir;
@@ -1897,6 +1921,8 @@ static void xive_core_debugfs_create(void)
 				    &xive_eq_debug_fops);
 	}
 	debugfs_create_bool("store-eoi", 0600, xive_dir, &xive_store_eoi);
+	debugfs_create_file("ipi-cause", 0600, xive_dir,
+			    NULL, &xive_ipi_cause_debug_fops);
 
 	if (xive_ops->debug_create)
 		xive_ops->debug_create(xive_dir);
