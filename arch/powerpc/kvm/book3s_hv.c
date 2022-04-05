@@ -5220,6 +5220,11 @@ static int kvmppc_core_init_vm_hv(struct kvm *kvm)
 	unsigned long lpcr, lpid;
 	int ret;
 
+	if (cpu_has_feature(CPU_FTR_ARCH_31) && (threads_per_core == 8)) {
+		printk("kvm doesn't like big core mode\n");
+		return -ENODEV;
+	}
+
 	mutex_init(&kvm->arch.uvmem_lock);
 	INIT_LIST_HEAD(&kvm->arch.uvmem_pfns);
 	mutex_init(&kvm->arch.mmu_setup_lock);
