@@ -1,0 +1,217 @@
+&i2c6 { // BMC_MUX_CPU2 TODO: Figureout right regulator
+	status = "okay";
+	// Bus frequency limited to 100KHz by cy8c9540
+
+	i2cmux3: mux@77 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "maxim,max7357";
+		reg = <0x77>;
+		interrupt-parent = <&gpio0>;
+		interrupts = <ASPEED_GPIO(F, 4) IRQ_TYPE_LEVEL_HIGH>; // BMC_MUX_CPU2_RST_INT_N
+		vdd-supply = <&p3v3_aux>;
+
+		i2c@0 { // SMB_PEX_CPU2_EVENT
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			smb_pex_cpu2_event: U62100@20 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "cypress,cy8c9540";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#interrupt-cells=<2>;
+				interrupt-parent = <&smb_pex_vr_ctrl>;
+				interrupts = <3 IRQ_TYPE_LEVEL_HIGH>; // SMB_PEX_CPU2_EVENT_INT
+				interrupt-controller;
+				vdd-supply = <&p3v3_aux>;
+				// Reset is PEX_CPU2_EVENT_RST
+				reset-gpios = <&smb_svc_pex_cpu2_led 16 GPIO_ACTIVE_HIGH>;
+				ngpios = <17>;
+				//FIXME: Used by unit testing. Uncomment on release.
+				gpio-reserved-ranges = <14 2>, <21 1>, <25 3>, <33 1>;
+
+				gpio-line-names =
+				/* GPORT0 */
+				"PWRGD_CHD_CPU2", "PWRGD_CHC_CPU2",
+				"PWRGD_CHB_CPU2", "PWRGD_CHA_CPU2",
+				"PWRGD_CHE_CPU2", "PWRGD_CHF_CPU2",
+				"PWRGD_CHG_CPU2", "PWRGD_CHH_CPU2",
+				/* GPORT1*/
+				"SMB_VR_PVPP_HBM_CPU2_ALERT_N", "SMB_VR_PVCCINFAON_CPU2_ALERT_N",
+				"SMB_VR_PVNN_MAIN_CPU2_ALERT_N", "SMB_VR_PVCCD_HV_CPU2_ALERT_N",
+				"SMB_VR_PVCCIN_CPU2_ALERT_N", "SEL_SMB_DIMM_CPU2",
+				"", "",
+				/* GPORT2*/
+				"PWRGD_LVC3_CPU2_AB_DRAM_G", "PWRGD_LVC3_CPU2_CD_DRAM_G",
+				"PWRGD_LVC3_CPU2_EF_DRAM_G", "PWRGD_LVC3_CPU2_GH_DRAM_G",
+				/* GPORT3*/
+				"FM_CPU2_DISABLE_COD_N", "",
+				"RST_LVC3_CPU2_RESET_N", "PWRGD_LVC3_CPU2_PWRGOOD",
+				"PWRGD_PLT_AUX_CPU2_LVT3", "",
+				"", "",
+				/* GPORT4*/
+				"H_LVT3_CPU2_PROCHOT_N", "H_LVT3_CPU2_MEMHOT_IN_N",
+				"H_LVT3_CPU2_MEMHOT_OUT_N", "H_LVT3_CPU2_MEMTRIP_OUT_N",
+				"H_LVT3_CPU2_THERMTRIP_OUT_N", "",
+				"H_LVT3_CPU2_NMI", "FM_S3M_CPU2_CD_INIT_ERROR",
+				/* GPORT5*/
+				"FM_CPU2_PKG_ID0", "FM_CPU2_PKG_ID1",
+				"FM_CPU2_PROC_ID0", "FM_CPU2_PROC_ID1";
+
+				pinctrl-0 = <&U62100_pins>;
+				pinctrl-names = "default";
+				U62100_pins: pin-cfg {
+					input {
+						pins = "gp10", "gp11", "gp12", "gp13", "gp14",
+						"gp40", "gp47", "gp50", "gp51", "gp52", "gp53";
+						function = "gpio";
+						input-enable;
+					};
+					input_pullup {
+						pins = "gp00", "gp01", "gp02", "gp03", "gp04",
+						"gp05", "gp06", "gp07", "gp30", "gp41", "gp42",
+						"gp43", "gp44", "gp46";
+						function = "gpio";
+						input-enable;
+						bias-pull-up;
+					};
+					out-low {
+						pins = "gp15", "gp20", "gp21", "gp22", "gp23",
+						"gp32", "gp33", "gp34";
+						function = "gpio";
+						output-enable;
+						output-low;
+					};
+				};
+			};
+		};
+		i2c@1 { // SMB_PIROM_CPU2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+		i2c@2 { // SMB_VR_PVCCINFAON_CPU2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			pvccinfaon_pvccfa_cpu2@58 {
+				compatible = "mps,mp2971";
+				reg = <0x58>;
+				// using  SMB_VR_PVCCINFAON_CPU2_ALERT_N
+				interrupt-parent = <&smb_pex_cpu2_event>;
+				interrupts = <9 IRQ_TYPE_LEVEL_LOW>;
+
+				regulators {
+					pvccinfaon_cpu2: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvccinfaon_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p5v>;
+					};
+					pvccfa_ehv_cpu2: vout1 {
+						regulator-compatible = "vout1";
+						regulator-name = "pvccfa_ehv_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p5v>;
+					};
+				};
+			};
+			tda38640_pvnn_main_cpu2@40 {
+				compatible = "infineon,tda38640";
+				reg = <0x40>;
+				// using SMB_VR_PVNN_MAIN_CPU2_ALERT_N
+				interrupt-parent = <&smb_pex_cpu2_event>;
+				interrupts = <10 IRQ_TYPE_LEVEL_LOW>;
+				regulators {
+					pvnn_main_cpu2: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvnn_main_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@3 { // SMB_VR_PVCCIN_CPU2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+			mp2973_pvccin_pvccfa_cpu2@58 {
+				compatible = "mps,mp2973";
+				reg = <0x58>;
+				// using SMB_VR_PVCCIN_CPU2_ALERT
+				interrupt-parent = <&smb_pex_cpu2_event>;
+				interrupts = <12 IRQ_TYPE_LEVEL_LOW>;
+
+				regulators {
+					pvccin_cpu2: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvccin_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p5v>;
+					};
+					pvccfa_ehv_fivra_cpu2: vout1 {
+						regulator-compatible = "vout1";
+						regulator-name = "pvccfa_ehv_fivra_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p5v>;
+					};
+				};
+			};
+		};
+		i2c@4 { // SMB_VR_PVCCD_HV_CPU2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <4>;
+			tda38640_pvccd_hv_cpu2@40 {
+				compatible = "infineon,tda38640";
+				reg = <0x40>;
+				// using  SMB_VR_PVCCD_HV_CPU2_ALERT_N
+				interrupt-parent = <&smb_pex_cpu2_event>;
+				interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
+				infineon,en-pin-fixed-level = <0>;
+				regulators {
+					pvccd_hv_cpu2: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvccd_hv_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@5 { // SMB_VR_PVPP_HBM_CPU2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <5>;
+			tda38640_pvpp_hbm_cpu2@40 {
+				compatible = "infineon,tda38640";
+				reg = <0x40>;
+				// using   SMB_VR_PVPP_HBM_CPU2_ALERT_N
+				interrupt-parent = <&smb_pex_cpu2_event>;
+				interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
+				regulators {
+					pvpp_hbm_cpu2: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvpp_hbm_cpu2";
+						regulator-enable-ramp-delay = <200>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@6 { // I2C_DDRABCD_CPU2_BMC
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <6>;
+		};
+		i2c@7 { // I2C_DDREFGH_CPU2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <7>;
+		};
+	};
+};

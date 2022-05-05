@@ -1,0 +1,184 @@
+&i2c1 { // BMC_MUX_NIC
+	status = "okay";
+	// Bus frequency limited to 100KHz by cy8c9540
+
+	bmc_mux_nic: mux@77 { //  U61040
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "maxim,max7357";
+		reg = <0x77>;
+		reset-gpios = <&gpio0 ASPEED_GPIO(R, 3) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_NIC_RST_INT_N
+		vdd-supply = <&p3v3_aux>;
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			smb_pex_nic: U62160@20 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "cypress,cy8c9540";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#interrupt-cells=<2>;
+				interrupt-parent = <&smb_pex_vr_ctrl>;
+				interrupts = <8 IRQ_TYPE_LEVEL_HIGH>; // SMB_PEX_NIC_INT
+				interrupt-controller;
+				vdd-supply = <&p3v3_aux>;
+				// Reset is PEX_NIC_RST
+				reset-gpios = <&gpio0 ASPEED_GPIO(Q, 3) GPIO_ACTIVE_HIGH>;
+
+				ngpios = <38>;
+				gpio-reserved-ranges = <19 1>, <22 6>, <30 6>, <38 2>;
+
+				gpio-line-names =
+				/* GPORT0 */
+				"IRQ_NIC2_OVT_WRNG", "FM_NIC2_ALLSTANDBY_N", "IRQ_NIC2_OVT_SHTDN",
+				"SMB_VR_PVCORE_NIC2_ALERT_N", "FM_NIC2_PERST1_N", "SMB_NIC2_ALERT_N",
+				"FM_NIC2_PERST3_N", "FM_NIC2_PERST2_N",
+				/* GPORT1*/
+				"FM_NIC1_RST_N", "FM_NIC1_PERST0_N", "FM_NIC1_PERST2_N",
+				"FM_NIC1_PERST3_N", "SMB_NIC1_ALERT_N", "FM_NIC1_PERST1_N",
+				"SMB_VR_PVCORE_NIC1_ALERT_N", "IRQ_NIC1_OVT_SHTDN",
+				/* GPORT2*/
+				"SMB_VR_P3V3_NIC_ALERT_N", "FM_NIC2_FLASH_PRSNT", "FM_NIC1_FLASH_PRSNT", "",
+				/* GPORT3*/
+				"FM_NIC2_PERST0_N", "FM_NIC2_RST_N", "", "", "", "", "", "",
+				/* GPORT4*/
+				"FM_NIC1_ALLSTANDBY_N", "IRQ_NIC1_OVT_WRNG", "", "", "", "", "", "",
+				/* GPORT5*/
+				"SMB_VR_P1V8_NIC_ALERT_N", "SMB_VR_P1V2_NIC_ALERT_N", "", "";
+
+				pinctrl-0 = <&U62160_pins>;
+				pinctrl-names = "default";
+				U62160_pins: pin-cfg {
+					input {
+						pins = "gp03", "gp05", "gp14", "gp16", "gp20",
+						"gp50", "gp51";
+						function = "gpio";
+						input-enable;
+					};
+					input_pullup {
+						pins = "gp00", "gp02", "gp04", "gp06", "gp07",
+						"gp11", "gp12", "gp13", "gp15", "gp17", "gp21",
+						"gp22", "gp30", "gp41";
+						function = "gpio";
+						input-enable;
+						bias-pull-up;
+					};
+					out-low {
+						pins = "gp01", "gp10", "gp31", "gp40";
+						function = "gpio";
+						output-enable;
+						output-low;
+					};
+				};
+			};
+		};
+
+		i2c@1 { // SMB_NIC2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+		i2c@2 { // SMB_VR_PVCORE_NIC2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			ir38263_pvcore_nic2@40 {
+				compatible = "infineon,ir38263";
+				reg = <0x40>;
+
+				regulators {
+					pvcore_nic2: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvcore_nic2";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@3 { // SMB_VR_PVCORE_NIC1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+			ir38263_pvcore_nic1@40 {
+				compatible = "infineon,ir38263";
+				reg = <0x40>;
+
+				regulators {
+					pvcore_nic1: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "pvcore_nic1";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@4 { // SMB_NIC1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <4>;
+		};
+		i2c@5 { // SMB_VR_P3V3_NIC
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <5>;
+			ir38263_p3v3_nic@40 {
+				compatible = "infineon,ir38263";
+				reg = <0x40>;
+
+				regulators {
+					p3v3_nic: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "p3v3_nic";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+						vbus-supply = <&p3v3_aux>;
+					};
+				};
+			};
+		};
+		i2c@6 { // SMB_VR_P1V2_NIC
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <6>;
+			ir38263_p1v2_nic@40 {
+				compatible = "infineon,ir38263";
+				reg = <0x40>;
+
+				regulators {
+					p1v2_nic: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "p1v2_nic";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+						vbus-supply = <&p3v3_aux>;
+					};
+				};
+			};
+		};
+		i2c@7 { // SMB_VR_P1V8_NIC
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <7>;
+			ir38263_p1v8_nic@40 {
+				compatible = "infineon,ir38263";
+				reg = <0x40>;
+
+				regulators {
+					p1v8_nic: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "p1v8_nic";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+						vbus-supply = <&p3v3_aux>;
+					};
+				};
+			};
+		};
+	};
+};

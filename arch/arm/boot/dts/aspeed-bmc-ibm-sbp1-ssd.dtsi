@@ -1,0 +1,1387 @@
+&i2cmux9 {
+	i2c@0 { // MUX_SSB_RSSD19
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		ssb_rssd19: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <46 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD19_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd19:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd19: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd19_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd19: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd19_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@1 { // MUX_SSB_RSSD18
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		ssb_rssd18: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <45 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD18_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd18:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd18: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd18_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd18: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd18_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@2 { // MUX_SSB_RSSD17
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <2>;
+		ssb_rssd17: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <44 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD17_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd17:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd17: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd17_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd17: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd17_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@3 { // MUX_SSB_RSSD20
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <3>;
+		ssb_rssd20: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <47 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD20_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd20:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd20: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd20_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd20: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd20_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@4 { // MUX_SSB_RSSD21
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+		ssb_rssd21: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <48 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD21_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd21:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd21: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd21_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd21: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd21_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@5 { // MUX_SSB_RSSD22
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <5>;
+		ssb_rssd22: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <49 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD22_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd22:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd22: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd22_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd22: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd22_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@6 { // MUX_SSB_RSSD24
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <6>;
+		ssb_rssd24: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <51 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD24_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd24:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd24: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd24_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd24: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd24_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@7 { // MUX_SSB_RSSD23
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <7>;
+		ssb_rssd23: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <50 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD23_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd23:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd23: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd23_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd23: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd23_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+};
+
+&i2cmux10 {
+	i2c@0 { // MUX_SSB_RSSD25
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		ssb_rssd25: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <52 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD25_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd25:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd25: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd25_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd25: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd25_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@1 { // MUX_SSB_RSSD26
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		ssb_rssd26: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <53 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD26_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd26:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd26: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd26_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd26: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd26_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@2 { // MUX_SSB_RSSD27
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <2>;
+		ssb_rssd27: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <54 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD27_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd27:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd27: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd27_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd27: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd27_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@3 { // MUX_SSB_RSSD32
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <3>;
+		ssb_rssd32: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <59 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD32_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd32:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd32: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd32_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd32: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd32_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@4 { // MUX_SSB_RSSD31
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+		ssb_rssd31: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <58 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD31_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd31:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd31: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd31_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd31: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd31_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@5 { // MUX_SSB_RSSD30
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <5>;
+		ssb_rssd30: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <57 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD30_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd30:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd30: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd30_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd30: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd30_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@6 { // MUX_SSB_RSSD29
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <6>;
+		ssb_rssd29: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <56 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD29_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd29:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd29: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd29_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd29: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd29_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@7 { // MUX_SSB_RSSD28
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <7>;
+		ssb_rssd28: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd17_32>;
+			interrupts = <55 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD28_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd28:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd28: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd28_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd28: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd28_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+};
+
+&i2cmux18 {
+	i2c@0 { // MUX_SSB_RSSD03
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		ssb_rssd03: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <46 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD03_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd03:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd03: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd03_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd03: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd03_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@1 { // MUX_SSB_RSSD02
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		ssb_rssd02: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <45 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD02_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd02:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd02: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd02_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd02: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd02_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@2 { // MUX_SSB_RSSD01
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <2>;
+		ssb_rssd01: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <44 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD01_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd01:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd01: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd01_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd01: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd01_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@3 { // MUX_SSB_RSSD04
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <3>;
+		ssb_rssd04: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <47 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD04_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd04:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd04: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd04_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd04: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd04_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@4 { // MUX_SSB_RSSD05
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+		ssb_rssd05: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <48 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD05_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd05:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd05: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd05_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd05: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd05_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@5 { // MUX_SSB_RSSD08
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <5>;
+		ssb_rssd08: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <51 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD08_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd08:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd08: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd08_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd08: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd08_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@6 { // MUX_SSB_RSSD07
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <6>;
+		ssb_rssd07: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <50 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD07_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd07:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd07: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd07_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd07: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd07_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@7 { // MUX_SSB_RSSD06
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <7>;
+		ssb_rssd06: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <49 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD06_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd06:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd06: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd06_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd06: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd06_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+};
+
+&i2cmux19 {
+	i2c@0 { // MUX_SSB_RSSD14
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		ssb_rssd14: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <57 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD14_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd14:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd14: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd14_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd14: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd14_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@1 { // MUX_SSB_RSSD13
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		ssb_rssd13: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <56 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD13_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd13:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd13: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd13_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd13: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd13_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@2 { // MUX_SSB_RSSD12
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <2>;
+		ssb_rssd12: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <55 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD12_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd12:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd12: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd12_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd12: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd12_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@3 { // MUX_SSB_RSSD11
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <3>;
+		ssb_rssd11: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <54 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD11_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd11:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd11: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd11_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd11: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd11_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@4 { // MUX_SSB_RSSD10
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+		ssb_rssd10: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <53 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD10_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd10:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd10: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd10_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd10: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd10_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@5 { // MUX_SSB_RSSD09
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <5>;
+		ssb_rssd09: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <52 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD09_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd09:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd09: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd09_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd09: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd09_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@6 { // MUX_SSB_RSSD15
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <6>;
+		ssb_rssd15: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <58 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD15_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd15:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd15: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd15_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd15: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd15_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+	i2c@7 { // MUX_SSB_RSSD16
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <7>;
+		ssb_rssd16: regulator@3a {
+			reg = <0x3a>;
+			compatible = "maxim,max5970";
+			#io-channel-cells = <1>;
+			interrupt-parent = <&smb_svc_pex_rssd01_16>;
+			interrupts = <59 IRQ_TYPE_LEVEL_LOW>; // SSB_RSSD16_ALERT_N
+			// FIXME: Move to regulators
+			vss1-supply = <&p3v3_aux>;
+			vss2-supply = <&p12v_a>;
+			shunt-resistor-micro-ohms = <100000 4500000>;
+			leds {
+				power {
+					label = "rssd16:green:power";
+					reg = <0>;
+					default-state = "off";
+				};
+			};
+			regulators {
+				sw0_ssb_rssd16: SW0 {
+					vss1-supply = <&p3v3_aux>;
+					regulator-compatible = "SW0";
+					regulator-name = "rssd16_3v3";
+					shunt-resistor-micro-ohms = <100000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <410000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+				sw1_ssb_rssd16: SW1 {
+					vss2-supply = <&p12v_a>;
+					regulator-compatible = "SW1";
+					regulator-name = "rssd16_12v";
+					shunt-resistor-micro-ohms = <9000>;
+					regulator-over-current-protection;
+					regulator-oc-protection-microamp = <4500000>;
+					regulator-enable-ramp-delay = <1000>;
+				};
+			};
+		};
+	};
+};

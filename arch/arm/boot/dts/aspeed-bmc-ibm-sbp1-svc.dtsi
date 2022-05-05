@@ -1,0 +1,928 @@
+&i2c13 { // BMC_MUX_SVC_EXP
+	status = "okay";
+
+	// Bus frequency limited to 100KHz by cy8c9540
+
+	i2cmux23: mux@77 {
+		compatible = "maxim,max7357";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x77>;
+		reset-gpios = <&gpio0 ASPEED_GPIO(R, 4) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_SVC_EXP_RST_INT_N
+		vdd-supply = <&p3v3_bmc_aux>;
+
+		i2c@0 { // SMB_PEX_VR_CTRL
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			smb_pex_vr_ctrl: U62120@20 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "cypress,cy8c9540";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#interrupt-cells=<2>;
+				interrupt-parent = <&gpio0>;
+				// using SMB_PEX_VR_CTRL_INT
+				interrupts = <ASPEED_GPIO(V, 2) IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-controller;
+				vdd-supply = <&p3v3_bmc_aux>;
+				// reset is PEX_VR_CTRL_RST
+				reset-gpios = <&gpio0 ASPEED_GPIO(Q, 2) GPIO_ACTIVE_HIGH>;
+
+				gpio-reserved-ranges = <21 1>;
+
+				gpio-line-names =
+				/* GPORT0 */
+					"BCM0_INPUT_DISABLE_N", "SMB_VR_P3V3_AUX_ALERT_N",
+					"SMB_PEX_CPU1_EVENT_INT", "SMB_PEX_CPU2_EVENT_INT",
+					"DPIC0_VOLTAGE_DETECTB_N", "DPIC0_VOLTAGE_DETECTA_N",
+					"DPIC1_VOLTAGE_DETECTA_N", "DPIC1_VOLTAGE_DETECTB_N",
+				/* GPORT1*/
+					"SMB_PEX_NIC_INT", "SMB_VR_P1V05_PCH_AUX_ALERT_N",
+					"SMB_PEX_CPU0_EVENT_INT", "SMB_PEX_CPU3_EVENT_INT",
+					"LED_ID_TPM", "PLUG_DETECT_TPM",
+					"PLUG_DETECT_M2_SSD_CARRIER1", "RST_M2_SSD1_PERST_N",
+				/* GPORT2*/
+					"LED_ID_BAT", "LED_ID_MGMT_PORT2",
+					"LED_ID_MGMT_PORT1", "SMB_VR_P5V_AUX_ALERT_N",
+				/* GPORT3*/
+					"SMB_VR_AUX_SSB_ALERT_N", "BCM1_INPUT_DISABLE_N",
+					"LED_ID_NIC1_PORT1", "LED_ID_NIC1_PORT2",
+					"LED_ID_NIC2_PORT1", "LED_ID_NIC2_PORT2",
+					"RST_M2_SSD2_PERST_N", "PLUG_DETECT_M2_SSD2",
+				/* GPORT4*/
+					"PLUG_DETECT_BAT", "PLUG_DETECT_M2_SSD1",
+					"M2_SSD1_SSB_ALERT_N", "BCM2_INPUT_DISABLE_N",
+					"SMB_VR_P1V8_PCH_AUX_ALERT_N", "BCM3_INPUT_DISABLE_N",
+					"LED_PWR_DWR_BACK", "LED_ID_DWR_BACK_P",
+				/* GPORT5*/
+					"LED_ID_M2_SSD2", "LED_ID_M2_SSD1",
+					"PLUG_DETECT_M2_SSD_CARRIER2","M2_SSD2_SSB_ALERT_N";
+
+				pinctrl-0 = <&U62120_pins>;
+				pinctrl-names = "default";
+				U62120_pins: pin-cfg {
+					input {
+						pins = "gp01", "gp02", "gp03", "gp04", "gp05",
+						"gp06", "gp07", "gp10", "gp11", "gp12", "gp13",
+						"gp15", "gp23", "gp40", "gp44";
+						function = "gpio";
+						input-enable;
+					};
+					input_pullup {
+						pins = "gp00", "gp16", "gp30", "gp31", "gp37",
+						"gp41", "gp42", "gp43", "gp45", "gp52", "gp53";
+						function = "gpio";
+						input-enable;
+						bias-pull-up;
+					};
+					out-low {
+						pins = "gp17", "gp36";
+						function = "gpio";
+						output-enable;
+						output-low;
+					};
+					out-high {
+						pins = "gp14", "gp20", "gp21", "gp22", "gp32",
+						"gp33", "gp34", "gp35", "gp46", "gp47", "gp50",
+						"gp51";
+						function = "gpio";
+						output-enable;
+						output-high;
+					};
+				};
+			};
+		};
+		i2c@1 { // BMC_PEX_IRQ
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			bmc_pex_irq: U60000@20 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "cypress,cy8c9520";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#interrupt-cells=<2>;
+				interrupt-parent = <&gpio0>;
+				interrupts = <ASPEED_GPIO(V, 0) IRQ_TYPE_LEVEL_HIGH>; // BMC_PEX_IRQ_INT
+				interrupt-controller;
+				vdd-supply = <&p3v3_aux>;
+				// reset is PEX_BMC_RST
+				reset-gpios = <&gpio0 ASPEED_GPIO(Q, 1) GPIO_ACTIVE_HIGH>;
+
+				ngpios = <17>;
+
+				gpio-line-names =
+
+				/* GPORT0 */
+				"SMB_MUX_PWM_FANGRP2_RST_INT_N", "SMB_MUX_SSB_FANGRP2_RST_INT_N",
+				"SMB_MUX_PWM_FANGRP1_RST_INT_N", "SMB_MUX_SSB_RSSD01_08_RST_INT_N",
+				"SMB_MUX_RSSD01_08_RST_INT_N", "SMB_MUX_RSSD09_16_RST_INT_N",
+				"SMB_PEX_RSSD01_16_INT", "SMB_MUX_SSB_FANGRP1_RST_INT_N",
+				/* GPORT1*/
+				"SMB_SVC_PEX_FAN_ALERT_INT", "SMB_MUX_SSB_RSSD09_16_RST_INT_N",
+				"SMB_MUX_SSB_RSSD17_24_RST_INT_N", "SMB_MUX_PWM_FANGRP0_RST_INT_N",
+				"SMB_MUX_RSSD17_24_RST_INT_N", "SMB_PEX_RSSD17_32_INT",
+				"SMB_MUX_RSSD25_32_RST_INT_N", "SMB_MUX_SSB_RSSD25_32_RST_INT_N",
+				/* GPORT2*/
+				"SMB_MUX_SSB_FANGRP0_RST_INT_N", "PEX_FAN_ALERT_RST",
+				"PEX_RSSD01_16_RST", "PEX_RSSD17_32_RST";
+
+				pinctrl-0 = <&U60000_pins>;
+				pinctrl-names = "default";
+				U60000_pins: pin-cfg {
+					input {
+						pins = "gp00", "gp01", "gp02", "gp03", "gp04",
+						"gp05", "gp06", "gp07", "gp10", "gp11", "gp12",
+						"gp13", "gp14", "gp15", "gp16", "gp17", "gp20";
+						function = "gpio";
+						input-enable;
+					};
+					out-high {
+						pins = "gp21", "gp22", "gp23";
+						function = "gpio";
+						output-enable;
+						output-high;
+					};
+				};
+			};
+		};
+		i2c@2 { // BMC_MUX_SVC_RSSD
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+
+			i2cmux24: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&gpio0 ASPEED_GPIO(P, 3) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_SVC_RSSD_INT
+				vdd-supply = <&p3v3_bmc_aux>;
+
+				i2c@0 { // SMB_SVC_PEX_RSSD01_16
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <0>;
+
+					smb_svc_pex_rssd01_16: U65200@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9560";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						// using SMB_SVC_PEX_RSSD01_16_INT
+						#interrupt-cells=<2>;
+						interrupt-parent = <&gpio0>;
+						interrupts = <ASPEED_GPIO(S, 0) IRQ_TYPE_LEVEL_HIGH>;
+						interrupt-controller;
+						vdd-supply = <&p3v3_bmc_aux>;
+						// reset is SVC_PEX_RSSD01_16_RST
+						reset-gpios = <&smb_svc_pex_cpu0_led 17 GPIO_ACTIVE_HIGH>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"LED_ID_RSSD01", "LED_ID_RSSD02",
+						"LED_ID_RSSD03", "LED_ID_RSSD04",
+						"LED_ID_RSSD05", "LED_ID_RSSD06",
+						"LED_ID_RSSD07", "LED_ID_RSSD08",
+						/* GPORT1*/
+						"LED_ID_RSSD09", "LED_ID_RSSD10",
+						"LED_ID_RSSD11", "LED_ID_RSSD12",
+						"LED_ID_RSSD13", "LED_ID_RSSD14",
+						"LED_ID_RSSD15", "LED_ID_RSSD16",
+						/* GPORT2*/
+						"RSSD01_PRESENT_N", "RSSD02_PRESENT_N",
+						"RSSD03_PRESENT_N", "RSSD04_PRESENT_N",
+						/* GPORT3*/
+						"RSSD05_PRESENT_N", "RSSD06_PRESENT_N",
+						"RSSD07_PRESENT_N", "RSSD08_PRESENT_N",
+						"RSSD09_PRESENT_N", "RSSD10_PRESENT_N",
+						"RSSD11_PRESENT_N", "RSSD12_PRESENT_N",
+						/* GPORT4*/
+						"RSSD13_PRESENT_N", "RSSD14_PRESENT_N",
+						"RSSD15_PRESENT_N", "RSSD16_PRESENT_N",
+						"LED_ID_FAN_ASM01", "LED_ID_FAN_ASM02",
+						"LED_ID_FAN_ASM03", "LED_ID_FAN_ASM04",
+						/* GPORT5*/
+						"LED_ID_FAN_ASM05", "LED_ID_FAN_ASM06",
+						"PLUG_DETECT_FAN_ASM01", "PLUG_DETECT_FAN_ASM02",
+						"PLUG_DETECT_FAN_ASM03", "PLUG_DETECT_FAN_ASM04",
+						"PLUG_DETECT_FAN_ASM05", "PLUG_DETECT_FAN_ASM06",
+						/* GPORT6*/
+						"SSB_RSSD01_ALERT_N", "SSB_RSSD02_ALERT_N",
+						"SSB_RSSD03_ALERT_N", "SSB_RSSD04_ALERT_N",
+						"SSB_RSSD05_ALERT_N", "SSB_RSSD06_ALERT_N",
+						"SSB_RSSD07_ALERT_N", "SSB_RSSD08_ALERT_N",
+						/* GPORT7*/
+						"SSB_RSSD09_ALERT_N", "SSB_RSSD10_ALERT_N",
+						"SSB_RSSD11_ALERT_N", "SSB_RSSD12_ALERT_N",
+						"SSB_RSSD13_ALERT_N", "SSB_RSSD14_ALERT_N",
+						"SSB_RSSD15_ALERT_N", "SSB_RSSD16_ALERT_N";
+
+						pinctrl-0 = <&U65200_pins>;
+						pinctrl-names = "default";
+						U65200_pins: pin-cfg {
+							input_pullup {
+								pins = "gp20", "gp21", "gp22",
+								"gp23", "gp30", "gp31", "gp32",
+								"gp33", "gp34", "gp35", "gp36",
+								"gp37", "gp40", "gp41", "gp42",
+								"gp43", "gp52", "gp53", "gp54",
+								"gp55", "gp56", "gp57", "gp60",
+								"gp61", "gp62", "gp63", "gp64",
+								"gp65", "gp66", "gp67", "gp70",
+								"gp71", "gp72", "gp73", "gp74",
+								"gp75", "gp76", "gp77";
+								function = "gpio";
+								input-enable;
+								bias-pull-up;
+							};
+							out-high {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp44", "gp45", "gp46",
+								"gp47", "gp50", "gp51";
+								function = "gpio";
+								output-enable;
+								output-high;
+							};
+						};
+					};
+				};
+				i2c@1 { // SMB_SVC_PEX_RSSD17_32
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+
+					smb_svc_pex_rssd17_32: U65300@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9560";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						// using SMB_SVC_PEX_RSSD17_32_INT
+						#interrupt-cells=<2>;
+						interrupt-parent = <&gpio0>;
+						interrupts = <ASPEED_GPIO(H, 0) IRQ_TYPE_LEVEL_HIGH>;
+						interrupt-controller;
+						vdd-supply = <&p3v3_bmc_aux>;
+						// reset is SVC_PEX_RSSD17_32_RST
+						reset-gpios = <&smb_svc_pex_cpu1_led 17 GPIO_ACTIVE_HIGH>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"LED_ID_RSSD17", "LED_ID_RSSD18",
+						"LED_ID_RSSD19", "LED_ID_RSSD20",
+						"LED_ID_RSSD21", "LED_ID_RSSD22",
+						"LED_ID_RSSD23", "LED_ID_RSSD24",
+						/* GPORT1*/
+						"LED_ID_RSSD25", "LED_ID_RSSD26",
+						"LED_ID_RSSD27", "LED_ID_RSSD28",
+						"LED_ID_RSSD29", "LED_ID_RSSD30",
+						"LED_ID_RSSD31", "LED_ID_RSSD32",
+						/* GPORT2*/
+						"RSSD17_PRESENT_N", "RSSD18_PRESENT_N",
+						"RSSD19_PRESENT_N", "RSSD20_PRESENT_N",
+						/* GPORT3*/
+						"RSSD21_PRESENT_N", "RSSD22_PRESENT_N",
+						"RSSD23_PRESENT_N", "RSSD24_PRESENT_N",
+						"RSSD25_PRESENT_N", "RSSD26_PRESENT_N",
+						"RSSD27_PRESENT_N", "RSSD28_PRESENT_N",
+						/* GPORT4*/
+						"RSSD29_PRESENT_N", "RSSD30_PRESENT_N",
+						"RSSD31_PRESENT_N", "RSSD32_PRESENT_N",
+						"LED_ID_FAN_ASM07", "LED_ID_FAN_ASM08",
+						"LED_ID_FAN_ASM09", "LED_ID_FAN_ASM10",
+						/* GPORT5*/
+						"LED_ID_FAN_ASM11", "LED_ID_FAN_ASM12",
+						"PLUG_DETECT_FAN_ASM07", "PLUG_DETECT_FAN_ASM08",
+						"PLUG_DETECT_FAN_ASM09", "PLUG_DETECT_FAN_ASM10",
+						"PLUG_DETECT_FAN_ASM11", "PLUG_DETECT_FAN_ASM12",
+						/* GPORT6*/
+						"SSB_RSSD17_ALERT_N", "SSB_RSSD18_ALERT_N",
+						"SSB_RSSD19_ALERT_N", "SSB_RSSD20_ALERT_N",
+						"SSB_RSSD21_ALERT_N", "SSB_RSSD22_ALERT_N",
+						"SSB_RSSD23_ALERT_N", "SSB_RSSD24_ALERT_N",
+						/* GPORT7*/
+						"SSB_RSSD25_ALERT_N", "SSB_RSSD26_ALERT_N",
+						"SSB_RSSD27_ALERT_N", "SSB_RSSD28_ALERT_N",
+						"SSB_RSSD29_ALERT_N", "SSB_RSSD30_ALERT_N",
+						"SSB_RSSD31_ALERT_N", "SSB_RSSD32_ALERT_N";
+
+						pinctrl-0 = <&U65300_pins>;
+						pinctrl-names = "default";
+						U65300_pins: pin-cfg {
+							input_pullup {
+								pins = "gp20", "gp21", "gp22",
+								"gp23", "gp30", "gp31", "gp32",
+								"gp33", "gp34", "gp35", "gp36",
+								"gp37", "gp40", "gp41", "gp42",
+								"gp43", "gp52", "gp53", "gp54",
+								"gp55", "gp56", "gp57", "gp60",
+								"gp61", "gp62", "gp63", "gp64",
+								"gp65", "gp66", "gp67", "gp70",
+								"gp71", "gp72", "gp73", "gp74",
+								"gp75", "gp76", "gp77";
+								function = "gpio";
+								input-enable;
+								bias-pull-up;
+							};
+							out-high {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp44", "gp45", "gp46",
+								"gp47", "gp50", "gp51";
+								function = "gpio";
+								output-enable;
+								output-high;
+							};
+						};
+					};
+				};
+
+				i2c@2 { // SMB_SVC_PEX_CPU1_LED
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <2>;
+
+					smb_svc_pex_cpu1_led: U65500@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9540";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						#interrupt-cells=<2>;
+						// uses SMB_SVC_PEX_CPU1_LED_INT
+						interrupt-parent = <&gpio0>;
+						interrupts = <ASPEED_GPIO(V, 6) IRQ_TYPE_LEVEL_HIGH>;
+						interrupt-controller;
+						vdd-supply = <&p3v3_bmc_aux>;
+						// reset is PEX_CPU1_LED_RST
+						reset-gpios = <&gpio0 ASPEED_GPIO(Q, 5) GPIO_ACTIVE_HIGH>;
+
+						gpio-reserved-ranges = <18 2>, <36 2>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"PLUG_DETECT_DIMM_C1E2", "PLUG_DETECT_DIMM_C1E1",
+						"PLUG_DETECT_DIMM_C1F2", "PLUG_DETECT_DIMM_C1F1",
+						"PLUG_DETECT_DIMM_C1G2", "PLUG_DETECT_DIMM_C1G1",
+						"PLUG_DETECT_DIMM_C1H2", "PLUG_DETECT_DIMM_C1H1",
+						/* GPORT1*/
+						"PLUG_DETECT_DIMM_C1D1", "PLUG_DETECT_DIMM_C1D2",
+						"PLUG_DETECT_DIMM_C1C1", "PLUG_DETECT_DIMM_C1C2",
+						"PLUG_DETECT_DIMM_C1B1", "PLUG_DETECT_DIMM_C1B2",
+						"PLUG_DETECT_DIMM_C1A1", "PLUG_DETECT_DIMM_C1A2",
+						/* GPORT2*/
+						"PEX_CPU1_EVENT_RST", "SVC_PEX_RSSD17_32_RST",
+						"", "",
+						/* GPORT3*/
+						"LED_ID_DIMM_C1E2", "LED_ID_DIMM_C1E1",
+						"LED_ID_DIMM_C1F2", "LED_ID_DIMM_C1F1",
+						"LED_ID_DIMM_C1G2", "LED_ID_DIMM_C1G1",
+						"LED_ID_DIMM_C1H2", "LED_ID_DIMM_C1H1",
+						/* GPORT4*/
+						"LED_ID_DIMM_C1A2", "LED_ID_DIMM_C1A1",
+						"LED_ID_DIMM_C1B2", "LED_ID_DIMM_C1B1",
+						"LED_ID_DIMM_C1C2", "LED_ID_DIMM_C1C1",
+						"LED_ID_DIMM_C1D2", "LED_ID_DIMM_C1D1",
+						/* GPORT5*/
+						"", "",
+						"FM_CPU1_SKTOCC_N", "LED_ID_CPU1";
+
+						pinctrl-0 = <&U65500_pins>;
+						pinctrl-names = "default";
+						U65500_pins: pin-cfg {
+							input {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp52";
+								function = "gpio";
+								input-enable;
+							};
+							out-high {
+								pins = "gp20", "gp21", "gp30",
+								"gp31", "gp32", "gp33", "gp34",
+								"gp35", "gp36", "gp37", "gp40",
+								"gp41", "gp42", "gp43", "gp44",
+								"gp45", "gp46", "gp47", "gp53";
+								function = "gpio";
+								output-enable;
+								output-high;
+							};
+						};
+					};
+				};
+				
+				i2c@3 { // SMB_SVC_PEX_FAN_ALERT
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <3>;
+
+					smb_svc_pex_fan_alert: U65600@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9560";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						// uses SMB_SVC_PEX_FAN_ALERT_INT
+						#interrupt-cells=<2>;
+						interrupt-parent = <&bmc_pex_irq>;
+						interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+						interrupt-controller;
+						vdd-supply = <&p3v3_aux>;
+						// reset is PEX_FAN_ALERT_RST
+						reset-gpios = <&bmc_pex_irq 17 GPIO_ACTIVE_HIGH>;
+
+						ngpios = <51>;
+						gpio-reserved-ranges = <24 3>, <51 9>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"FAN01_SSB_ALERT_N", "FAN02_SSB_ALERT_N",
+						"FAN03_SSB_ALERT_N", "FAN04_SSB_ALERT_N",
+						"FAN05_SSB_ALERT_N", "FAN06_SSB_ALERT_N",
+						"FAN07_SSB_ALERT_N", "FAN08_SSB_ALERT_N",
+						/* GPORT1*/
+						"FAN09_SSB_ALERT_N", "FAN10_SSB_ALERT_N",
+						"FAN11_SSB_ALERT_N", "FAN12_SSB_ALERT_N",
+						"FAN13_SSB_ALERT_N", "FAN14_SSB_ALERT_N",
+						"FAN15_SSB_ALERT_N", "FAN16_SSB_ALERT_N",
+						/* GPORT2*/
+						"FAN17_SSB_ALERT_N", "FAN18_SSB_ALERT_N",
+						"FAN19_SSB_ALERT_N", "FAN20_SSB_ALERT_N",
+						/* GPORT3*/
+						"FAN21_SSB_ALERT_N", "FAN22_SSB_ALERT_N",
+						"FAN23_SSB_ALERT_N", "FAN24_SSB_ALERT_N",
+						"", "",
+						"", "FAN01_PWM_ALERT_N",
+						/* GPORT4*/
+						"FAN02_PWM_ALERT_N", "FAN03_PWM_ALERT_N",
+						"FAN04_PWM_ALERT_N", "FAN05_PWM_ALERT_N",
+						"FAN06_PWM_ALERT_N", "FAN07_PWM_ALERT_N",
+						"FAN08_PWM_ALERT_N", "FAN09_PWM_ALERT_N",
+						/* GPORT5*/
+						"FAN10_PWM_ALERT_N", "FAN11_PWM_ALERT_N",
+						"FAN12_PWM_ALERT_N", "FAN13_PWM_ALERT_N",
+						"FAN14_PWM_ALERT_N", "FAN15_PWM_ALERT_N",
+						"FAN16_PWM_ALERT_N", "FAN17_PWM_ALERT_N",
+						/* GPORT6*/
+						"FAN18_PWM_ALERT_N", "FAN19_PWM_ALERT_N",
+						"FAN20_PWM_ALERT_N", "FAN21_PWM_ALERT_N",
+						"FAN22_PWM_ALERT_N", "FAN23_PWM_ALERT_N",
+						"FAN24_PWM_ALERT_N", "",
+						/* GPORT7*/
+						"", "",
+						"", "",
+						"", "",
+						"", "";
+
+						pinctrl-0 = <&U65600_pins>;
+						pinctrl-names = "default";
+						U65600_pins: pin-cfg {
+							input_pullup {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp20", "gp21", "gp22",
+								"gp23", "gp30", "gp31", "gp32",
+								"gp33", "gp37", "gp40", "gp41",
+								"gp42", "gp43", "gp44", "gp45",
+								"gp46", "gp47", "gp50", "gp51",
+								"gp52", "gp53", "gp54", "gp55",
+								"gp56", "gp57", "gp60", "gp61",
+								"gp62", "gp63", "gp64", "gp65",
+								"gp66";
+								function = "gpio";
+								input-enable;
+								bias-pull-up;
+							};
+						};
+					};
+				};
+				i2c@4 { // SMB_SVC_PEX_CPU2_LED
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <4>;
+
+					smb_svc_pex_cpu2_led: U65800@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9540";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						#interrupt-cells=<2>;
+						// uses SMB_SVC_PEX_CPU2_LED_INT
+						interrupt-parent = <&gpio0>;
+						interrupts = <ASPEED_GPIO(V, 5) IRQ_TYPE_LEVEL_HIGH>;
+						interrupt-controller;
+						vdd-supply = <&p3v3_bmc_aux>;
+						// reset is PEX_CPU2_LED_RST
+						reset-gpios = <&gpio0 ASPEED_GPIO(Q, 6) GPIO_ACTIVE_HIGH>;
+
+						gpio-reserved-ranges = <17 3>, <36 2>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"PLUG_DETECT_DIMM_C2E2", "PLUG_DETECT_DIMM_C2E1",
+						"PLUG_DETECT_DIMM_C2F2", "PLUG_DETECT_DIMM_C2F1",
+						"PLUG_DETECT_DIMM_C2G2", "PLUG_DETECT_DIMM_C2G1",
+						"PLUG_DETECT_DIMM_C2H2", "PLUG_DETECT_DIMM_C2H1",
+						/* GPORT1*/
+						"PLUG_DETECT_DIMM_C2D1", "PLUG_DETECT_DIMM_C2D2",
+						"PLUG_DETECT_DIMM_C2C1", "PLUG_DETECT_DIMM_C2C2",
+						"PLUG_DETECT_DIMM_C2B1", "PLUG_DETECT_DIMM_C2B2",
+						"PLUG_DETECT_DIMM_C2A1", "PLUG_DETECT_DIMM_C2A2",
+						/* GPORT2*/
+						"PEX_CPU2_EVENT_RST", "",
+						"", "",
+						/* GPORT3*/
+						"LED_ID_DIMM_C2E2", "LED_ID_DIMM_C2E1",
+						"LED_ID_DIMM_C2F2", "LED_ID_DIMM_C2F1",
+						"LED_ID_DIMM_C2G2", "LED_ID_DIMM_C2G1",
+						"LED_ID_DIMM_C2H2", "LED_ID_DIMM_C2H1",
+						/* GPORT4*/
+						"LED_ID_DIMM_C2A2", "LED_ID_DIMM_C2A1",
+						"LED_ID_DIMM_C2B2", "LED_ID_DIMM_C2B1",
+						"LED_ID_DIMM_C2C2", "LED_ID_DIMM_C2C1",
+						"LED_ID_DIMM_C2D2", "LED_ID_DIMM_C2D1",
+						/* GPORT5*/
+						"", "",
+						"FM_CPU2_SKTOCC_N", "LED_ID_CPU2";
+
+						pinctrl-0 = <&U65800_pins>;
+						pinctrl-names = "default";
+						U65800_pins: pin-cfg {
+							input {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp52";
+								function = "gpio";
+								input-enable;
+							};
+							out-high {
+								pins = "gp20", "gp30", "gp31",
+								"gp32", "gp33", "gp34", "gp35",
+								"gp36", "gp37", "gp40", "gp41",
+								"gp42", "gp43", "gp44", "gp45",
+								"gp46", "gp47", "gp53";
+								function = "gpio";
+								output-enable;
+								output-high;
+							};
+						};
+					};
+				};
+				i2c@5 { // SMB_SVC_PEX_CPU3_LED
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <5>;
+
+					smb_svc_pex_cpu3_led: U65900@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9540";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						#interrupt-cells=<2>;
+						interrupt-parent = <&gpio0>;
+						interrupts = <ASPEED_GPIO(V, 3) IRQ_TYPE_LEVEL_HIGH>; // SMB_SVC_PEX_CPU12_LED_INT
+						interrupt-controller;
+						vdd-supply = <&p3v3_bmc_aux>;
+						// reset is PEX_CPU3_LED_RST
+						reset-gpios = <&gpio0 ASPEED_GPIO(Q, 7) GPIO_ACTIVE_HIGH>;
+
+						ngpios = <59>;
+						//FIXME: Used by unit testing. Uncomment on release.
+						gpio-reserved-ranges = <17 3>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"PLUG_DETECT_DIMM_C3E2", "PLUG_DETECT_DIMM_C3E1",
+						"PLUG_DETECT_DIMM_C3F2", "PLUG_DETECT_DIMM_C3F1",
+						"PLUG_DETECT_DIMM_C3G2", "PLUG_DETECT_DIMM_C3G1",
+						"PLUG_DETECT_DIMM_C3H2", "PLUG_DETECT_DIMM_C3H1",
+						/* GPORT1*/
+						"PLUG_DETECT_DIMM_C3D1", "PLUG_DETECT_DIMM_C3D2",
+						"PLUG_DETECT_DIMM_C3C1", "PLUG_DETECT_DIMM_C3C2",
+						"PLUG_DETECT_DIMM_C3B1", "PLUG_DETECT_DIMM_C3B2",
+						"PLUG_DETECT_DIMM_C3A1", "PLUG_DETECT_DIMM_C3A2",
+						/* GPORT2*/
+						"PEX_CPU3_EVENT_RST", "",
+						"", "",
+						/* GPORT3*/
+						"LED_ID_DIMM_C3E2", "LED_ID_DIMM_C3E1",
+						"LED_ID_DIMM_C3F2", "LED_ID_DIMM_C3F1",
+						"LED_ID_DIMM_C3G2", "LED_ID_DIMM_C3G1",
+						"LED_ID_DIMM_C3H2", "LED_ID_DIMM_C3H1",
+						/* GPORT4*/
+						"LED_ID_DIMM_C3A2", "LED_ID_DIMM_C3A1",
+						"LED_ID_DIMM_C3B2", "LED_ID_DIMM_C3B1",
+						"LED_ID_DIMM_C3C2", "LED_ID_DIMM_C3C1",
+						"LED_ID_DIMM_C3D2", "LED_ID_DIMM_C3D1",
+						/* GPORT5*/
+						"LED_PWR_DWR_FRNT", "LED_ID_DWR_FRNT_P",
+						"FM_CPU3_SKTOCC_N", "LED_ID_CPU3";
+
+						pinctrl-0 = <&U65900_pins>;
+						pinctrl-names = "default";
+						U65900_pins: pin-cfg {
+							input {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp52";
+								function = "gpio";
+								input-enable;
+							};
+							out-high {
+								pins = "gp20", "gp30", "gp31",
+								"gp32", "gp33", "gp34", "gp35",
+								"gp36", "gp37", "gp40", "gp41",
+								"gp42", "gp43", "gp44", "gp45",
+								"gp46", "gp47", "gp50", "gp51",
+								"gp53";
+								function = "gpio";
+								output-enable;
+								output-high;
+							};
+						};
+					};
+				};
+				i2c@6 { // SMB_SVC_PEX_CPU0_LED
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <6>;
+
+					smb_svc_pex_cpu0_led: U65400@20 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "cypress,cy8c9540";
+						reg = <0x20>;
+						gpio-controller;
+						#gpio-cells = <2>;
+						#interrupt-cells=<2>;
+						interrupt-parent = <&gpio0>;
+						interrupts = <ASPEED_GPIO(O, 3) IRQ_TYPE_LEVEL_HIGH>; // SMB_SVC_PEX_CPU0_LED_INT
+						interrupt-controller;
+						vdd-supply = <&p3v3_bmc_aux>;
+						// reset is PEX_CPU0_LED_RST
+						reset-gpios = <&gpio0 ASPEED_GPIO(Q, 4) GPIO_ACTIVE_HIGH>;
+
+						ngpios = <59>;
+						//FIXME: Used by unit testing. Uncomment on release.
+						gpio-reserved-ranges = <18 2>, <36 2>;
+
+						gpio-line-names =
+						/* GPORT0 */
+						"PLUG_DETECT_DIMM_C0E2", "PLUG_DETECT_DIMM_C0E1",
+						"PLUG_DETECT_DIMM_C0F2", "PLUG_DETECT_DIMM_C0F1",
+						"PLUG_DETECT_DIMM_C0G2", "PLUG_DETECT_DIMM_C0G1",
+						"PLUG_DETECT_DIMM_C0H2", "PLUG_DETECT_DIMM_C0H1",
+						/* GPORT1*/
+						"PLUG_DETECT_DIMM_C0D1", "PLUG_DETECT_DIMM_C0D2",
+						"PLUG_DETECT_DIMM_C0C1", "PLUG_DETECT_DIMM_C0C2",
+						"PLUG_DETECT_DIMM_C0B1", "PLUG_DETECT_DIMM_C0B2",
+						"PLUG_DETECT_DIMM_C0A1", "PLUG_DETECT_DIMM_C0A2",
+						/* GPORT2*/
+						"PEX_CPU0_EVENT_RST", "SVC_PEX_RSSD01_16_RST",
+						"", "",
+						/* GPORT3*/
+						"LED_ID_DIMM_C0E2", "LED_ID_DIMM_C0E1",
+						"LED_ID_DIMM_C0F2", "LED_ID_DIMM_C0F1",
+						"LED_ID_DIMM_C0G2", "LED_ID_DIMM_C0G1",
+						"LED_ID_DIMM_C0H2", "LED_ID_DIMM_C0H1",
+						/* GPORT4*/
+						"LED_ID_DIMM_C0A2", "LED_ID_DIMM_C0A1",
+						"LED_ID_DIMM_C0B2", "LED_ID_DIMM_C0B1",
+						"LED_ID_DIMM_C0C2", "LED_ID_DIMM_C0C1",
+						"LED_ID_DIMM_C0D2", "LED_ID_DIMM_C0D1",
+						/* GPORT5*/
+						"", "",
+						"FM_CPU0_SKTOCC_N", "LED_ID_CPU0";
+
+						pinctrl-0 = <&U65400_pins>;
+						pinctrl-names = "default";
+						U65400_pins: pin-cfg {
+							input {
+								pins = "gp00", "gp01", "gp02",
+								"gp03", "gp04", "gp05", "gp06",
+								"gp07", "gp10", "gp11", "gp12",
+								"gp13", "gp14", "gp15", "gp16",
+								"gp17", "gp52";
+								function = "gpio";
+								input-enable;
+							};
+							out-high {
+								pins = "gp20", "gp21", "gp30",
+								"gp31", "gp32", "gp33", "gp34",
+								"gp35", "gp36", "gp37", "gp40",
+								"gp41", "gp42", "gp43",
+								"gp44", "gp45", "gp46",
+								"gp47", "gp53";
+								function = "gpio";
+								output-enable;
+								output-high;
+							};
+						};
+					};
+				};
+			};
+		};
+		i2c@3 { // BMC_EEPROM
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+
+			eeprom@51 { // M24C32-R
+				compatible = "atmel,24c32";
+				reg = <0x51>;
+				pagesize = <32>;
+				vcc-supply = <&p3v3_bmc_aux>;
+			};
+		};
+		i2c@7 { // BMC_MUX_SVC_VR
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <7>;
+			i2cmux25: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&gpio0 ASPEED_GPIO(R, 2) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_SVC_VR_RST_INT
+				vdd-supply = <&p3v3_bmc_aux>;
+
+				i2c@1 { // SMB_VR_P5V_AUX
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+
+					ir38263_p5v_aux@40 {
+						reg = <0x40>;
+						compatible = "infineon,ir38263";
+
+						regulators {
+							p5v_aux: vout0 {
+								regulator-compatible = "vout0";
+								regulator-name = "p5v_aux";
+								regulator-enable-ramp-delay = <2000>;
+								vin-supply = <&p12v_a>;
+								vbus-supply = <&p3v3_bmc_aux>;
+								// Supplies the BMC
+								regulator-always-on;
+								regulator-boot-on;
+							};
+						};
+					};
+				};
+				i2c@2 { // SMB_VR_P3V3_AUX
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <2>;
+					ir38263_p3v3_aux@40 {
+						compatible = "infineon,ir38263";
+						reg = <0x40>;
+
+						regulators {
+							p3v3_aux: vout0 {
+								regulator-compatible = "vout0";
+								vin-supply = <&p12v_a>;
+								regulator-name = "p3v3_aux";
+								// 2msec for regulator + 18msec for board capacitance
+								// Note: Every IC has a PTC which slowly charges the bypass cap.
+								regulator-enable-ramp-delay = <200000>;
+							};
+						};
+					};
+				};
+				i2c@3 { // SMB_VR_AUX_SSB
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <3>;
+					aux_ssb: regulator@3a {
+						reg = <0x3a>;
+						compatible = "maxim,max5970";
+						#io-channel-cells = <1>;
+						regulator-name = "pch_main_rails";
+						interrupt-parent = <&smb_pex_vr_ctrl>;
+						interrupts = <20 IRQ_TYPE_LEVEL_LOW>; // SMB_VR_AUX_SSB_ALERT
+						vbus-supply = <&p3v3_bmc_aux>;
+						vin-supply = <&p3v3_bmc_aux>;
+
+						// FIXME: Move to regulators
+						vss1-supply = <&p5v_aux>;
+						vss2-supply = <&p3v3_aux>;
+
+						regulators {
+							p5v: SW0 {
+								vss1-supply = <&p5v_aux>;
+								regulator-compatible = "SW0";
+								regulator-name = "p5v";
+								shunt-resistor-micro-ohms = <12000>;
+								regulator-over-current-protection;
+								regulator-oc-protection-microamp = <3400000>;
+								regulator-enable-ramp-delay = <100000>;
+							};
+							p3v3_pch: SW1 {
+								vss2-supply = <&p3v3_aux>;
+								regulator-compatible = "SW1";
+								regulator-name = "p3v3_pch";
+								shunt-resistor-micro-ohms = <12000>;
+								regulator-over-current-protection;
+								regulator-oc-protection-microamp = <3400000>;
+								regulator-enable-ramp-delay = <100000>;
+							};
+						};
+					};
+				};
+				i2c@4 { // SMB_BCM0
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <4>;
+					pli1209bc_p12v_a: regulator@5f {
+						compatible = "vicor,pli1209bc";
+						reg = <0x5f>;
+						regulators {
+							p12v_a: vout2 {
+								regulator-compatible = "vout2";
+								regulator-name = "bcm0";
+								regulator-always-on;
+								regulator-boot-on;
+							};
+						};
+					};
+				};
+				i2c@5 { // SMB_BCM1
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <5>;
+					pli1209bc_p12v_b: regulator@5f {
+						compatible = "vicor,pli1209bc";
+						reg = <0x5f>;
+						regulators {
+							p12v_b: vout2 {
+								regulator-compatible = "vout2";
+								regulator-name = "bcm1";
+								regulator-boot-on;
+							};
+						};
+					};
+				};
+				i2c@6 { // SMB_BCM2
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <6>;
+					pli1209bc_p12v_c: regulator@5f {
+						compatible = "vicor,pli1209bc";
+						reg = <0x5f>;
+						regulators {
+							p12v_c: vout2 {
+								regulator-compatible = "vout2";
+								regulator-name = "bcm2";
+								regulator-boot-on;
+							};
+						};
+					};
+				};
+				i2c@7 { // SMB_BCM3
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <7>;
+					pli1209bc_p12v_d: regulator@5f {
+						compatible = "vicor,pli1209bc";
+						reg = <0x5f>;
+						regulators {
+							p12v_d: vout2 {
+								regulator-compatible = "vout2";
+								regulator-name = "bcm3";
+								regulator-boot-on;
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};

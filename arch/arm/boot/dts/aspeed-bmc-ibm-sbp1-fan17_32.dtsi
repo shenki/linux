@@ -1,0 +1,280 @@
+&i2c8 { // BMC_MUX_FANSSB_RSSD17_32
+	status = "okay";
+	// Bus frequency limited to 100KHz by cy8c9560
+
+	i2cmux5: mux@77 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "maxim,max7357";
+		reg = <0x77>;
+		reset-gpios = <&gpio0 ASPEED_GPIO(R, 0) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_FANSSB_RSSD17_32_RST_INT_N
+		vdd-supply = <&p3v3_aux>;
+
+		i2c@0 { // SMB_MUX_SSB_FANGRP0
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			i2cmux6: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 16 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_SSB_FANGRP0_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+			};
+		};
+		i2c@1 { // SMB_MUX_SSB_FANGRP1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+
+			i2cmux7: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_SSB_FANGRP1_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+			};
+		};
+		i2c@2 { // SMB_MUX_SSB_FANGRP2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+
+			i2cmux8: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 1 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_SSB_FANGRP2_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+			};
+		};
+		i2c@3 { // SMB_MUX_SSB_RSSD17_24
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+
+			i2cmux9: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 10 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_SSB_RSSD17_24_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+			};
+		};
+		i2c@4 { // SMB_MUX_SSB_RSSD25_32
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <4>;
+
+			i2cmux10: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_SSB_RSSD25_32_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+			};
+		};
+		i2c@5 { // SMB_PEX_RSSD01_16
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <5>;
+
+			smb_pex_rssd_01_16: U62140@20 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "cypress,cy8c9560";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#interrupt-cells=<2>;
+				interrupt-parent = <&bmc_pex_irq>;
+				interrupts = <6 IRQ_TYPE_LEVEL_HIGH>; // SMB_PEX_RSSD01_16_INT
+				interrupt-controller;
+				vdd-supply = <&p3v3_aux>;
+				// Reset is PEX_RSSD01_16_RST
+				reset-gpios = <&bmc_pex_irq 18 GPIO_ACTIVE_HIGH>;
+				ngpios = <48>;
+				gpio-reserved-ranges = <48 12>;
+
+				gpio-line-names =
+				/* GPORT0 */
+				"RSSD01_SMBRST_N", "RSSD02_SMBRST_N",
+				"RSSD03_SMBRST_N", "RSSD04_SMBRST_N",
+				"RSSD05_SMBRST_N", "RSSD06_SMBRST_N",
+				"RSSD07_SMBRST_N", "RSSD08_SMBRST_N",
+				/* GPORT1*/
+				"RSSD09_SMBRST_N", "RSSD10_SMBRST_N",
+				"RSSD11_SMBRST_N", "RSSD12_SMBRST_N",
+				"RSSD13_SMBRST_N", "RSSD14_SMBRST_N",
+				"RSSD15_SMBRST_N", "RSSD16_SMBRST_N",
+				/* GPORT2*/
+				"RSSD01_PWRDIS", "RSSD02_PWRDIS",
+				"RSSD03_PWRDIS", "RSSD04_PWRDIS",
+				/* GPORT3*/
+				"RSSD05_PWRDIS", "RSSD06_PWRDIS",
+				"RSSD07_PWRDIS", "RSSD08_PWRDIS",
+				"RSSD09_PWRDIS", "RSSD10_PWRDIS",
+				"RSSD11_PWRDIS", "RSSD12_PWRDIS",
+				/* GPORT4*/
+				"RSSD13_PWRDIS", "RSSD14_PWRDIS",
+				"RSSD15_PWRDIS", "RSSD16_PWRDIS",
+				"RSSD01_RESET_N", "RSSD02_RESET_N",
+				"RSSD03_RESET_N", "RSSD04_RESET_N",
+				/* GPORT5*/
+				"RSSD05_RESET_N", "RSSD06_RESET_N",
+				"RSSD07_RESET_N", "RSSD08_RESET_N",
+				"RSSD09_RESET_N", "RSSD10_RESET_N",
+				"RSSD11_RESET_N", "RSSD12_RESET_N",
+				/* GPORT6*/
+				"RSSD13_RESET_N", "RSSD14_RESET_N",
+				"RSSD15_RESET_N", "RSSD16_RESET_N",
+				"", "",
+				"", "",
+				/* GPORT7*/
+				"", "",
+				"", "",
+				"", "",
+				"", "";
+
+				pinctrl-0 = <&U62140_pins>;
+				pinctrl-names = "default";
+				U62140_pins: pin-cfg {
+					input {
+						pins = "gp20", "gp21", "gp22", "gp23", "gp30",
+						"gp31", "gp32", "gp33", "gp34", "gp35", "gp36",
+						"gp37", "gp40", "gp41", "gp42", "gp43", "gp44",
+						"gp45", "gp46", "gp47", "gp50", "gp51", "gp52",
+						"gp53", "gp54", "gp55", "gp56", "gp57", "gp60",
+						"gp61", "gp62", "gp63";
+						function = "gpio";
+						input-enable;
+					};
+					out-high {
+						pins = "gp00", "gp01", "gp02", "gp03", "gp04",
+						"gp05", "gp06", "gp07", "gp10", "gp11", "gp12",
+						"gp13", "gp14", "gp15", "gp16", "gp17";
+						function = "gpio";
+						output-enable;
+						output-high;
+					};
+				};
+			};
+		};
+		i2c@6 { // SMB_MUX_RSSD17_24
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <6>;
+
+			i2cmux11: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 12 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_RSSD17_24_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+
+				i2c@0 { // SMB_RSSD17
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <0>;
+				};
+				i2c@1 { // SMB_RSSD18
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+				};
+				i2c@2 { // SMB_RSSD19
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <2>;
+				};
+				i2c@3 { // SMB_RSSD20
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <3>;
+				};
+				i2c@4 { // SMB_RSSD21
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <4>;
+				};
+				i2c@5 { // SMB_RSSD22
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <5>;
+				};
+				i2c@6 { // SMB_RSSD23
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <6>;
+				};
+				i2c@7 { // SMB_RSSD24
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <7>;
+				};
+			};
+		};
+		i2c@7 { // SMB_MUX_RSSD25_32
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <7>;
+
+			i2cmux12: mux@70 {
+				compatible = "maxim,max7357";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x70>;
+				reset-gpios = <&bmc_pex_irq 14 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // SMB_MUX_RSSD25_32_RST_INT_N
+				vdd-supply = <&p3v3_aux>;
+
+				i2c@0 { // SMB_RSSD25
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <0>;
+				};
+				i2c@1 { // SMB_RSSD26
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+				};
+				i2c@2 { // SMB_RSSD27
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <2>;
+				};
+				i2c@3 { // SMB_RSSD28
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <3>;
+				};
+				i2c@4 { // SMB_RSSD29
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <4>;
+				};
+				i2c@5 { // SMB_RSSD30
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <5>;
+				};
+				i2c@6 { // SMB_RSSD31
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <6>;
+				};
+				i2c@7 { // SMB_RSSD32
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <7>;
+				};
+			};
+		};
+	};
+};
+
