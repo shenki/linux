@@ -36,6 +36,7 @@
 #define ESPI_FLASH_SUC_CMPLT_D_LAST	0x0d
 #define ESPI_FLASH_SUC_CMPLT_D_ONLY	0x0f
 #define ESPI_FLASH_UNSUC_CMPLT		0x0c
+#define ESPI_FLASH_UNSUC_CMPLT_ONLY	0x0e
 
 /*
  * eSPI packet format structure

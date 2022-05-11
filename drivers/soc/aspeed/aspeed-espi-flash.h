@@ -5,6 +5,8 @@
 #ifndef _ASPEED_ESPI_FLASH_H_
 #define _ASPEED_ESPI_FLASH_H_
 
+#include <linux/mtd/mtd.h>
+
 enum aspeed_espi_flash_safs_mode {
 	SAFS_MODE_MIX,
 	SAFS_MODE_SW,
@@ -20,21 +22,23 @@ struct aspeed_espi_flash_dma {
 };
 
 struct aspeed_espi_flash {
-	uint32_t safs_mode;
 
-	uint32_t dma_mode;
-	struct aspeed_espi_flash_dma dma;
+	unsigned short		page_offset;	/* offset in flash address */
+	unsigned int		page_size;	/* of bytes per page */
 
-	uint32_t rx_ready;
-	wait_queue_head_t wq;
+	struct mutex			lock;
+	struct aspeed_espi_flash_dma	dma;
 
-	struct mutex get_rx_mtx;
-	struct mutex put_tx_mtx;
+	struct mtd_info			mtd;
+	struct aspeed_espi_ctrl		*ctrl;
+	uint8_t				erase_mask;
 
-	spinlock_t lock;
+	uint32_t			tx_sts;
+	uint32_t			rx_sts;
 
-	struct miscdevice mdev;
-	struct aspeed_espi_ctrl *ctrl;
+	wait_queue_head_t		wq;
+
+	spinlock_t			spinlock;
 };
 
 void aspeed_espi_flash_event(uint32_t sts, struct aspeed_espi_flash *espi_flash);

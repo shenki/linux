@@ -25,6 +25,8 @@
 
 #define DEVICE_NAME "aspeed-espi-ctrl"
 
+static int once;
+
 static irqreturn_t aspeed_espi_ctrl_isr(int irq, void *arg)
 {
 	uint32_t sts;
@@ -90,6 +92,11 @@ static int aspeed_espi_ctrl_probe(struct platform_device *pdev)
 	struct aspeed_espi_ctrl *espi_ctrl;
 	struct device *dev = &pdev->dev;
 
+	if (!once) {
+		// HACK: return probe defer once to get loaded after MTD core is ready
+		once = 1;
+		return -EPROBE_DEFER;
+	}
 	espi_ctrl = devm_kzalloc(dev, sizeof(*espi_ctrl), GFP_KERNEL);
 	if (!espi_ctrl)
 		return -ENOMEM;
@@ -99,7 +106,7 @@ static int aspeed_espi_ctrl_probe(struct platform_device *pdev)
 	espi_ctrl->map = syscon_node_to_regmap(dev->parent->of_node);
 	if (IS_ERR(espi_ctrl->map)) {
 		dev_err(dev, "cannot get remap\n");
-		return -ENODEV;
+		return PTR_ERR(espi_ctrl->map);
 	}
 
 	espi_ctrl->irq = platform_get_irq(pdev, 0);
@@ -109,7 +116,7 @@ static int aspeed_espi_ctrl_probe(struct platform_device *pdev)
 	espi_ctrl->clk = devm_clk_get(dev, NULL);
 	if (IS_ERR(espi_ctrl->clk)) {
 		dev_err(dev, "cannot get clock\n");
-		return -ENODEV;
+		return PTR_ERR(espi_ctrl->clk);
 	}
 
 	rc = clk_prepare_enable(espi_ctrl->clk);
@@ -137,7 +144,7 @@ static int aspeed_espi_ctrl_probe(struct platform_device *pdev)
 	}
 
 	espi_ctrl->flash = aspeed_espi_flash_alloc(dev, espi_ctrl);
-	if (rc) {
+	if (IS_ERR(espi_ctrl->flash)) {
 		dev_err(dev, "failed to allocate flash channel\n");
 		return PTR_ERR(espi_ctrl->flash);
 	}
@@ -196,6 +203,7 @@ static const struct of_device_id aspeed_espi_ctrl_of_matches[] = {
 	  .data = &ast2600_model },
 	{ },
 };
+MODULE_DEVICE_TABLE(of, aspeed_espi_ctrl_of_matches);
 
 static struct platform_driver aspeed_espi_ctrl_driver = {
 	.driver = {
