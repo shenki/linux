@@ -38,6 +38,14 @@ properties:
   interrupts:
     maxItems: 1
 
+  ranges:
+    minItems: 1
+    maxItems: 5
+    description: |
+      Defines the address mapping for child devices with four integer
+      values for each chip-select line in use:
+      <cs-number> 0 <physical address of mapping> <size>
+
 required:
   - compatible
   - reg
@@ -58,6 +66,7 @@ examples:
         compatible = "aspeed,ast2600-fmc";
         clocks = <&syscon ASPEED_CLK_AHB>;
         interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+        ranges = <0 0 0x20000000 0x2000000>, <1 0 0x22000000 0x2000000>;
 
         flash@0 {
                 reg = < 0 >;
