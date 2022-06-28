@@ -382,6 +382,7 @@ static const char *aspeed_spi_get_name(struct spi_mem *mem)
 
 struct aspeed_spi_window {
 	u32 cs;
+	u32 reg;
 	u32 offset;
 	u32 size;
 };
@@ -396,6 +397,7 @@ static void aspeed_spi_get_windows(struct aspeed_spi *aspi,
 	for (cs = 0; cs < aspi->data->max_cs; cs++) {
 		reg_val = readl(aspi->regs + CE0_SEGMENT_ADDR_REG + cs * 4);
 		windows[cs].cs = cs;
+		windows[cs].reg = reg_val;
 		windows[cs].size = data->segment_end(aspi, reg_val) -
 			data->segment_start(aspi, reg_val);
 		windows[cs].offset = data->segment_start(aspi, reg_val) - aspi->ahb_base_phy;
@@ -712,6 +714,41 @@ static void aspeed_spi_enable(struct aspeed_spi *aspi, bool enable)
 		aspeed_spi_chip_enable(aspi, cs, enable);
 }
 
+static int windows_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct aspeed_spi *aspi = dev_get_drvdata(dev);
+	struct aspeed_spi_window windows[ASPEED_SPI_MAX_NUM_CS] = { 0 };
+	u32 cs;
+	int len = 0;
+
+	if (aspi->data == &ast2400_spi_data)
+		return 0;
+
+	aspeed_spi_get_windows(aspi, windows);
+
+	len += sysfs_emit_at(buf, len, "     offset     size       register\n");
+	for (cs = 0; cs < aspi->data->max_cs; cs++) {
+		if (!windows[cs].reg)
+			len += sysfs_emit_at(buf, len, "CE%d: disabled\n", cs);
+		else
+			len += sysfs_emit_at(buf, len, "CE%d: 0x%.8x 0x%.8x 0x%x\n", cs,
+					     windows[cs].offset, windows[cs].size,
+					     windows[cs].reg);
+	}
+	return len;
+}
+
+static DEVICE_ATTR_RO(windows);
+
+static struct attribute *aspeed_spi_attributes[] = {
+	&dev_attr_windows.attr,
+	NULL,
+};
+
+static const struct attribute_group aspeed_spi_attribute_group = {
+	.attrs = aspeed_spi_attributes
+};
+
 static int aspeed_spi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -780,6 +817,12 @@ static int aspeed_spi_probe(struct platform_device *pdev)
 	ret = devm_spi_register_controller(dev, ctlr);
 	if (ret) {
 		dev_err(&pdev->dev, "spi_register_controller failed\n");
+		goto disable_clk;
+	}
+
+	ret = devm_device_add_group(&pdev->dev, &aspeed_spi_attribute_group);
+	if (ret) {
+		dev_err(&pdev->dev, "cannot create attribute group\n");
 		goto disable_clk;
 	}
 	return 0;
