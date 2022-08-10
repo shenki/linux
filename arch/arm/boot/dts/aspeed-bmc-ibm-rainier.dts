@@ -2073,7 +2073,7 @@
 	status = "okay";
 
 	tpm@2e {
-		compatible = "nuvoton,npct75x";
+		compatible = "nuvoton,npct75x", "tcg,tpm-tis-i2c";
 		reg = <0x2e>;
 	};
 
