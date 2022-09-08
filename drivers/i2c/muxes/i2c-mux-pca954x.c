@@ -546,7 +546,7 @@ static int pca954x_probe(struct i2c_client *client,
 		udelay(1);
 		gpiod_set_value_cansleep(gpio, 0);
 		/* Give the chip some time to recover. */
-		udelay(1);
+		udelay(100);
 	}
 
 	data->chip = device_get_match_data(dev);
