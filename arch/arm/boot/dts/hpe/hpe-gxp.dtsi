@@ -122,6 +122,121 @@
 				interrupts = <6>;
 				interrupt-parent = <&vic0>;
 			};
+
+			sysreg_system_controller: syscon@f8 {
+				compatible = "hpe,gxp-sysreg", "syscon";
+				reg = <0xf8 0x8>;
+			};
+
+			i2c0: i2c@2000 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2000 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c1: i2c@2100 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2100 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c2: i2c@2200 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2200 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c3: i2c@2300 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2300 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c4: i2c@2400 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2400 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c5: i2c@2500 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2500 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c6: i2c@2600 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2600 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c7: i2c@2700 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2700 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c8: i2c@2800 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2800 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
+
+			i2c9: i2c@2900 {
+				compatible = "hpe,gxp-i2c";
+				reg = <0x2900 0x70>;
+				interrupts = <9>;
+				interrupt-parent = <&vic0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				hpe,sysreg-phandle = <&sysreg_system_controller>;
+				hpe,i2c-max-bus-freq = <100000>;
+			};
 		};
 	};
 };
