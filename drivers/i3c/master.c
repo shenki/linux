@@ -1205,6 +1205,59 @@ out:
 	return ret;
 }
 
+int i3c_master_setmrl_locked(struct i3c_master_controller *master,
+			     struct i3c_device_info *info, u16 read_len, u8 ibi_len)
+{
+	struct i3c_ccc_cmd_dest dest;
+	struct i3c_ccc_cmd cmd;
+	struct i3c_ccc_mrl *mrl;
+	int ret;
+
+	mrl = i3c_ccc_cmd_dest_init(&dest, info->dyn_addr, sizeof(*mrl));
+	if (!mrl)
+		return -ENOMEM;
+
+	/*
+	 * When the device does not have IBI payload SETMRL only sends 2
+	 * bytes of data.
+	 */
+	if (!(info->bcr & I3C_BCR_IBI_PAYLOAD))
+		dest.payload.len -= 1;
+
+	mrl->read_len = cpu_to_be16(read_len);
+	mrl->ibi_len = ibi_len;
+	info->max_read_len = read_len;
+	info->max_ibi_len = mrl->ibi_len;
+	i3c_ccc_cmd_init(&cmd, false, I3C_CCC_SETMRL(false), &dest, 1);
+
+	ret = i3c_master_send_ccc_cmd_locked(master, &cmd);
+	i3c_ccc_cmd_dest_cleanup(&dest);
+
+	return ret;
+}
+
+int i3c_master_setmwl_locked(struct i3c_master_controller *master,
+			     struct i3c_device_info *info, u16 write_len)
+{
+	struct i3c_ccc_cmd_dest dest;
+	struct i3c_ccc_cmd cmd;
+	struct i3c_ccc_mwl *mwl;
+	int ret;
+
+	mwl = i3c_ccc_cmd_dest_init(&dest, info->dyn_addr, sizeof(*mwl));
+	if (!mwl)
+		return -ENOMEM;
+
+	mwl->len = cpu_to_be16(write_len);
+	info->max_write_len = write_len;
+	i3c_ccc_cmd_init(&cmd, false, I3C_CCC_SETMWL(false), &dest, 1);
+
+	ret = i3c_master_send_ccc_cmd_locked(master, &cmd);
+	i3c_ccc_cmd_dest_cleanup(&dest);
+
+	return ret;
+}
+
 static int i3c_master_getmxds_locked(struct i3c_master_controller *master,
 				     struct i3c_device_info *info)
 {
