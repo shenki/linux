@@ -579,7 +579,7 @@
                         };
 
 			uart1: serial@1e783000 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e783000 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -593,7 +593,7 @@
 			};
 
 			uart5: serial@1e784000 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e784000 0x1000>;
 				reg-shift = <2>;
 				interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL_HIGH>;
@@ -864,7 +864,7 @@
 			};
 
 			uart2: serial@1e78d000 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e78d000 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -878,7 +878,7 @@
 			};
 
 			uart3: serial@1e78e000 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e78e000 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -892,7 +892,7 @@
 			};
 
 			uart4: serial@1e78f000 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e78f000 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -906,7 +906,7 @@
 			};
 
 			uart6: serial@1e790000 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790000 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -920,7 +920,7 @@
 			};
 
 			uart7: serial@1e790100 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790100 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -934,7 +934,7 @@
 			};
 
 			uart8: serial@1e790200 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790200 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -948,7 +948,7 @@
 			};
 
 			uart9: serial@1e790300 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790300 0x20>;
 				reg-shift = <2>;
 				reg-io-width = <4>;
@@ -962,7 +962,7 @@
 			};
 
 			uart10: serial@1e790400 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790400 0x20>;
 				interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART10CLK>;
@@ -973,7 +973,7 @@
 			};
 
 			uart11: serial@1e790500 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790500 0x20>;
 				interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART11CLK>;
@@ -984,7 +984,7 @@
 			};
 
 			uart12: serial@1e790600 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790600 0x20>;
 				interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART12CLK>;
@@ -995,7 +995,7 @@
 			};
 
 			uart13: serial@1e790700 {
-				compatible = "ns16550a";
+				compatible = "aspeed,ast2600-uart";
 				reg = <0x1e790700 0x20>;
 				interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&syscon ASPEED_CLK_GATE_UART13CLK>;
