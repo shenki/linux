@@ -1,0 +1,27 @@
+name: Build with GCC toolchain
+
+on:
+  push:
+  # Allow triggering a CI run from the web UI.
+  workflow_dispatch:
+
+# The trigger to which the workflow will run
+jobs:
+  matrix_config:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [openbmc_defconfig, aspeed_g4_defconfig]
+    env:
+      ARCH: arm
+      CROSS_COMPILE: arm-linux-gnueabihf-
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: sudo apt install -y build-essential device-tree-compiler gawk flex bison openssl libssl-dev libelf-dev libudev-dev crossbuild-essential-armhf
+      - name: Configure
+        run: make ${{ matrix.config }}
+      - name: Build
+        run: make -s -j$(nproc)
