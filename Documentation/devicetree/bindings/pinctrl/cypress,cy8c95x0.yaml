@@ -51,6 +51,10 @@ properties:
     description:
       Optional power supply.
 
+  reset-gpios:
+    description: GPIO used for hardware reset.
+    maxItems: 1
+
 patternProperties:
   '-pins$':
     type: object
