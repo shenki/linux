@@ -50,6 +50,8 @@ struct aspeed_espi_ctrl {
 #define   ESPI_CTRL_VW_SW_RDY			BIT(3)
 #define   ESPI_CTRL_PERIF_SW_RDY		BIT(1)
 #define ESPI_STS		0x004
+#define   ESPI_CTRL_FLASH_CHAN_RDY		BIT(6)
+
 #define ESPI_INT_STS		0x008
 #define   ESPI_INT_STS_HW_RST_DEASSERT		BIT(31)
 #define   ESPI_INT_STS_OOB_RX_TMOUT		BIT(23)

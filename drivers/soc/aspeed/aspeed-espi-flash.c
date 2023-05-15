@@ -140,6 +140,13 @@ static long aspeed_espi_flash_put_tx(uint8_t cyc, uint16_t len, uint32_t addr,
 	ulong to;
 	int ret = 0;
 
+	/* Test if flash channel is ready */
+	regmap_read(espi_ctrl->map, ESPI_STS, &reg);
+	if (!(reg & ESPI_CTRL_FLASH_CHAN_RDY)) {
+		return -EIO;
+	}
+
+	/* Test if TX ready */
 	regmap_read(espi_ctrl->map, ESPI_FLASH_TX_CTRL, &reg);
 	if (reg & ESPI_FLASH_TX_CTRL_TRIGGER)
 		return -EBUSY;
@@ -291,7 +298,7 @@ static int aspeed_espi_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	mutex_lock(&espi_flash->lock);
 
 	while (len) {
-		len_pt = (len > ESPI_PLD_LEN_MIN)? ESPI_PLD_LEN_MIN : len;
+		len_pt = (len > ESPI_PLD_LEN_MIN) ? ESPI_PLD_LEN_MIN : len;
 
 		ret = aspeed_espi_flash_put_tx(ESPI_FLASH_WRITE, len_pt, to, buf, len_pt, espi_flash);
 		if (ret) {
@@ -318,16 +325,14 @@ void aspeed_espi_flash_enable(struct aspeed_espi_flash *espi_flash)
 	struct aspeed_espi_flash_dma *dma = &espi_flash->dma;
 	struct aspeed_espi_ctrl *espi_ctrl = espi_flash->ctrl;
 
-	regmap_update_bits(espi_ctrl->map, ESPI_CTRL,
-			   ESPI_CTRL_FLASH_SW_MODE_MASK,
-			   0);
-
+	/* Enable DMA transfers */
 	regmap_write(espi_ctrl->map, ESPI_FLASH_TX_DMA, dma->tx_addr);
 	regmap_write(espi_ctrl->map, ESPI_FLASH_RX_DMA, dma->rx_addr);
 	regmap_update_bits(espi_ctrl->map, ESPI_CTRL,
 				ESPI_CTRL_FLASH_TX_DMA_EN | ESPI_CTRL_FLASH_RX_DMA_EN,
 				ESPI_CTRL_FLASH_TX_DMA_EN | ESPI_CTRL_FLASH_RX_DMA_EN);
 
+	/* Enable interrupts */
 	regmap_write(espi_ctrl->map, ESPI_INT_STS,
 		     ESPI_INT_STS_FLASH_BITS);
 
@@ -335,6 +340,7 @@ void aspeed_espi_flash_enable(struct aspeed_espi_flash *espi_flash)
 			   ESPI_INT_EN_FLASH_BITS,
 			   ESPI_INT_EN_FLASH_BITS);
 
+	/* Set Flash Channel Software Ready */
 	regmap_update_bits(espi_ctrl->map, ESPI_CTRL,
 			   ESPI_CTRL_FLASH_SW_RDY,
 			   ESPI_CTRL_FLASH_SW_RDY);
@@ -396,6 +402,7 @@ void *aspeed_espi_flash_alloc(struct device *dev, struct aspeed_espi_ctrl *espi_
 	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_4KB:
 	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_4KB_64KB:
 		mtd->erasesize = 0x1000;
+		espi_flash->erase_mask = 1;
 		break;
 	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_64KB:
 		mtd->erasesize = 0x10000;
