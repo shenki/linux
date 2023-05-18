@@ -765,6 +765,8 @@ static int cy8c95x0_gpio_set_pincfg(struct cy8c95x0_pinctrl *chip,
 	u8 port = cypress_get_port(chip, off);
 	u8 bit = cypress_get_pin_mask(chip, off);
 	unsigned long param = pinconf_to_config_param(config);
+	unsigned long arg = pinconf_to_config_argument(config);
+	u8 outreg = CY8C95X0_OUTPUT_(port);
 	unsigned int reg;
 	int ret;
 
@@ -802,6 +804,41 @@ static int cy8c95x0_gpio_set_pincfg(struct cy8c95x0_pinctrl *chip,
 		break;
 	case PIN_CONFIG_MODE_PWM:
 		reg = CY8C95X0_PWMSEL;
+		break;
+	case PIN_CONFIG_INPUT_ENABLE:
+
+		ret = regmap_write_bits(chip->regmap, CY8C95X0_DIRECTION, bit, bit);
+		if (ret)
+			goto out;
+
+		if (test_bit(off, chip->push_pull)) {
+			/*
+			 * Disable driving the pin by forcing it to HighZ. Only setting the
+			 * direction register isn't sufficient in Push-Pull mode.
+			 */
+			reg = CY8C95X0_DRV_HIZ;
+			__clear_bit(off, chip->push_pull);
+		} else {
+			goto out;
+		}
+		break;
+	case PIN_CONFIG_OUTPUT:
+	case PIN_CONFIG_OUTPUT_ENABLE:
+		/* Set output level */
+		ret = regmap_write_bits(chip->regmap, outreg, bit, arg ? bit : 0);
+		if (ret)
+			goto out;
+
+		/* ...then direction */
+		ret = regmap_write_bits(chip->regmap, CY8C95X0_DIRECTION, bit, 0);
+		if (ret)
+			goto out;
+
+		if (param == PIN_CONFIG_OUTPUT)
+			goto out;
+
+		__set_bit(off, chip->push_pull);
+		reg = PIN_CONFIG_DRIVE_PUSH_PULL;
 		break;
 	default:
 		ret = -ENOTSUPP;
