@@ -621,32 +621,6 @@
 		#thermal-sensor-cells = <0>;
 	};
 
-	thermal-zones {
-		qsfp0 {
-			polling-delay = <1000>;
-			polling-delay-passive = <100>;
-			thermal-sensors = <&thermistor0 0>;
-		};
-
-		qsfp1 {
-			polling-delay = <1000>;
-			polling-delay-passive = <100>;
-			thermal-sensors = <&thermistor1 0>;
-		};
-
-		qsfp2 {
-			polling-delay = <1000>;
-			polling-delay-passive = <100>;
-			thermal-sensors = <&thermistor2 0>;
-		};
-
-		qsfp3 {
-			polling-delay = <1000>;
-			polling-delay-passive = <100>;
-			thermal-sensors = <&thermistor3 0>;
-		};
-	};
-
 	p3v3_bmc_aux: fixedregulator-p3v3_bmc_aux {
 		/* FIXME: use correct driver */
 		compatible = "regulator-fixed";
