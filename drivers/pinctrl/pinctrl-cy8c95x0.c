@@ -305,6 +305,10 @@ static const char * const cy8c95x0_groups[] = {
 	"gp77",
 };
 
+static int cy8c95x0_gpio_set_pincfg(struct cy8c95x0_pinctrl *chip,
+				    unsigned int off,
+				    unsigned long config);
+
 static inline u8 cypress_get_port(struct cy8c95x0_pinctrl *chip, unsigned int pin)
 {
 	/* Account for GPORT2 which only has 4 bits */
@@ -553,64 +557,16 @@ out:
 static int cy8c95x0_gpio_direction_input(struct gpio_chip *gc, unsigned int off)
 {
 	struct cy8c95x0_pinctrl *chip = gpiochip_get_data(gc);
-	u8 port = cypress_get_port(chip, off);
-	u8 bit = cypress_get_pin_mask(chip, off);
-	int ret;
-
-	mutex_lock(&chip->i2c_lock);
-	ret = regmap_write(chip->regmap, CY8C95X0_PORTSEL, port);
-	if (ret)
-		goto out;
-
-	ret = regmap_write_bits(chip->regmap, CY8C95X0_DIRECTION, bit, bit);
-	if (ret)
-		goto out;
-
-	if (test_bit(off, chip->push_pull)) {
-		/*
-		 * Disable driving the pin by forcing it to HighZ. Only setting the
-		 * direction register isn't sufficient in Push-Pull mode.
-		 */
-		ret = regmap_write_bits(chip->regmap, CY8C95X0_DRV_HIZ, bit, bit);
-		if (ret)
-			goto out;
-
-		__clear_bit(off, chip->push_pull);
-	}
-
-out:
-	mutex_unlock(&chip->i2c_lock);
-
-	return ret;
+	unsigned long param = pinconf_to_config_packed(PIN_CONFIG_INPUT_ENABLE, 0);
+	return cy8c95x0_gpio_set_pincfg(chip, off, param);
 }
 
 static int cy8c95x0_gpio_direction_output(struct gpio_chip *gc,
 					  unsigned int off, int val)
 {
 	struct cy8c95x0_pinctrl *chip = gpiochip_get_data(gc);
-	u8 port = cypress_get_port(chip, off);
-	u8 outreg = CY8C95X0_OUTPUT_(port);
-	u8 bit = cypress_get_pin_mask(chip, off);
-	int ret;
-
-	/* Set output level */
-	ret = regmap_write_bits(chip->regmap, outreg, bit, val ? bit : 0);
-	if (ret)
-		return ret;
-
-	mutex_lock(&chip->i2c_lock);
-	/* Select port... */
-	ret = regmap_write(chip->regmap, CY8C95X0_PORTSEL, port);
-	if (ret)
-		goto out;
-
-	/* ...then direction */
-	ret = regmap_write_bits(chip->regmap, CY8C95X0_DIRECTION, bit, 0);
-
-out:
-	mutex_unlock(&chip->i2c_lock);
-
-	return ret;
+	unsigned long param = pinconf_to_config_packed(PIN_CONFIG_OUTPUT_ENABLE, val);
+	return cy8c95x0_gpio_set_pincfg(chip, off, param);
 }
 
 static int cy8c95x0_gpio_get_value(struct gpio_chip *gc, unsigned int off)
