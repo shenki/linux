@@ -125,8 +125,10 @@ static long aspeed_espi_flash_rx_get_completion(struct aspeed_espi_flash *espi_f
 	if (ret)
 		return ret;
 
-	if (cyc != ESPI_FLASH_SUC_CMPLT)
+	if (cyc != ESPI_FLASH_SUC_CMPLT) {
+		printk(KERN_NOTICE "eSPI Rx response was not successful\n");
 		return -EFAULT;
+	}
 	return 0;
 }
 
@@ -143,13 +145,16 @@ static long aspeed_espi_flash_put_tx(uint8_t cyc, uint16_t len, uint32_t addr,
 	/* Test if flash channel is ready */
 	regmap_read(espi_ctrl->map, ESPI_STS, &reg);
 	if (!(reg & ESPI_CTRL_FLASH_CHAN_RDY)) {
+		printk(KERN_NOTICE "eSPI flash channel not ready\n");
 		return -EIO;
 	}
 
 	/* Test if TX ready */
 	regmap_read(espi_ctrl->map, ESPI_FLASH_TX_CTRL, &reg);
-	if (reg & ESPI_FLASH_TX_CTRL_TRIGGER)
+	if (reg & ESPI_FLASH_TX_CTRL_TRIGGER) {
+		printk(KERN_NOTICE "eSPI Tx operation still pending\n");
 		return -EBUSY;
+	}
 
 	/*
 	 * common header (i.e. cycle type, tag, and length)
@@ -179,10 +184,15 @@ static long aspeed_espi_flash_put_tx(uint8_t cyc, uint16_t len, uint32_t addr,
 						       to);
 	if (ret == -ERESTARTSYS)
 		ret = -EINTR;
-	else if (!ret)
+	else if (!ret) {
+		printk(KERN_NOTICE "eSPI Tx operation not processed within 100msec\n");
 		ret = -ETIMEDOUT;
-	else if (espi_flash->tx_sts & (ESPI_INT_STS_FLASH_TX_ERR | ESPI_INT_STS_FLASH_TX_ABT))
+	}
+	else if (espi_flash->tx_sts & (ESPI_INT_STS_FLASH_TX_ERR | ESPI_INT_STS_FLASH_TX_ABT)) {
+		printk(KERN_NOTICE "eSPI Tx operation declined by remote\n");
+
 		ret = -EFAULT;
+	}
 	else
 		ret = 0;
 
@@ -269,10 +279,12 @@ static int aspeed_espi_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 			goto unlock_mtx_n_out;
 		
 		if (cyc != ESPI_FLASH_SUC_CMPLT_D_ONLY) {
+			printk(KERN_NOTICE "eSPI Rx response was not successful\n");
 			ret = -EFAULT;
 			goto unlock_mtx_n_out;
 		}
 		if (pkt_len != len_pt) {
+			printk(KERN_NOTICE "eSPI Rx response has unexpected data length\n");
 			ret = -ENODATA;
 			goto unlock_mtx_n_out;
 		}
