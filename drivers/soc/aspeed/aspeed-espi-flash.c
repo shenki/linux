@@ -337,6 +337,10 @@ void aspeed_espi_flash_enable(struct aspeed_espi_flash *espi_flash)
 	struct aspeed_espi_flash_dma *dma = &espi_flash->dma;
 	struct aspeed_espi_ctrl *espi_ctrl = espi_flash->ctrl;
 
+	regmap_update_bits(espi_ctrl->map, ESPI_CTRL,
+			   ESPI_CTRL_FLASH_SW_MODE_MASK,
+			   0);
+
 	/* Enable DMA transfers */
 	regmap_write(espi_ctrl->map, ESPI_FLASH_TX_DMA, dma->tx_addr);
 	regmap_write(espi_ctrl->map, ESPI_FLASH_RX_DMA, dma->rx_addr);
