@@ -102,6 +102,7 @@ static int aspeed_espi_ctrl_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	espi_ctrl->model = of_device_get_match_data(dev);
+	espi_ctrl->dev = dev;
 
 	espi_ctrl->map = syscon_node_to_regmap(dev->parent->of_node);
 	if (IS_ERR(espi_ctrl->map)) {

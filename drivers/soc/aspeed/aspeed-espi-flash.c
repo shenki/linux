@@ -23,7 +23,7 @@ static long aspeed_espi_flash_rx(uint8_t *cyc, uint16_t *len,
 				struct aspeed_espi_flash *espi_flash)
 {
 	unsigned long flags;
-	uint32_t reg, rx_pkt_len, addr_be;
+	uint32_t reg, rx_pkt_len;
 	struct aspeed_espi_ctrl *espi_ctrl = espi_flash->ctrl;
 	void *rx_virt_ptr;
 	ulong to;
@@ -59,21 +59,6 @@ static long aspeed_espi_flash_rx(uint8_t *cyc, uint16_t *len,
 	 * user space.
 	 */
 	switch (*cyc) {
-	case ESPI_FLASH_READ:
-	case ESPI_FLASH_WRITE:
-	case ESPI_FLASH_ERASE:
-		// FIXME: is this every received ?
-		/* R/W/E as an address field */
-		rx_virt_ptr = espi_flash->dma.rx_virt + sizeof(addr_be);
-		rx_pkt_len = (*len) ? *len : ESPI_PLD_LEN_MAX;
-
-		if (addr) {
-			memcpy(&addr_be, espi_flash->dma.rx_virt, sizeof(addr_be));
-
-			*addr = ntohl(addr_be);
-		}
-
-		break;
 	case ESPI_FLASH_SUC_CMPLT_D_MIDDLE:
 	case ESPI_FLASH_SUC_CMPLT_D_FIRST:
 	case ESPI_FLASH_SUC_CMPLT_D_LAST:
@@ -97,6 +82,10 @@ static long aspeed_espi_flash_rx(uint8_t *cyc, uint16_t *len,
 
 	if (rx_pkt_len && pkt_len && pkt) {
 		if (*pkt_len >= rx_pkt_len) {
+			dma_sync_single_for_cpu(espi_ctrl->dev,
+				espi_flash->dma.rx_addr, rx_pkt_len,
+				DMA_FROM_DEVICE);
+
 			memcpy(pkt, rx_virt_ptr, rx_pkt_len);
 		} else {
 			ret = -EINVAL;
@@ -165,7 +154,9 @@ static long aspeed_espi_flash_put_tx(uint8_t cyc, uint16_t len, uint32_t addr,
 	if (pkt && pkt_len) {
 		memcpy(espi_flash->dma.tx_virt + sizeof(addr_be), pkt, pkt_len);
 	}
-	dma_wmb();
+	dma_sync_single_for_device(espi_ctrl->dev,
+			espi_flash->dma.tx_addr, pkt_len + sizeof(addr_be), 
+			DMA_TO_DEVICE);
 
 	spin_lock_irqsave(&espi_flash->spinlock, flags);
 	espi_flash->tx_sts = 0;
@@ -215,16 +206,50 @@ void aspeed_espi_flash_event(uint32_t sts, struct aspeed_espi_flash *espi_flash)
 	wake_up_interruptible(&espi_flash->wq);
 }
 
+static int aspeed_espi_flash_erase_bs(struct aspeed_espi_ctrl *espi_ctrl, int *erase_mask)
+{
+	u32 reg;
+
+	regmap_read(espi_ctrl->map, ESPI_CH3_CAP_N_CONF, &reg);
+	reg = (reg & ESPI_CH3_CAP_N_CONF_ERASE_MASK) >> ESPI_CH3_CAP_N_CONF_ERASE_SHIFT;
+	*erase_mask = reg;
+
+	switch (reg) {
+	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_4KB:
+		return 0x1000;
+	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_4KB_64KB:
+		*erase_mask = ESPI_CH3_CAP_N_CONF_ERASE_SIZE_64KB;
+		return 0x10000;
+	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_64KB:
+		return 0x10000;
+	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_128KB:
+		return 0x20000;
+	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_256KB:
+		return 0x40000;
+	default:
+		return -ENODEV;
+	}
+}
+
 static int aspeed_espi_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	struct aspeed_espi_flash *espi_flash = mtd->priv;
-	int ret = 0;
+	struct aspeed_espi_ctrl *espi_ctrl = espi_flash->ctrl;
+	int ret = 0, bs, erase_mask;
 
 	/* Sanity checks */
 	if ((uint32_t)instr->len % espi_flash->mtd.erasesize)
 		return -EINVAL;
 
 	if ((uint32_t)instr->addr % espi_flash->mtd.erasesize)
+		return -EINVAL;
+
+	/* Check for 4KiB erase fallback */
+	bs = aspeed_espi_flash_erase_bs(espi_ctrl, &erase_mask);
+	if (bs < 0)
+		return bs;
+	/* If hardware only supports > 64KiB erase block, bail out */
+	if (bs > espi_flash->mtd.erasesize)
 		return -EINVAL;
 
 	mutex_lock(&espi_flash->lock);
@@ -241,8 +266,8 @@ static int aspeed_espi_flash_erase(struct mtd_info *mtd, struct erase_info *inst
 
 		/* TODO: Read blank check */
 
-		instr->len -= espi_flash->mtd.erasesize;
-		instr->addr += espi_flash->mtd.erasesize;
+		instr->len -= bs;
+		instr->addr += bs;
 	}
 
 unlock_mtx_n_out:
@@ -384,17 +409,28 @@ void *aspeed_espi_flash_alloc(struct device *dev, struct aspeed_espi_ctrl *espi_
 
 	dma = &espi_flash->dma;
 
-	dma->tx_virt = dma_alloc_coherent(dev, PAGE_SIZE,
-						&dma->tx_addr, GFP_KERNEL);
+	dma->tx_virt = devm_kzalloc(dev, PAGE_SIZE, GFP_KERNEL);
 	if (!dma->tx_virt) {
 		dev_err(dev, "cannot allocate DMA TX buffer\n");
 		return ERR_PTR(-ENOMEM);
 	}
 
-	dma->rx_virt = dma_alloc_coherent(dev, PAGE_SIZE,
-						&dma->rx_addr, GFP_KERNEL);
+	dma->tx_addr = dma_map_single(dev, dma->tx_virt,
+				       PAGE_SIZE, DMA_TO_DEVICE);
+	if (dma_mapping_error(dev, dma->tx_addr)) {
+		pr_err("Map DMA page failed.\n");
+		return ERR_PTR(-ENOMEM);
+	}
+
+	dma->rx_virt = devm_kzalloc(dev, PAGE_SIZE, GFP_KERNEL);
 	if (!dma->rx_virt) {
 		dev_err(dev, "cannot allocate DMA RX buffer\n");
+		return ERR_PTR(-ENOMEM);
+	}
+	dma->rx_addr = dma_map_single(dev, dma->rx_virt,
+				       PAGE_SIZE, DMA_FROM_DEVICE);
+	if (dma_mapping_error(dev, dma->tx_addr)) {
+		pr_err("Map DMA page failed.\n");
 		return ERR_PTR(-ENOMEM);
 	}
 
@@ -410,30 +446,7 @@ void *aspeed_espi_flash_alloc(struct device *dev, struct aspeed_espi_ctrl *espi_
 	mtd->_write = aspeed_espi_flash_write;
 	mtd->type = MTD_NORFLASH;
 	mtd->name = "aspeed-espi-ctrl";
-
-	regmap_read(espi_ctrl->map, ESPI_CH3_CAP_N_CONF, &reg);
-	reg = (reg & ESPI_CH3_CAP_N_CONF_ERASE_MASK) >> ESPI_CH3_CAP_N_CONF_ERASE_SHIFT;
-	espi_flash->erase_mask = reg;
-	switch (reg) {
-	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_4KB:
-	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_4KB_64KB:
-		mtd->erasesize = 0x1000;
-		espi_flash->erase_mask = 1;
-		break;
-	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_64KB:
-		mtd->erasesize = 0x10000;
-		break;
-	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_128KB:
-		mtd->erasesize = 0x20000;
-		break;
-	case ESPI_CH3_CAP_N_CONF_ERASE_SIZE_256KB:
-		mtd->erasesize = 0x40000;
-		break;
-	default:
-		printk(KERN_NOTICE "Unknown erase size %x\n", reg);
-		return ERR_PTR(-ENODEV);
-	}
-
+	mtd->erasesize = 0x10000; // eSPI capabilities can only be read when the remote is on
 	mtd->writesize = 1;
 	mtd->owner = THIS_MODULE;
 	mtd->priv = espi_flash;
@@ -452,8 +465,8 @@ void aspeed_espi_flash_free(struct device *dev, struct aspeed_espi_flash *espi_f
 {
 	struct aspeed_espi_flash_dma *dma = &espi_flash->dma;
 
-	dma_free_coherent(dev, PAGE_SIZE, dma->tx_virt, dma->tx_addr);
-	dma_free_coherent(dev, PAGE_SIZE, dma->rx_virt, dma->rx_addr);
+	dma_unmap_single(dev, dma->tx_addr, PAGE_SIZE, DMA_TO_DEVICE);
+	dma_unmap_single(dev, dma->rx_addr, PAGE_SIZE, DMA_TO_DEVICE);
 
 	mtd_device_unregister(&espi_flash->mtd);
 }
