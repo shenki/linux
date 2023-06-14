@@ -47,8 +47,6 @@
 #define GET_TEMP_MAX(x)		(((x) & DIMM_TEMP_MAX) >> 8)
 #define GET_TEMP_CRIT(x)	(((x) & DIMM_TEMP_CRIT) >> 16)
 
-#define NO_DIMM_RETRY_COUNT_MAX	5
-
 struct peci_dimmtemp;
 
 struct dimm_info {
@@ -82,7 +80,6 @@ struct peci_dimmtemp {
 	} dimm[DIMM_NUMS_MAX];
 	char **dimmtemp_label;
 	DECLARE_BITMAP(dimm_mask, DIMM_NUMS_MAX);
-	u8 no_dimm_retry_count;
 };
 
 static u8 __dimm_temp(u32 reg, int dimm_order)
@@ -261,17 +258,13 @@ static int check_populated_dimms(struct peci_dimmtemp *priv)
 	/*
 	 * If we got all -EINVALs, it means that the CPU doesn't have any
 	 * DIMMs. Unfortunately, it may also happen at the very start of
-	 * host platform boot. Retrying a couple of times lets us make sure
-	 * that the state is persistent.
+	 * host platform boot. Modern multi-socket platforms using DDR5
+	 * DIMMs boot within a couple of minutes.
+	 * Assume that a server platform always has at least one DIMM on
+	 * every CPU can keep trying again.
 	 */
 	if (bitmap_full(chan_rank_empty, chan_rank_max)) {
-		if (priv->no_dimm_retry_count < NO_DIMM_RETRY_COUNT_MAX) {
-			priv->no_dimm_retry_count++;
-
-			return -EAGAIN;
-		}
-
-		return -ENODEV;
+		return -EAGAIN;
 	}
 
 	/*
@@ -279,7 +272,6 @@ static int check_populated_dimms(struct peci_dimmtemp *priv)
 	 * defer the detection to be performed at a later point in time.
 	 */
 	if (bitmap_empty(dimm_mask, DIMM_NUMS_MAX)) {
-		priv->no_dimm_retry_count = 0;
 		return -EAGAIN;
 	}
 
