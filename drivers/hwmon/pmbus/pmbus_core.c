@@ -2549,7 +2549,6 @@ static int pmbus_identify_common(struct i2c_client *client,
 		}
 	}
 
-	pmbus_clear_fault_page(client, page);
 	return 0;
 }
 
