@@ -39,6 +39,7 @@
 		compatible = "gpio-leds";
 
 		power {
+			label = "LED_BMC_READY";
 			gpios = <&gpio0 ASPEED_GPIO(H, 1) GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			default-state = "off";
