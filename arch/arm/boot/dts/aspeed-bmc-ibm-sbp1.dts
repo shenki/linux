@@ -1,0 +1,1989 @@
+// SPDX-License-Identifier: GPL-2.0+
+/dts-v1/;
+
+#include <dt-bindings/gpio/aspeed-gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/i2c/i2c.h>
+#include "aspeed-g6.dtsi"
+
+/ {
+	model = "IBM SBP1";
+	compatible = "aspeed,ast2600";
+
+	chosen {
+		stdout-path = &uart1;
+		bootargs = "console=tty0 console=ttyS0,115200 earlycon";
+	};
+
+	// 512MB
+	memory@80000000 {
+		reg = <0x80000000 0x20000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		gfx_memory: framebuffer {
+			size = <0x01000000>;
+			alignment = <0x01000000>;
+			compatible = "shared-dma-pool";
+			reusable;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power {
+			label = "LED_BMC_READY";
+			gpios = <&gpio0 ASPEED_GPIO(H, 1) GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			default-state = "off";
+			retain-state-suspended;
+			panic-indicator;
+		};
+
+		// Misc ID LEDs
+		id_tpm {
+			label = "LED_ID_TPM";
+			gpios = <&smb_pex_vr_ctrl 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_bat {
+			label = "LED_ID_BAT";
+			gpios = <&smb_pex_vr_ctrl 16 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_mgmt_port2 {
+			label = "LED_ID_MGMT_PORT2";
+			gpios = <&smb_pex_vr_ctrl 17 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_mgmt_port1 {
+			label = "LED_ID_MGMT_PORT1";
+			gpios = <&smb_pex_vr_ctrl 18 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_nic1_port1 {
+			label = "LED_ID_NIC1_PORT1";
+			gpios = <&smb_pex_vr_ctrl 22 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_nic1_port2 {
+			label = "LED_ID_NIC1_PORT2";
+			gpios = <&smb_pex_vr_ctrl 23 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_nic2_port1 {
+			label = "LED_ID_NIC2_PORT1";
+			gpios = <&smb_pex_vr_ctrl 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_nic2_port2 {
+			label = "LED_ID_NIC2_PORT2";
+			gpios = <&smb_pex_vr_ctrl 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_m2_ssd2 {
+			label = "LED_ID_M2_SSD2";
+			gpios = <&smb_pex_vr_ctrl 36 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_m2_ssd1 {
+			label = "LED_ID_M2_SSD1";
+			gpios = <&smb_pex_vr_ctrl 37 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		// DWR ID LEDs
+		id_dwr_frnt_p {
+			label = "LED_ID_DWR_FRNT_P";
+			gpios = <&smb_svc_pex_cpu3_led 37 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+
+			default-state = "on";
+			retain-state-suspended;
+			retain-state-shutdown;
+		};
+		pwr_dwr_frnt {
+			label = "LED_PWR_DWR_FRNT";
+			gpios = <&smb_svc_pex_cpu3_led 36 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+
+			retain-state-suspended;
+			retain-state-shutdown;
+		};
+		pwr_dwr_back {
+			label = "LED_PWR_DWR_BACK";
+			gpios = <&smb_pex_vr_ctrl 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+
+			retain-state-suspended;
+			retain-state-shutdown;
+		};
+		id_dwr_back_p {
+			label = "LED_ID_DWR_BACK_P";
+			gpios = <&smb_pex_vr_ctrl 35 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+
+			default-state = "on";
+			retain-state-suspended;
+			retain-state-shutdown;
+		};
+
+		// CPU ID LEDs
+		id_cpu0 {
+			label = "LED_ID_CPU0";
+			gpios = <&smb_svc_pex_cpu0_led 39 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_cpu1 {
+			label = "LED_ID_CPU1";
+			gpios = <&smb_svc_pex_cpu1_led 39 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_cpu2 {
+			label = "LED_ID_CPU2";
+			gpios = <&smb_svc_pex_cpu2_led 39 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_cpu3 {
+			label = "LED_ID_CPU3";
+			gpios = <&smb_svc_pex_cpu3_led 39 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		// DIMM ID LEDs
+		id_dimm_c0e2 {
+			label = "LED_ID_DIMM_C0E2";
+			gpios = <&smb_svc_pex_cpu0_led 20 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0e1 {
+			label = "LED_ID_DIMM_C0E1";
+			gpios = <&smb_svc_pex_cpu0_led 21 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0f2 {
+			label = "LED_ID_DIMM_C0F2";
+			gpios = <&smb_svc_pex_cpu0_led 22 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0f1 {
+			label = "LED_ID_DIMM_C0F1";
+			gpios = <&smb_svc_pex_cpu0_led 23 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0g2 {
+			label = "LED_ID_DIMM_C0G2";
+			gpios = <&smb_svc_pex_cpu0_led 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0g1 {
+			label = "LED_ID_DIMM_C0G1";
+			gpios = <&smb_svc_pex_cpu0_led 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0h2 {
+			label = "LED_ID_DIMM_C0H2";
+			gpios = <&smb_svc_pex_cpu0_led 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0h1 {
+			label = "LED_ID_DIMM_C0H1";
+			gpios = <&smb_svc_pex_cpu0_led 27 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0a2 {
+			label = "LED_ID_DIMM_C0A2";
+			gpios = <&smb_svc_pex_cpu0_led 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0a1 {
+			label = "LED_ID_DIMM_C0A1";
+			gpios = <&smb_svc_pex_cpu0_led 29 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0b2 {
+			label = "LED_ID_DIMM_C0B2";
+			gpios = <&smb_svc_pex_cpu0_led 30 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0b1 {
+			label = "LED_ID_DIMM_C0B1";
+			gpios = <&smb_svc_pex_cpu0_led 31 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0c2 {
+			label = "LED_ID_DIMM_C0C2";
+			gpios = <&smb_svc_pex_cpu0_led 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0c1 {
+			label = "LED_ID_DIMM_C0C1";
+			gpios = <&smb_svc_pex_cpu0_led 33 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0d2 {
+			label = "LED_ID_DIMM_C0D2";
+			gpios = <&smb_svc_pex_cpu0_led 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c0d1 {
+			label = "LED_ID_DIMM_C0D1";
+			gpios = <&smb_svc_pex_cpu0_led 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		id_dimm_c1e2 {
+			label = "LED_ID_DIMM_C1E2";
+			gpios = <&smb_svc_pex_cpu1_led 20 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1e1 {
+			label = "LED_ID_DIMM_C1E1";
+			gpios = <&smb_svc_pex_cpu1_led 21 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1f2 {
+			label = "LED_ID_DIMM_C1F2";
+			gpios = <&smb_svc_pex_cpu1_led 22 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1f1 {
+			label = "LED_ID_DIMM_C1F1";
+			gpios = <&smb_svc_pex_cpu1_led 23 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1g2 {
+			label = "LED_ID_DIMM_C1G2";
+			gpios = <&smb_svc_pex_cpu1_led 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1g1 {
+			label = "LED_ID_DIMM_C1G1";
+			gpios = <&smb_svc_pex_cpu1_led 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1h2 {
+			label = "LED_ID_DIMM_C1H2";
+			gpios = <&smb_svc_pex_cpu1_led 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1h1 {
+			label = "LED_ID_DIMM_C1H1";
+			gpios = <&smb_svc_pex_cpu1_led 27 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1a2 {
+			label = "LED_ID_DIMM_C1A2";
+			gpios = <&smb_svc_pex_cpu1_led 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1a1 {
+			label = "LED_ID_DIMM_C1A1";
+			gpios = <&smb_svc_pex_cpu1_led 29 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1b2 {
+			label = "LED_ID_DIMM_C1B2";
+			gpios = <&smb_svc_pex_cpu1_led 30 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1b1 {
+			label = "LED_ID_DIMM_C1B1";
+			gpios = <&smb_svc_pex_cpu1_led 31 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1c2 {
+			label = "LED_ID_DIMM_C1C2";
+			gpios = <&smb_svc_pex_cpu1_led 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1c1 {
+			label = "LED_ID_DIMM_C1C1";
+			gpios = <&smb_svc_pex_cpu1_led 33 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1d2 {
+			label = "LED_ID_DIMM_C1D2";
+			gpios = <&smb_svc_pex_cpu1_led 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c1d1 {
+			label = "LED_ID_DIMM_C1D1";
+			gpios = <&smb_svc_pex_cpu1_led 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		id_dimm_c2e2 {
+			label = "LED_ID_DIMM_C2E2";
+			gpios = <&smb_svc_pex_cpu2_led 20 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2e1 {
+			label = "LED_ID_DIMM_C2E1";
+			gpios = <&smb_svc_pex_cpu2_led 21 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2f2 {
+			label = "LED_ID_DIMM_C2F2";
+			gpios = <&smb_svc_pex_cpu2_led 22 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2f1 {
+			label = "LED_ID_DIMM_C2F1";
+			gpios = <&smb_svc_pex_cpu2_led 23 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2g2 {
+			label = "LED_ID_DIMM_C2G2";
+			gpios = <&smb_svc_pex_cpu2_led 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2g1 {
+			label = "LED_ID_DIMM_C2G1";
+			gpios = <&smb_svc_pex_cpu2_led 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2h2 {
+			label = "LED_ID_DIMM_C2H2";
+			gpios = <&smb_svc_pex_cpu2_led 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2h1 {
+			label = "LED_ID_DIMM_C2H1";
+			gpios = <&smb_svc_pex_cpu2_led 27 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2a2 {
+			label = "LED_ID_DIMM_C2A2";
+			gpios = <&smb_svc_pex_cpu2_led 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2a1 {
+			label = "LED_ID_DIMM_C2A1";
+			gpios = <&smb_svc_pex_cpu2_led 29 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2b2 {
+			label = "LED_ID_DIMM_C2B2";
+			gpios = <&smb_svc_pex_cpu2_led 30 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2b1 {
+			label = "LED_ID_DIMM_C2B1";
+			gpios = <&smb_svc_pex_cpu2_led 31 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2c2 {
+			label = "LED_ID_DIMM_C2C2";
+			gpios = <&smb_svc_pex_cpu2_led 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2c1 {
+			label = "LED_ID_DIMM_C2C1";
+			gpios = <&smb_svc_pex_cpu2_led 33 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2d2 {
+			label = "LED_ID_DIMM_C2D2";
+			gpios = <&smb_svc_pex_cpu2_led 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c2d1 {
+			label = "LED_ID_DIMM_C2D1";
+			gpios = <&smb_svc_pex_cpu2_led 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		id_dimm_c3e2 {
+			label = "LED_ID_DIMM_C3E2";
+			gpios = <&smb_svc_pex_cpu3_led 20 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3e1 {
+			label = "LED_ID_DIMM_C3E1";
+			gpios = <&smb_svc_pex_cpu3_led 21 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3f2 {
+			label = "LED_ID_DIMM_C3F2";
+			gpios = <&smb_svc_pex_cpu3_led 22 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3f1 {
+			label = "LED_ID_DIMM_C3F1";
+			gpios = <&smb_svc_pex_cpu3_led 23 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3g2 {
+			label = "LED_ID_DIMM_C3G2";
+			gpios = <&smb_svc_pex_cpu3_led 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3g1 {
+			label = "LED_ID_DIMM_C3G1";
+			gpios = <&smb_svc_pex_cpu3_led 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3h2 {
+			label = "LED_ID_DIMM_C3H2";
+			gpios = <&smb_svc_pex_cpu3_led 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3h1 {
+			label = "LED_ID_DIMM_C3H1";
+			gpios = <&smb_svc_pex_cpu3_led 27 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3a2 {
+			label = "LED_ID_DIMM_C3A2";
+			gpios = <&smb_svc_pex_cpu3_led 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3a1 {
+			label = "LED_ID_DIMM_C3A1";
+			gpios = <&smb_svc_pex_cpu3_led 29 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3b2 {
+			label = "LED_ID_DIMM_C3B2";
+			gpios = <&smb_svc_pex_cpu3_led 30 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3b1 {
+			label = "LED_ID_DIMM_C3B1";
+			gpios = <&smb_svc_pex_cpu3_led 31 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3c2 {
+			label = "LED_ID_DIMM_C3C2";
+			gpios = <&smb_svc_pex_cpu3_led 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3c1 {
+			label = "LED_ID_DIMM_C3C1";
+			gpios = <&smb_svc_pex_cpu3_led 33 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3d2 {
+			label = "LED_ID_DIMM_C3D2";
+			gpios = <&smb_svc_pex_cpu3_led 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_c3d1 {
+			label = "LED_ID_DIMM_C3D1";
+			gpios = <&smb_svc_pex_cpu3_led 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		// RSSD ID LEDs
+		id_dimm_rssd01 {
+			label = "LED_ID_RSSD01";
+			gpios = <&smb_svc_pex_rssd01_16 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd02 {
+			label = "LED_ID_RSSD02";
+			gpios = <&smb_svc_pex_rssd01_16 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd03 {
+			label = "LED_ID_RSSD03";
+			gpios = <&smb_svc_pex_rssd01_16 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd04 {
+			label = "LED_ID_RSSD04";
+			gpios = <&smb_svc_pex_rssd01_16 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd05 {
+			label = "LED_ID_RSSD05";
+			gpios = <&smb_svc_pex_rssd01_16 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd06 {
+			label = "LED_ID_RSSD06";
+			gpios = <&smb_svc_pex_rssd01_16 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd07 {
+			label = "LED_ID_RSSD07";
+			gpios = <&smb_svc_pex_rssd01_16 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd08 {
+			label = "LED_ID_RSSD08";
+			gpios = <&smb_svc_pex_rssd01_16 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd09 {
+			label = "LED_ID_RSSD09";
+			gpios = <&smb_svc_pex_rssd01_16 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd10 {
+			label = "LED_ID_RSSD10";
+			gpios = <&smb_svc_pex_rssd01_16 9 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd11 {
+			label = "LED_ID_RSSD11";
+			gpios = <&smb_svc_pex_rssd01_16 10 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd12 {
+			label = "LED_ID_RSSD12";
+			gpios = <&smb_svc_pex_rssd01_16 11 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd13 {
+			label = "LED_ID_RSSD13";
+			gpios = <&smb_svc_pex_rssd01_16 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd14 {
+			label = "LED_ID_RSSD14";
+			gpios = <&smb_svc_pex_rssd01_16 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd15 {
+			label = "LED_ID_RSSD15";
+			gpios = <&smb_svc_pex_rssd01_16 14 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd16 {
+			label = "LED_ID_RSSD16";
+			gpios = <&smb_svc_pex_rssd01_16 15 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd17 {
+			label = "LED_ID_RSSD17";
+			gpios = <&smb_svc_pex_rssd17_32 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd18 {
+			label = "LED_ID_RSSD18";
+			gpios = <&smb_svc_pex_rssd17_32 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd19 {
+			label = "LED_ID_RSSD19";
+			gpios = <&smb_svc_pex_rssd17_32 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd20 {
+			label = "LED_ID_RSSD20";
+			gpios = <&smb_svc_pex_rssd17_32 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd21 {
+			label = "LED_ID_RSSD21";
+			gpios = <&smb_svc_pex_rssd17_32 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd22 {
+			label = "LED_ID_RSSD22";
+			gpios = <&smb_svc_pex_rssd17_32 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd23 {
+			label = "LED_ID_RSSD23";
+			gpios = <&smb_svc_pex_rssd17_32 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd24 {
+			label = "LED_ID_RSSD24";
+			gpios = <&smb_svc_pex_rssd17_32 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd25 {
+			label = "LED_ID_RSSD25";
+			gpios = <&smb_svc_pex_rssd17_32 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd26 {
+			label = "LED_ID_RSSD26";
+			gpios = <&smb_svc_pex_rssd17_32 9 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd27 {
+			label = "LED_ID_RSSD27";
+			gpios = <&smb_svc_pex_rssd17_32 10 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd28 {
+			label = "LED_ID_RSSD28";
+			gpios = <&smb_svc_pex_rssd17_32 11 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd29 {
+			label = "LED_ID_RSSD29";
+			gpios = <&smb_svc_pex_rssd17_32 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd30 {
+			label = "LED_ID_RSSD30";
+			gpios = <&smb_svc_pex_rssd17_32 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd31 {
+			label = "LED_ID_RSSD31";
+			gpios = <&smb_svc_pex_rssd17_32 14 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_dimm_rssd32 {
+			label = "LED_ID_RSSD32";
+			gpios = <&smb_svc_pex_rssd17_32 15 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		// FAN ID LEDs
+		id_fan_asm01 {
+			label = "LED_ID_FAN_ASM01";
+			gpios = <&smb_svc_pex_rssd01_16 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm02 {
+			label = "LED_ID_FAN_ASM02";
+			gpios = <&smb_svc_pex_rssd01_16 33 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm03 {
+			label = "LED_ID_FAN_ASM03";
+			gpios = <&smb_svc_pex_rssd01_16 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm04 {
+			label = "LED_ID_FAN_ASM04";
+			gpios = <&smb_svc_pex_rssd01_16 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm05 {
+			label = "LED_ID_FAN_ASM05";
+			gpios = <&smb_svc_pex_rssd01_16 36 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm06 {
+			label = "LED_ID_FAN_ASM06";
+			gpios = <&smb_svc_pex_rssd01_16 37 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm07 {
+			label = "LED_ID_FAN_ASM07";
+			gpios = <&smb_svc_pex_rssd17_32 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm08 {
+			label = "LED_ID_FAN_ASM08";
+			gpios = <&smb_svc_pex_rssd17_32 33 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm09 {
+			label = "LED_ID_FAN_ASM09";
+			gpios = <&smb_svc_pex_rssd17_32 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm10 {
+			label = "LED_ID_FAN_ASM10";
+			gpios = <&smb_svc_pex_rssd17_32 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm11 {
+			label = "LED_ID_FAN_ASM11";
+			gpios = <&smb_svc_pex_rssd17_32 36 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+		id_fan_asm12 {
+			label = "LED_ID_FAN_ASM12";
+			gpios = <&smb_svc_pex_rssd17_32 37 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+	};
+
+	iio-hwmon-fan-ssbs {
+		compatible = "iio-hwmon";
+		// Voltage and current sensors
+		io-channels = <&fan01_ssb 0>, <&fan01_ssb 1>,
+			<&fan02_ssb 0>, <&fan02_ssb 1>,
+			<&fan03_ssb 0>, <&fan03_ssb 1>,
+			<&fan04_ssb 0>, <&fan04_ssb 1>,
+			<&fan05_ssb 0>, <&fan05_ssb 1>,
+			<&fan06_ssb 0>, <&fan06_ssb 1>,
+			<&fan07_ssb 0>, <&fan07_ssb 1>,
+			<&fan08_ssb 0>, <&fan08_ssb 1>,
+			<&fan09_ssb 0>, <&fan09_ssb 1>,
+			<&fan10_ssb 0>, <&fan10_ssb 1>,
+			<&fan11_ssb 0>, <&fan11_ssb 1>,
+			<&fan12_ssb 0>, <&fan12_ssb 1>,
+			<&fan13_ssb 0>, <&fan13_ssb 1>,
+			<&fan14_ssb 0>, <&fan14_ssb 1>,
+			<&fan15_ssb 0>, <&fan15_ssb 1>,
+			<&fan16_ssb 0>, <&fan16_ssb 1>,
+			<&fan17_ssb 0>, <&fan17_ssb 1>,
+			<&fan18_ssb 0>, <&fan18_ssb 1>,
+			<&fan19_ssb 0>, <&fan19_ssb 1>,
+			<&fan20_ssb 0>, <&fan20_ssb 1>,
+			<&fan21_ssb 0>, <&fan21_ssb 1>,
+			<&fan22_ssb 0>, <&fan22_ssb 1>,
+			<&fan23_ssb 0>, <&fan23_ssb 1>,
+			<&fan24_ssb 0>, <&fan24_ssb 1>;
+	};
+
+	iio-hwmon-rssbs {
+		compatible = "iio-hwmon";
+		// Voltage and current sensors
+		io-channels = <&ssb_rssd01 0>, <&ssb_rssd01 1>, <&ssb_rssd01 2>, <&ssb_rssd01 3>,
+			<&ssb_rssd02 0>, <&ssb_rssd02 1>, <&ssb_rssd02 2>, <&ssb_rssd02 3>,
+			<&ssb_rssd03 0>, <&ssb_rssd03 1>, <&ssb_rssd03 2>, <&ssb_rssd03 3>,
+			<&ssb_rssd04 0>, <&ssb_rssd04 1>, <&ssb_rssd04 2>, <&ssb_rssd04 3>,
+			<&ssb_rssd05 0>, <&ssb_rssd05 1>, <&ssb_rssd05 2>, <&ssb_rssd05 3>,
+			<&ssb_rssd06 0>, <&ssb_rssd06 1>, <&ssb_rssd06 2>, <&ssb_rssd06 3>,
+			<&ssb_rssd07 0>, <&ssb_rssd07 1>, <&ssb_rssd07 2>, <&ssb_rssd07 3>,
+			<&ssb_rssd08 0>, <&ssb_rssd08 1>, <&ssb_rssd08 2>, <&ssb_rssd08 3>,
+			<&ssb_rssd09 0>, <&ssb_rssd09 1>, <&ssb_rssd09 2>, <&ssb_rssd09 3>,
+			<&ssb_rssd10 0>, <&ssb_rssd10 1>, <&ssb_rssd10 2>, <&ssb_rssd10 3>,
+			<&ssb_rssd11 0>, <&ssb_rssd11 1>, <&ssb_rssd11 2>, <&ssb_rssd11 3>,
+			<&ssb_rssd12 0>, <&ssb_rssd12 1>, <&ssb_rssd12 2>, <&ssb_rssd12 3>,
+			<&ssb_rssd13 0>, <&ssb_rssd13 1>, <&ssb_rssd13 2>, <&ssb_rssd13 3>,
+			<&ssb_rssd14 0>, <&ssb_rssd14 1>, <&ssb_rssd14 2>, <&ssb_rssd14 3>,
+			<&ssb_rssd15 0>, <&ssb_rssd15 1>, <&ssb_rssd15 2>, <&ssb_rssd15 3>,
+			<&ssb_rssd16 0>, <&ssb_rssd16 1>, <&ssb_rssd16 2>, <&ssb_rssd16 3>,
+			<&ssb_rssd17 0>, <&ssb_rssd17 1>, <&ssb_rssd17 2>, <&ssb_rssd17 3>,
+			<&ssb_rssd18 0>, <&ssb_rssd18 1>, <&ssb_rssd18 2>, <&ssb_rssd18 3>,
+			<&ssb_rssd19 0>, <&ssb_rssd19 1>, <&ssb_rssd19 2>, <&ssb_rssd19 3>,
+			<&ssb_rssd20 0>, <&ssb_rssd20 1>, <&ssb_rssd20 2>, <&ssb_rssd20 3>,
+			<&ssb_rssd21 0>, <&ssb_rssd21 1>, <&ssb_rssd21 2>, <&ssb_rssd21 3>,
+			<&ssb_rssd22 0>, <&ssb_rssd22 1>, <&ssb_rssd22 2>, <&ssb_rssd22 3>,
+			<&ssb_rssd23 0>, <&ssb_rssd23 1>, <&ssb_rssd23 2>, <&ssb_rssd23 3>,
+			<&ssb_rssd24 0>, <&ssb_rssd24 1>, <&ssb_rssd24 2>, <&ssb_rssd24 3>,
+			<&ssb_rssd25 0>, <&ssb_rssd25 1>, <&ssb_rssd25 2>, <&ssb_rssd25 3>,
+			<&ssb_rssd26 0>, <&ssb_rssd26 1>, <&ssb_rssd26 2>, <&ssb_rssd26 3>,
+			<&ssb_rssd27 0>, <&ssb_rssd27 1>, <&ssb_rssd27 2>, <&ssb_rssd27 3>,
+			<&ssb_rssd28 0>, <&ssb_rssd28 1>, <&ssb_rssd28 2>, <&ssb_rssd28 3>,
+			<&ssb_rssd29 0>, <&ssb_rssd29 1>, <&ssb_rssd29 2>, <&ssb_rssd29 3>,
+			<&ssb_rssd30 0>, <&ssb_rssd30 1>, <&ssb_rssd30 2>, <&ssb_rssd30 3>,
+			<&ssb_rssd31 0>, <&ssb_rssd31 1>, <&ssb_rssd31 2>, <&ssb_rssd31 3>,
+			<&ssb_rssd32 0>, <&ssb_rssd32 1>, <&ssb_rssd32 2>, <&ssb_rssd32 3>;
+	};
+
+	iio-hwmon-m2-ssb {
+		compatible = "iio-hwmon";
+		// Voltage and current sensors
+		io-channels = <&smb_m2_ssb_ssd1 0>, <&smb_m2_ssb_ssd1 1>,
+			<&smb_m2_ssb_ssd2 0>, <&smb_m2_ssb_ssd2 1>;
+	};
+
+	iio-hwmon-pch-ssb {
+		compatible = "iio-hwmon";
+		// Voltage and current sensors
+		io-channels = <&aux_ssb 0>, <&aux_ssb 1>, <&aux_ssb 2>, <&aux_ssb 3>;
+	};
+
+	iio-hwmon {
+		compatible = "iio-hwmon";
+		// Voltage sensors top to down
+		io-channels = <&p12v_vd 0>, <&p5v_aux_vd 0>, <&p5v_bmc_aux_vd 0>, <&p3v3_aux_vd 0>,
+			<&p3v3_bmc_aux_vd 0>, <&p1v8_bmc_aux_vd 0>, <&adc1 4>, <&adc0 2>, <&adc1 0>,
+			<&p2V5_aux_vd 0>;
+	};
+
+	iio-hwmon-rtcbat {
+		compatible = "iio-hwmon";
+		io-channels = <&adc1 7>;
+	};
+
+	p12v_vd: voltage_divider1 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 3>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 1127/127 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <15>;
+		full-ohms = <133>;
+	};
+
+	p5v_aux_vd: voltage_divider2 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 5>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 1365/365 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <50>;
+		full-ohms = <187>;
+	};
+
+	p5v_bmc_aux_vd: voltage_divider3 {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 3>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 1365/365 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <50>;
+		full-ohms = <187>;
+	};
+
+	p3v3_aux_vd: voltage_divider4 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 2>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 1698/698 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <14>;
+		full-ohms = <34>;
+	};
+
+	p3v3_bmc_aux_vd: voltage_divider5 {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 7>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 1698/698 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <14>;
+		full-ohms = <34>;
+	};
+
+	p1v8_bmc_aux_vd: voltage_divider6 {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 6>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 4000/3000 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <3>;
+		full-ohms = <4>;
+	};
+
+	p2V5_aux_vd: voltage_divider7 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 1>;
+		#io-channel-cells = <1>;
+
+		/* Scale the system voltage by 2100/1100 to fit the ADC range.
+		 * Use small nominator to prevent integer overflow.
+		 */
+		output-ohms = <11>;
+		full-ohms = <21>;
+	};
+
+	thermistor0: thermal-sensor0 {
+		compatible = "epcos,b57891s0103";
+		pullup-uv = <3300000>;
+		pullup-ohm = <10000>;
+		pulldown-ohm = <0>;
+		io-channels = <&adc0 0>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	thermistor1: thermal-sensor1 {
+		compatible = "epcos,b57891s0103";
+		pullup-uv = <3300000>;
+		pullup-ohm = <10000>;
+		pulldown-ohm = <0>;
+		io-channels = <&adc0 1>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	thermistor2: thermal-sensor2 {
+		compatible = "epcos,b57891s0103";
+		pullup-uv = <3300000>;
+		pullup-ohm = <10000>;
+		pulldown-ohm = <0>;
+		io-channels = <&adc0 4>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	thermistor3: thermal-sensor3 {
+		compatible = "epcos,b57891s0103";
+		pullup-uv = <3300000>;
+		pullup-ohm = <10000>;
+		pulldown-ohm = <0>;
+		io-channels = <&adc0 5>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	p3v3_bmc_aux: fixedregulator-p3v3_bmc_aux {
+		/* FIXME: use correct driver */
+		compatible = "regulator-fixed";
+		regulator-name = "p3v3_bmc_aux";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	p1v8_bmc_aux: fixedregulator-p1v8_bmc_aux {
+		compatible = "regulator-fixed";
+		regulator-name = "p1v8_bmc_aux";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+
+	p1v2_bmc_aux: fixedregulator-p1v2_bmc_aux {
+		compatible = "regulator-fixed";
+		regulator-name = "p1v2_bmc_aux";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		vin-supply = <&p5v_aux>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	p12v_b_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "BCM1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p12v_b>;
+		comment = "BCM1 12V";
+	};
+
+	p12v_c_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "BCM2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p12v_c>;
+		comment = "BCM2 12V";
+	};
+
+	p12v_d_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "BCM3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p12v_d>;
+		comment = "BCM3 12V";
+	};
+
+	pvccinfaon_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccinfaon_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccinfaon_cpu0>;
+		comment = "PVCCINFAON of CPU0";
+	};
+
+	pvccfa_ehv_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_cpu0>;
+		comment = "PVCCFA_EHV of CPU0";
+	};
+
+	pvnn_main_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvnn_main_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvnn_main_cpu0>;
+		comment = "PVNN_MAIN of CPU0";
+	};
+
+	pvccin_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccin_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccin_cpu0>;
+		comment = "PVCCIN of CPU0";
+	};
+
+	pvccfa_ehv_fivra_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_fivra_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_fivra_cpu0>;
+		comment = "PVCCFA EHV FIVRA of CPU0";
+	};
+
+	pvccd_hv_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccd_hv_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccd_hv_cpu0>;
+		comment = "PVCCD_HV of CPU0";
+	};
+
+	pvpp_hbm_cpu0_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvpp_hbm_cpu0";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvpp_hbm_cpu0>;
+		comment = "PVPP_HBM of CPU0";
+	};
+
+
+	pvccinfaon_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccinfaon_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccinfaon_cpu1>;
+		comment = "PVCCINFAON of CPU1";
+	};
+
+	pvccfa_ehv_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_cpu1>;
+		comment = "PVCCFA_EHV of CPU1";
+	};
+
+	pvnn_main_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvnn_main_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvnn_main_cpu1>;
+		comment = "PVNN_MAIN of CPU1";
+	};
+
+	pvccin_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccin_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccin_cpu1>;
+		comment = "PVCCIN of CPU1";
+	};
+
+	pvccfa_ehv_fivra_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_fivra_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_fivra_cpu1>;
+		comment = "PVCCDA EHV FIVRA of CPU1";
+	};
+
+	pvccd_hv_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccd_hv_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccd_hv_cpu1>;
+		comment = "PVCCD_HV of CPU1";
+	};
+
+	pvpp_hbm_cpu1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvpp_hbm_cpu1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvpp_hbm_cpu1>;
+		comment = "PVPP_HBM of CPU1";
+	};
+
+	pvccinfaon_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccinfaon_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccinfaon_cpu2>;
+		comment = "PVCCINFAON of CPU2";
+	};
+
+	pvccfa_ehv_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_cpu2>;
+		comment = "PVCCFA_EHV of CPU2";
+	};
+
+	pvnn_main_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvnn_main_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvnn_main_cpu2>;
+		comment = "PVNN_MAIN of CPU2";
+	};
+
+	pvccin_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccin_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccin_cpu2>;
+		comment = "PVCCIN of CPU2";
+	};
+
+	pvccfa_ehv_fivra_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_fivra_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_fivra_cpu2>;
+		comment = "PVCCDA EHV FIVRA of CPU2";
+	};
+
+	pvccd_hv_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccd_hv_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccd_hv_cpu2>;
+		comment = "PVCCD_HV of CPU2";
+	};
+
+	pvpp_hbm_cpu2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvpp_hbm_cpu2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvpp_hbm_cpu2>;
+		comment = "PVPP_HBM of CPU2";
+	};
+
+	pvccinfaon_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccinfaon_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccinfaon_cpu3>;
+		comment = "PVCCINFAON of CPU3";
+	};
+
+	pvccfa_ehv_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_cpu3>;
+		comment = "PVCCFA_EHV of CPU3";
+	};
+
+	pvnn_main_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvnn_main_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvnn_main_cpu3>;
+		comment = "PVNN_MAIN of CPU3";
+	};
+
+	pvccin_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccin_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccin_cpu3>;
+		comment = "PVCCIN of CPU3";
+	};
+
+	pvccfa_ehv_fivra_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccfa_ehv_fivra_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccfa_ehv_fivra_cpu3>;
+		comment = "PVCCDA EHV FIVRA of CPU3";
+	};
+
+	pvccd_hv_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvccd_hv_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvccd_hv_cpu3>;
+		comment = "PVCCD_HV of CPU3";
+	};
+
+	pvpp_hbm_cpu3_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvpp_hbm_cpu3";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvpp_hbm_cpu3>;
+		comment = "PVPP_HBM of CPU3";
+	};
+
+	p3v3_aux_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p3v3_aux";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p3v3_aux>;
+		comment = "PCH AUX 3.3V power supply";
+	};
+
+	p1v05_pch_aux_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p1v05_pch_aux";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p1v05_pch_aux>;
+		comment = "PCH AUX 1.05V power supply";
+	};
+
+	p1v8_pch_aux_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p1v8_pch_aux";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p1v8_pch_aux>;
+		comment = "PCH AUX 1.8V power supply";
+	};
+
+	p3v3_pch_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p3v3_pch";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p3v3_pch>;
+		comment = "PCH 3V3 power supply";
+	};
+
+	p5v_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p5v";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p5v>;
+		comment = "Platform 5V power supply";
+	};
+
+	smb_m2_ssb_ssd2 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "smb_m2_ssb_ssd2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&sw0_smb_m2_ssb_ssd2>;
+		comment = "M2 SSD2 power switch";
+	};
+	
+	smb_m2_ssb_ssd1 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "smb_m2_ssb_ssd1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&sw0_smb_m2_ssb_ssd1>;
+		comment = "M2 SSD1 power switch";
+	};
+
+	ssb_rssd01 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd01";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd01>;
+		sw1-supply = <&sw1_ssb_rssd01>;
+	};
+
+	ssb_rssd02 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd02";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd02>;
+		sw1-supply = <&sw1_ssb_rssd02>;
+	};
+
+	ssb_rssd03 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd03";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd03>;
+		sw1-supply = <&sw1_ssb_rssd03>;
+	};
+
+	ssb_rssd04 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd04";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd04>;
+		sw1-supply = <&sw1_ssb_rssd04>;
+	};
+
+	ssb_rssd05 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd05";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd05>;
+		sw1-supply = <&sw1_ssb_rssd05>;
+	};
+
+	ssb_rssd06 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd05";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd06>;
+		sw1-supply = <&sw1_ssb_rssd06>;
+	};
+
+	ssb_rssd07 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd07";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd07>;
+		sw1-supply = <&sw1_ssb_rssd07>;
+	};
+
+	ssb_rssd08 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd08";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd08>;
+		sw1-supply = <&sw1_ssb_rssd08>;
+	};
+
+	ssb_rssd09 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd09";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd09>;
+		sw1-supply = <&sw1_ssb_rssd09>;
+	};
+
+	ssb_rssd10 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd10";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd10>;
+		sw1-supply = <&sw1_ssb_rssd10>;
+	};
+
+	ssb_rssd11 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd11";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd11>;
+		sw1-supply = <&sw1_ssb_rssd11>;
+	};
+
+	ssb_rssd12 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd12";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd12>;
+		sw1-supply = <&sw1_ssb_rssd12>;
+	};
+
+	ssb_rssd13 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd13";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd13>;
+		sw1-supply = <&sw1_ssb_rssd13>;
+	};
+
+	ssb_rssd14 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd14";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd14>;
+		sw1-supply = <&sw1_ssb_rssd14>;
+	};
+
+	ssb_rssd15 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd15";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd15>;
+		sw1-supply = <&sw1_ssb_rssd15>;
+	};
+
+	ssb_rssd16 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd16";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd16>;
+		sw1-supply = <&sw1_ssb_rssd16>;
+	};
+
+	ssb_rssd17 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd17";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd17>;
+		sw1-supply = <&sw1_ssb_rssd17>;
+	};
+
+	ssb_rssd18 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd18";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd18>;
+		sw1-supply = <&sw1_ssb_rssd18>;
+	};
+
+	ssb_rssd19 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd19";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd19>;
+		sw1-supply = <&sw1_ssb_rssd19>;
+	};
+
+	ssb_rssd20 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd20";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd20>;
+		sw1-supply = <&sw1_ssb_rssd20>;
+	};
+
+	ssb_rssd21 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd21";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd21>;
+		sw1-supply = <&sw1_ssb_rssd21>;
+	};
+
+	ssb_rssd22 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd22";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd22>;
+		sw1-supply = <&sw1_ssb_rssd22>;
+	};
+
+	ssb_rssd23 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd23";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd23>;
+		sw1-supply = <&sw1_ssb_rssd23>;
+	};
+
+	ssb_rssd24 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd24";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd24>;
+		sw1-supply = <&sw1_ssb_rssd24>;
+	};
+
+	ssb_rssd25 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd25";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd25>;
+		sw1-supply = <&sw1_ssb_rssd25>;
+	};
+
+	ssb_rssd26 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd26";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd26>;
+		sw1-supply = <&sw1_ssb_rssd26>;
+	};
+
+	ssb_rssd27 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd27";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd27>;
+		sw1-supply = <&sw1_ssb_rssd27>;
+	};
+
+	ssb_rssd28 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd28";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd28>;
+		sw1-supply = <&sw1_ssb_rssd28>;
+	};
+
+	ssb_rssd29 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd29";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd29>;
+		sw1-supply = <&sw1_ssb_rssd29>;
+	};
+
+	ssb_rssd30 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd30";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd30>;
+		sw1-supply = <&sw1_ssb_rssd30>;
+	};
+
+	ssb_rssd31 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd31";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd31>;
+		sw1-supply = <&sw1_ssb_rssd31>;
+	};
+
+	ssb_rssd32 {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "ssb_rssd32";
+		regulator-supplies = "sw0", "sw1";
+		sw0-supply = <&sw0_ssb_rssd32>;
+		sw1-supply = <&sw1_ssb_rssd32>;
+	};
+
+	p3v3_nic_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p3v3_nic";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p3v3_nic>;
+	};
+
+	p1v8_nic_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p1v8_nic";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p1v8_nic>;
+	};
+
+	p1v2_nic_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "p1v2_nic";
+		regulator-supplies = "vbus";
+		vbus-supply = <&p1v2_nic>;
+	};
+
+	pvcore_nic1_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvcore_nic1";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvcore_nic1>;
+	};
+
+	pvcore_nic2_consumer {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "pvcore_nic2";
+		regulator-supplies = "vbus";
+		vbus-supply = <&pvcore_nic2>;
+	};
+};
+
+&peci0 {
+	status = "okay";
+};
+
+&vuart1 {
+	status = "okay";
+};
+
+&lpc_snoop {
+	status = "okay";
+	snoop-ports = <0x80>, <0x81>;
+};
+
+&fmc {
+	status = "okay";
+	flash@0 {
+		status = "okay";
+		m25p,fast-read;
+		label = "bmc";
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <4>;
+#include "openbmc-flash-layout-64.dtsi"
+	};
+
+	flash@1 {
+		status = "okay";
+		m25p,fast-read;
+		label = "alt-bmc";
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <4>;
+#include "openbmc-flash-layout-64-alt.dtsi"
+	};
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_txd1_default
+			&pinctrl_rxd1_default
+			&pinctrl_nrts1_default
+			&pinctrl_ndtr1_default
+			&pinctrl_ndsr1_default
+			&pinctrl_ncts1_default
+			&pinctrl_ndcd1_default
+			&pinctrl_nri1_default>;
+};
+
+&uart5 {
+	status = "disabled";
+};
+
+// 1.8V domain is not connected
+&gpio1 {
+	status = "disabled";
+};
+
+&espi_ctrl {
+        status = "okay";
+	flash,size = <0x4000000>;
+};
+
+&video {
+	status = "okay";
+};
+
+&vhub {
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_vgahs_default &pinctrl_vgavs_default>;
+};
+
+&mdio2 {
+	status = "okay";
+
+	reset-gpios = <&gpio0 ASPEED_GPIO(V, 7) GPIO_ACTIVE_LOW>;
+	reset-assert-us = <10000>;
+	reset-deassert-us = <300>;
+
+	ethphy2: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+};
+
+&mdio3 {
+	status = "okay";
+
+	reset-gpios = <&gpio0 ASPEED_GPIO(G, 2) GPIO_ACTIVE_LOW>;
+	reset-assert-us = <10000>;
+	reset-deassert-us = <300>;
+
+	ethphy3: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+};
+
+&mac2 {
+	status = "okay";
+
+	phy-mode = "rgmii";
+	phy-handle = <&ethphy2>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_rgmii3_default>;
+};
+
+&mac3 {
+	status = "okay";
+
+	phy-mode = "rgmii";
+	phy-handle = <&ethphy3>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_rgmii4_default>;
+};
+
+&adc0 {
+	status = "okay";
+	vref-supply = <&p1v8_bmc_aux>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_adc0_default
+		     &pinctrl_adc1_default
+		     &pinctrl_adc2_default
+		     &pinctrl_adc3_default
+		     &pinctrl_adc4_default
+		     &pinctrl_adc5_default
+		     &pinctrl_adc6_default
+		     &pinctrl_adc7_default>;
+};
+
+&adc1 {
+	status = "okay";
+	vref-supply = <&p1v8_bmc_aux>;
+	aspeed,battery-sensing;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_adc8_default
+		     &pinctrl_adc9_default
+		     &pinctrl_adc10_default
+		     &pinctrl_adc11_default
+		     &pinctrl_adc12_default
+		     &pinctrl_adc13_default
+		     &pinctrl_adc15_default>;
+};
+
+&kcs3 {
+	// BMC KCS channel 3
+	status = "okay";
+	aspeed,lpc-io-reg = <0xca2>;
+};
+
+&gpio0 {
+	status = "okay";
+	gpio-line-names =
+	/* A0 - A7 */	"", "", "", "", "", "", "", "",
+	/* B0 - B7 */	"", "", "FM_ADR_TRIGGER_R_N", "RST_PLTRST_BUF_N", "BMC_TPM_RESET_N", "BMC_TPM_IRQ_N", "PCH_TPM_RESET_N", "PCH_TPM_IRQ_N",
+	/* C0 - C7 */	"", "", "", "", "", "", "", "",
+	/* D0 - D7 */	"", "", "", "", "", "", "", "",
+	/* E0 - E7 */	"", "", "", "", "", "", "", "",
+	/* F0 - F7 */	"", "", "", "BMC_MUX_CPU1_RST_INT_N", "BMC_MUX_CPU2_RST_INT_N", "", "", "",
+	/* G0 - G7 */	"FM_SSD_CLK_DRVR1_EN", "FM_CK440Q_DEV_EN", "BMC_MAC1_RESET_N", "FM_DB2000_DEV_EN", "FM_CPU_RMCA_LVT3_N", "FM_CPU_CATERR_LVT3_N", "FM_DBP_PRESENT_N", "",
+	/* H0 - H7 */	"SMB_SVC_PEX_RSSD17_32_INT", "LED_BMC_RDY", "RST_DBP_N", "", "", "", "", "",
+	/* I0 - I7 */	"JTAG_MUX_MODE_SEL", "JTAG_MUX_TRANS_ENBL", "JTAG_MUX_LSP_SEL5", "JTAG_MUX_MSTR_SEL", "JTAG_MUX_LSP_SEL3", "", "JTAG_MUX_ENBL_N", "JTAG_MUX_RST_N",
+	/* J0 - J7 */	"", "", "", "", "", "", "", "",
+	/* K0 - K7 */	"", "", "", "", "", "", "", "",
+	/* L0 - L7 */	"", "", "", "", "RST_RTCRST_N", "RST_SRTCRST_N", "", "",
+	/* M0 - M7 */	"BMC_UART1_CTS_N", "BMC_UART1_DCD_N", "BMC_UART1_DSR_N", "BMC_UART1_RI_N", "BMC_UART1_DTR_N", "BMC_UART1_RTS_N", "", "",
+	/* N0 - N7 */	"IRQ_BMC_PCH_NMI", "", "FM_PCH_BMC_THERMTRIP_N", "FM_BIOS_POST_CMPLT_N", "RST_PLTRST_N", "FM_FLASH_SEC_OVRD", "FM_SMI_ACTIVE_N", "PWRGD_DBP",
+	/* O0 - O7 */	"CATERR_CPU2_EN", "H_LVT1_THERMTRIP_N", "CATERR_CPU3_EN", "SMB_SVC_PEX_CPU0_LED_INT", "H_LVT1_MEMTRIP_N", "", "CATERR_CPU1_EN", "FM_PCH_ADR_COMPLETE_N",
+	/* P0 - P7 */	"PWRGD_SYS_PWROK", "PWRGD_PCH_PWROK", "BMC_MUX_CPU3_RST_INT_N", "BMC_MUX_SVC_RSSD_INT", "FM_SLPS4_N", "IRQ_SML0_ALERT_N", "FM_SLPS3_N", "LED_BMC_HB",
+	/* Q0 - Q7 */	"", "PEX_BMC_RST", "PEX_VR_CTRL_RST", "PEX_NIC_RST", "PEX_CPU0_LED_RST", "PEX_CPU1_LED_RST", "PEX_CPU2_LED_RST", "PEX_CPU3_LED_RST",
+	/* R0 - R7 */	"BMC_MUX_FANSSB_RSSD17_32_RST_INT_N", "BMC_MUX_FANPWM_RSSD01_16_RST_INT_N", "BMC_MUX_SVC_VR_RST_INT_N", "BMC_MUX_NIC_RST_INT_N", "BMC_MUX_SVC_EXP_RST_INT_N", "FM_CPU_ERR2_LVT3_N", "BMC_MUX_CPU0_RST_INT_N", "BMC_MUX_M2_RST_INT_N",
+	/* S0 - S7 */	"SMB_SVC_PEX_RSSD01_16_INT", "RST_PCH_RSMRST_R_N", "", "", "BMC_ROT_FPGA_RESET_N", "FM_SSD_CLK_DRVR0_EN", "", "",
+	/* T0 - T7 */	"", "", "", "", "", "", "", "",
+	/* U0 - U7 */	"", "", "", "", "", "", "", "",
+	/* V0 - V7 */	"BMC_PEX_IRQ_INT", "RTC_BATT_TEST", "SMB_PEX_VR_CTRL_INT", "SMB_SVC_PEX_CPU3_LED_INT", "PWRGD_CPUPWRGD", "SMB_SVC_PEX_CPU2_LED_INT", "SMB_SVC_PEX_CPU1_LED_INT", "BMC_MAC0_RESET_N",
+	/* W0 - W7 */	"", "", "", "", "", "", "", "",
+	/* X0 - X7 */	"", "", "", "", "", "", "", "",
+	/* Y0 - Y7 */	"FM_THROTTLE_N", "FM_PASSWORD_CLEAR_N", "H_LVT3_CATERR_DLY_N", "FM_CPU_OL_INT_R_N", "", "", "", "",
+	/* Z0 - Z7 */	"FM_CPU_ERR0_LVT3_N", "FM_CPU_ERR1_LVT3_N", "BMC_MUX_VR_PCH_CPU_RST_INT_N", "JTAG_MUX_LSP_SEL1", "", "JTAG_MUX_LSP_SEL4", "JTAG_MUX_LSP_SEL2", "";
+
+	gpio-reserved-ranges = <0 10>, <16 27>, <45 3>, <55 1>, <59 5>, <69 1>, <72 20>, <94 2>, <102 2>, <105 1>, <117 1>, <128 1>, <146 2>, <150 18>, <176 16>, <196 4>, <204 1>, <207 1>;
+};
+
+// SDA2 BMC_MUX_NIC
+#include "aspeed-bmc-ibm-sbp1-nic.dtsi"
+
+&i2c2 { // SMB_VR_P3V3_BMC_AUX, MAX77813
+	status = "okay";
+};
+
+&i2c3 { // BMC_MUX_M2
+	status = "okay";
+
+	// Bus frequency limited to 100KHz by M.2 slot
+
+	i2cmux1: mux@77 {	// U62005
+		compatible = "maxim,max7357";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x77>;
+		reset-gpios = <&gpio0 ASPEED_GPIO(R, 7) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_M2_RST_INT_N
+		vdd-supply = <&p3v3_aux>;
+
+		i2c@0 { // SMB_S3M_CPU0_LVC1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+		};
+		i2c@1 { // SMB_S3M_CPU1_LVC1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+		i2c@2 { // SMB_M2_SSD1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+		};
+		i2c@3 { // SMB_M2_SSB_SSD1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+			smb_m2_ssb_ssd1: regulator@3a {
+				reg = <0x3a>;
+				vss1-supply = <&p3v3_aux>;
+				compatible = "maxim,max5978";
+				#io-channel-cells = <1>;
+				regulator-name = "p3v3_m2_ssd1";
+				shunt-resistor-micro-ohms = <12000>;
+				regulator-over-current-protection;
+				regulator-oc-protection-microamp = <2800000>;
+				interrupt-parent = <&smb_pex_vr_ctrl>;
+				interrupts = <30 IRQ_TYPE_LEVEL_LOW>; // M2_SSD1_SSB_ALERT_N
+					leds {
+						power {
+							label = "m2_ssb_ssd1:green:power";
+							reg = <0>;
+							default-state = "off";
+						};
+					};
+				regulators {
+					sw0_smb_m2_ssb_ssd1: SW0 {
+						regulator-compatible = "SW0";
+						shunt-resistor-micro-ohms = <12000>;
+						regulator-over-current-protection;
+						regulator-oc-protection-microamp = <2800000>;
+						regulator-name = "p3v3_m2_ssd1";
+						regulator-enable-ramp-delay = <10000>;
+					};
+				};
+			};
+		};
+		i2c@4 { // SMB_M2_SSD2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <4>;
+		};
+		i2c@5 { // SMB_M2_SSB_SSD2
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <5>;
+			smb_m2_ssb_ssd2: regulator@3a {
+				reg = <0x3a>;
+				compatible = "maxim,max5978";
+				#io-channel-cells = <1>;
+				regulator-name = "p3v3_m2_ssd2";
+				shunt-resistor-micro-ohms = <12000>;
+				regulator-over-current-protection;
+				regulator-oc-protection-microamp = <2800000>;
+				interrupt-parent = <&smb_pex_vr_ctrl>;
+				interrupts = <39 IRQ_TYPE_LEVEL_LOW>; // M2_SSD2_SSB_ALERT_N
+				vss1-supply = <&p3v3_aux>;
+				leds {
+					power {
+						label = "m2_ssb_ssd2:green:power";
+						reg = <0>;
+						default-state = "off";
+					};
+				};
+				regulators {
+					sw0_smb_m2_ssb_ssd2: SW0 {
+						regulator-compatible = "SW0";
+						shunt-resistor-micro-ohms = <12000>;
+						regulator-over-current-protection;
+						regulator-oc-protection-microamp = <2800000>;
+						regulator-name = "p3v3_m2_ssd2";
+						regulator-enable-ramp-delay = <10000>;
+					};
+				};
+			};
+		};
+		i2c@6 { // SMB_S3M_CPU2_LVC1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+		i2c@7 { // SMB_S3M_CPU3_LVC1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+	};
+};
+
+&i2c4 { // SMB_SMLINK0_STBY_LVC3
+	status = "okay";
+	multi-master;
+	bus-frequency = <1000000>;
+
+	//Set bmc' slave address;
+	bmc_slave@10 {
+		compatible = "ipmb-dev";
+		reg = <(0x10 | I2C_OWN_SLAVE_ADDRESS)>;
+		i2c-protocol;
+	};
+};
+
+// SDA6 BMC_MUX_VR_PCH_CPU
+#include "aspeed-bmc-ibm-sbp1-pch.dtsi"
+
+// SDA11 BMC_MUX_CPU0
+#include "aspeed-bmc-ibm-sbp1-cpu0.dtsi"
+
+// SDA8 BMC_MUX_CPU1
+#include "aspeed-bmc-ibm-sbp1-cpu1.dtsi"
+
+// SDA7 BMC_MUX_CPU2
+#include "aspeed-bmc-ibm-sbp1-cpu2.dtsi"
+
+// SDA13 BMC_MUX_CPU3
+#include "aspeed-bmc-ibm-sbp1-cpu3.dtsi"
+
+// SDA9 BMC_MUX_FANSSB_RSSD17_32
+#include "aspeed-bmc-ibm-sbp1-fan17_32.dtsi"
+
+// SDA12 BMC_MUX_FANSSB_RSSD01_16
+#include "aspeed-bmc-ibm-sbp1-fan01_16.dtsi"
+
+// SDA14 BMC_MUX_SVC_EXP
+#include "aspeed-bmc-ibm-sbp1-svc.dtsi"
+
+// SDA10 
+&i2c9 { // SMB_VR_P1V2_BMC_AUX
+	status = "okay";
+
+	/* Debug interface for p1v2_bmc_aux */
+	p1v2_bmc_aux_mon: pmic@60 {
+		compatible = "maxim,max8952";
+		reg = <0x60>;
+		max8952,default-mode = <3>;
+		max8952,dvs-mode-microvolt = <1100000>, <1100000>,
+						<1100000>, <1100000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+};
+
+// Fan regulator/pwm
+#include "aspeed-bmc-ibm-sbp1-fanmux.dtsi"
+
+// SSD
+#include "aspeed-bmc-ibm-sbp1-ssd.dtsi"

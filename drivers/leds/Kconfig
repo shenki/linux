@@ -598,6 +598,16 @@ config LEDS_ADP5520
 	  To compile this driver as a module, choose M here: the module will
 	  be called leds-adp5520.
 
+config LEDS_MAX597X
+	tristate "Maxim 597x leds"
+	depends on I2C
+	depends on OF
+	depends on LEDS_CLASS
+	select MFD_MAX597X
+	help
+	  This driver controls a Maxim 5970/5978 indication led via I2C bus.
+	  The MAX5970/5978 is a smart switch with 4 indication leds
+
 config LEDS_MC13783
 	tristate "LED Support for MC13XXX PMIC"
 	depends on LEDS_CLASS

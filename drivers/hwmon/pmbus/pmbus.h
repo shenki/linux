@@ -26,7 +26,7 @@ enum pmbus_regs {
 
 	PMBUS_CAPABILITY		= 0x19,
 	PMBUS_QUERY			= 0x1A,
-
+	PMBUS_SMBALERT_MASK		= 0x1B,
 	PMBUS_VOUT_MODE			= 0x20,
 	PMBUS_VOUT_COMMAND		= 0x21,
 	PMBUS_VOUT_TRIM			= 0x22,
@@ -242,6 +242,15 @@ enum pmbus_regs {
  * OPERATION
  */
 #define PB_OPERATION_CONTROL_ON		BIT(7)
+
+/*
+ * ON_OFF_CONFIG
+ */
+#define PB_ON_OFF_CONFIG_POWERUP_CONTROL	BIT(4)
+#define PB_ON_OFF_CONFIG_OPERATION_REQ		BIT(3)
+#define PB_ON_OFF_CONFIG_EN_PIN_REQ		BIT(2)
+#define PB_ON_OFF_CONFIG_POLARITY_HIGH		BIT(1)
+#define PB_ON_OFF_CONFIG_TURN_OFF_FAST		BIT(0)
 
 /*
  * WRITE_PROTECT
@@ -464,7 +473,7 @@ struct pmbus_driver_info {
 extern const struct regulator_ops pmbus_regulator_ops;
 
 /* Macros for filling in array of struct regulator_desc */
-#define PMBUS_REGULATOR_STEP(_name, _id, _voltages, _step)  \
+#define PMBUS_REGULATOR_STEP(_name, _id, _voltages, _step, _min_uV)  \
 	[_id] = {						\
 		.name = (_name # _id),				\
 		.id = (_id),					\
@@ -475,9 +484,10 @@ extern const struct regulator_ops pmbus_regulator_ops;
 		.owner = THIS_MODULE,				\
 		.n_voltages = _voltages,			\
 		.uV_step = _step,				\
+		.min_uV = _min_uV,				\
 	}
 
-#define PMBUS_REGULATOR(_name, _id)	PMBUS_REGULATOR_STEP(_name, _id, 0, 0)
+#define PMBUS_REGULATOR(_name, _id)   PMBUS_REGULATOR_STEP(_name, _id, 0, 0, 0)
 
 /* Function declarations */
 

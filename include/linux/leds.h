@@ -163,6 +163,7 @@ struct led_classdev {
 
 	/* Ensures consistent access to the LED Flash Class device */
 	struct mutex		led_access;
+	void			*driver_data;
 };
 
 /**

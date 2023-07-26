@@ -98,6 +98,10 @@ static struct regulator *create_regulator(struct regulator_dev *rdev,
 static void destroy_regulator(struct regulator *regulator);
 static void _regulator_put(struct regulator *regulator);
 
+static struct device_attribute dev_attr_status;
+static struct device_attribute dev_attr_microvolts;
+static struct device_attribute dev_attr_state;
+
 const char *rdev_get_name(struct regulator_dev *rdev)
 {
 	if (rdev->constraints && rdev->constraints->name)
@@ -2732,6 +2736,8 @@ static int _regulator_do_enable(struct regulator_dev *rdev)
 		_regulator_delay_helper(delay);
 	}
 
+	sysfs_notify(&rdev->dev.kobj, NULL, dev_attr_state.attr.name);
+
 	trace_regulator_enable_complete(rdev_get_name(rdev));
 
 	return 0;
@@ -2913,6 +2919,8 @@ static int _regulator_do_disable(struct regulator_dev *rdev)
 
 	if (rdev->desc->off_on_delay)
 		rdev->last_off = ktime_get();
+
+	sysfs_notify(&rdev->dev.kobj, NULL, dev_attr_state.attr.name);
 
 	trace_regulator_disable_complete(rdev_get_name(rdev));
 
@@ -4782,8 +4790,21 @@ EXPORT_SYMBOL_GPL(regulator_unregister_notifier);
 static int _notifier_call_chain(struct regulator_dev *rdev,
 				  unsigned long event, void *data)
 {
+	const char *name;
+	int ret;
+
 	/* call rdev chain first */
-	return blocking_notifier_call_chain(&rdev->notifier, event, data);
+	ret =  blocking_notifier_call_chain(&rdev->notifier, event, data);
+
+	if (event & REGULATOR_EVENT_VOLTAGE_CHANGE) {
+		name = dev_attr_microvolts.attr.name;
+		sysfs_notify(&rdev->dev.kobj, NULL, name);
+	} else {
+		name = dev_attr_status.attr.name;
+		sysfs_notify(&rdev->dev.kobj, NULL, name);
+	}
+
+	return ret;
 }
 
 int _regulator_bulk_get(struct device *dev, int num_consumers,

@@ -1,0 +1,71 @@
+&i2c5 { // BMC_MUX_VR_PCH_CPU
+	status = "okay";
+
+	i2cmux2: mux@77 {
+		compatible = "maxim,max7357";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x77>;
+		reset-gpios = <&gpio0 ASPEED_GPIO(Z, 2) (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>; // BMC_MUX_VR_PCH_CPU_RST_INT_N
+		vdd-supply = <&p3v3_aux>;
+
+		i2c@1 { // SMB_VR_P1V05_PCH_AUX
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+
+			ir38263_p1v05_pch_aux@40 {
+				compatible = "infineon,ir38263";
+				reg = <0x40>;
+
+				regulators {
+					p1v05_pch_aux: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "p1v05_pch_aux";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@2 { // SMB_VR_P1V8_PCH_AUX
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+
+			ir38060_p1v8_pch_aux@40 {
+				compatible = "infineon,ir38060";
+				reg = <0x40>;
+
+				regulators {
+					p1v8_pch_aux: vout0 {
+						regulator-compatible = "vout0";
+						regulator-name = "p1v8_pch_aux";
+						regulator-enable-ramp-delay = <2000>;
+						vin-supply = <&p12v_a>;
+					};
+				};
+			};
+		};
+		i2c@4 { // SMB_SSD_CLK_DRVR0
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <4>;
+		};
+		i2c@5 { // SMB_SSD_CLK_DRVR1
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <5>;
+		};
+		i2c@6 { // SMB_CK440Q_LVC3
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <6>;
+		};
+		i2c@7 { // SMB_DB2000_LVC3
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <7>;
+		};
+	};
+};
