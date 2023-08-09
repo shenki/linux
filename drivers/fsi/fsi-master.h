@@ -111,7 +111,6 @@
 
 /* fsi-master definition and flags */
 #define FSI_MASTER_FLAG_SWCLOCK		0x1
-#define FSI_MASTER_FLAG_I2CR		0x2
 
 /*
  * Structures and function prototypes

@@ -267,13 +267,12 @@ static int i2cr_probe(struct i2c_client *client)
 
 	/* Only one I2CR on any given I2C bus (fixed I2C device address) */
 	i2cr->master.idx = client->adapter->nr;
-	dev_set_name(&i2cr->master.dev, "i2cr%d",i2cr->master.idx);
+	dev_set_name(&i2cr->master.dev, "i2cr%d", i2cr->master.idx);
 	i2cr->master.dev.parent = &client->dev;
 	i2cr->master.dev.of_node = of_node_get(dev_of_node(&client->dev));
 	i2cr->master.dev.release = i2cr_release;
 
 	i2cr->master.n_links = 1;
-	i2cr->master.flags = FSI_MASTER_FLAG_I2CR;
 	i2cr->master.read = i2cr_read;
 	i2cr->master.write = i2cr_write;
 
@@ -292,7 +291,6 @@ static void i2cr_remove(struct i2c_client *client)
 {
 	struct fsi_master_i2cr *i2cr = i2c_get_clientdata(client);
 
-	i2cr->master.idx = -1;
 	fsi_master_unregister(&i2cr->master);
 }
 

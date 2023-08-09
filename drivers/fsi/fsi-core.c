@@ -1310,13 +1310,19 @@ int fsi_master_register(struct fsi_master *master)
 
 	mutex_init(&master->scan_lock);
 
-	if (!master->idx) {
+	/* Alloc the requested index if it's non-zero */
+	if (master->idx) {
+		master->idx = ida_alloc_range(&master_ida, master->idx,
+					      master->idx, GFP_KERNEL);
+	} else {
 		master->idx = ida_alloc(&master_ida, GFP_KERNEL);
-		if (master->idx < 0)
-			return master->idx;
-
-		dev_set_name(&master->dev, "fsi%d", master->idx);
 	}
+
+	if (master->idx < 0)
+		return master->idx;
+
+	if (!dev_name(&master->dev))
+		dev_set_name(&master->dev, "fsi%d", master->idx);
 
 	master->dev.class = &fsi_master_class;
 
@@ -1339,17 +1345,17 @@ EXPORT_SYMBOL_GPL(fsi_master_register);
 
 void fsi_master_unregister(struct fsi_master *master)
 {
-	trace_fsi_master_unregister(master);
+	int idx = master->idx;
 
-	if (master->idx >= 0) {
-		ida_free(&master_ida, master->idx);
-		master->idx = -1;
-	}
+	trace_fsi_master_unregister(master);
 
 	mutex_lock(&master->scan_lock);
 	fsi_master_unscan(master);
+	master->n_links = 0;
 	mutex_unlock(&master->scan_lock);
+
 	device_unregister(&master->dev);
+	ida_free(&master_ida, idx);
 }
 EXPORT_SYMBOL_GPL(fsi_master_unregister);
 

@@ -88,7 +88,7 @@ static int i2cr_scom_probe(struct device *dev)
 	int didx;
 	int ret;
 
-	if (!(fsi_dev->slave->master->flags & FSI_MASTER_FLAG_I2CR))
+	if (!is_fsi_master_i2cr(fsi_dev->slave->master))
 		return -ENODEV;
 
 	scom = devm_kzalloc(dev, sizeof(*scom), GFP_KERNEL);
