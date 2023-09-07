@@ -78,7 +78,7 @@ struct aspeed_spi_data {
 	u32	timing;
 	u32	hclk_mask;
 	u32	hdiv_max;
-	size_t	min_decoding_sz;
+	size_t	min_window_sz;
 
 	u64 (*segment_start)(struct aspeed_spi *aspi, u32 reg);
 	u64 (*segment_end)(struct aspeed_spi *aspi, u32 reg);
@@ -468,13 +468,13 @@ static void aspeed_spi_chip_set_default_window(struct aspeed_spi *aspi)
 				aspi->chips[cs - 1].ahb_base +
 				aspi->chips[cs - 1].ahb_window_size;
 
-		aspi->chips[cs].ahb_window_size = aspi->data->min_decoding_sz;
+		aspi->chips[cs].ahb_window_size = aspi->data->min_window_sz;
 
 		dev_dbg(aspi->dev, "CE%d default window [ 0x%.9llx - 0x%.9llx ]",
 			cs, (u64)(aspi->ahb_base_phy +
-				  aspi->data->min_decoding_sz * cs),
+				  aspi->data->min_window_sz * cs),
 			(u64)(aspi->ahb_base_phy +
-			      aspi->data->min_decoding_sz * (cs + 1) - 1));
+			      aspi->data->min_window_sz * (cs + 1) - 1));
 	}
 
 	/* Close unused CS */
@@ -1128,7 +1128,7 @@ static const struct aspeed_spi_data ast2400_fmc_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xfffff0ff,
 	.hdiv_max      = 1,
-	.min_decoding_sz = 0x800000,
+	.min_window_sz = 0x800000,
 	.calibrate     = aspeed_spi_calibrate,
 	.segment_start = aspeed_spi_segment_start,
 	.segment_end   = aspeed_spi_segment_end,
@@ -1155,7 +1155,7 @@ static const struct aspeed_spi_data ast2500_fmc_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xffffd0ff,
 	.hdiv_max      = 1,
-	.min_decoding_sz = 0x800000,
+	.min_window_sz = 0x800000,
 	.calibrate     = aspeed_spi_calibrate,
 	.segment_start = aspeed_spi_segment_start,
 	.segment_end   = aspeed_spi_segment_end,
@@ -1170,7 +1170,7 @@ static const struct aspeed_spi_data ast2500_spi_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xffffd0ff,
 	.hdiv_max      = 1,
-	.min_decoding_sz = 0x800000,
+	.min_window_sz = 0x800000,
 	.calibrate     = aspeed_spi_calibrate,
 	.segment_start = aspeed_spi_segment_start,
 	.segment_end   = aspeed_spi_segment_end,
@@ -1186,7 +1186,7 @@ static const struct aspeed_spi_data ast2600_fmc_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xf0fff0ff,
 	.hdiv_max      = 2,
-	.min_decoding_sz = 0x200000,
+	.min_window_sz = 0x200000,
 	.calibrate     = aspeed_spi_ast2600_calibrate,
 	.segment_start = aspeed_spi_segment_ast2600_start,
 	.segment_end   = aspeed_spi_segment_ast2600_end,
@@ -1202,7 +1202,7 @@ static const struct aspeed_spi_data ast2600_spi_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xf0fff0ff,
 	.hdiv_max      = 2,
-	.min_decoding_sz = 0x200000,
+	.min_window_sz = 0x200000,
 	.calibrate     = aspeed_spi_ast2600_calibrate,
 	.segment_start = aspeed_spi_segment_ast2600_start,
 	.segment_end   = aspeed_spi_segment_ast2600_end,
@@ -1218,7 +1218,7 @@ static const struct aspeed_spi_data ast2700_fmc_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xf0fff0ff,
 	.hdiv_max      = 2,
-	.min_decoding_sz = 0x10000,
+	.min_window_sz = 0x10000,
 	.calibrate     = aspeed_spi_ast2600_calibrate,
 	.segment_start = aspeed_spi_segment_ast2700_start,
 	.segment_end   = aspeed_spi_segment_ast2700_end,
@@ -1234,7 +1234,7 @@ static const struct aspeed_spi_data ast2700_spi_data = {
 	.timing	       = CE0_TIMING_COMPENSATION_REG,
 	.hclk_mask     = 0xf0fff0ff,
 	.hdiv_max      = 2,
-	.min_decoding_sz = 0x10000,
+	.min_window_sz = 0x10000,
 	.calibrate     = aspeed_spi_ast2600_calibrate,
 	.segment_start = aspeed_spi_segment_ast2700_start,
 	.segment_end   = aspeed_spi_segment_ast2700_end,
