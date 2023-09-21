@@ -1161,7 +1161,7 @@ static int i3c_hci_init(struct i3c_hci *hci)
 	hci->DCT_entries = FIELD_GET(DCT_TABLE_SIZE, regval);
 	hci->DCT_entry_size = FIELD_GET(DCT_ENTRY_SIZE, regval) ? 0 : 16;
 	dev_info(&hci->master.dev, "DCT: %u %u-bytes entries at offset %#x\n",
-		 hci->DCT_entries, hci->DCT_entry_size * 4, offset);
+		 hci->DCT_entries, hci->DCT_entry_size, offset);
 #ifdef CONFIG_ARCH_ASPEED
 	/* Currently, doesn't support dma mode*/
 	hci->RHS_regs = NULL;
