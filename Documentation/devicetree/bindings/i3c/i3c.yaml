@@ -61,6 +61,12 @@ properties:
       Indicates that the system is accessible via this bus as an endpoint for
       MCTP over I3C transport.
 
+  mctp-controller:
+    type: boolean
+    description: |
+      Indicates that the system is accessible via this bus as an endpoint for
+      MCTP over I3C transport.
+
 required:
   - "#address-cells"
   - "#size-cells"
