@@ -365,16 +365,6 @@
 				resets = <&syscon ASPEED_RESET_HACE>;
 			};
 
-			acry: acry@1e6fa000 {
-				compatible = "aspeed,ast2600-acry";
-				reg = <0x1e6fa000 0x400 0x1e710000 0x1800>;
-				interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>;
-				clocks = <&syscon ASPEED_CLK_GATE_RSACLK>;
-				clock-names = "rsaclk";
-				aspeed,ahbc = <&ahbc>;
-				status = "ok";
-			};
-
 			syscon: syscon@1e6e2000 {
 				compatible = "aspeed,ast2600-scu", "syscon", "simple-mfd";
 				reg = <0x1e6e2000 0x1000>;
