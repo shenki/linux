@@ -651,6 +651,7 @@ static struct attribute *i3c_masterdev_attrs[] = {
 	&dev_attr_dynamic_address.attr,
 	&dev_attr_hdrcap.attr,
 	&dev_attr_hotjoin.attr,
+	&dev_attr_bus_context.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(i3c_masterdev);
