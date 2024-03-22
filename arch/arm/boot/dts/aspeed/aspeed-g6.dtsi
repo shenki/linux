@@ -742,6 +742,7 @@
 				clocks = <&syscon ASPEED_CLK_APB2>;
 				#interrupt-cells = <2>;
 				interrupt-controller;
+				#interrupt-cells = <2>;
 				bus-frequency = <12000000>;
 				pinctrl-names = "default";
 				pinctrl-0 = <&pinctrl_sgpm1_default>;
@@ -757,6 +758,7 @@
 				clocks = <&syscon ASPEED_CLK_APB2>;
 				#interrupt-cells = <2>;
 				interrupt-controller;
+				#interrupt-cells = <2>;
 				bus-frequency = <12000000>;
 				pinctrl-names = "default";
 				pinctrl-0 = <&pinctrl_sgpm2_default>;
