@@ -60,6 +60,11 @@ static struct fixed_phy_status ncsi_phy_status = {
 	.asym_pause = 0
 };
 
+struct ftgmac100_config {
+	u32 edor_mask;
+	bool is_aspeed;
+};
+
 struct ftgmac100 {
 	/* Registers */
 	struct resource *res;
@@ -98,6 +103,7 @@ struct ftgmac100 {
 	struct work_struct reset_task;
 	struct mii_bus *mii_bus;
 	struct clk *clk;
+	const struct ftgmac100_config *cfg;
 
 	/* AST2500/AST2600 RMII ref clock gate */
 	struct clk *rclk;
@@ -1469,7 +1475,7 @@ static int ftgmac100_mii_probe(struct net_device *netdev)
 	 * right and the SCU has been configured properly by pinmux
 	 * or the firmware.
 	 */
-	if (priv->is_aspeed && !(phy_interface_mode_is_rgmii(phy_intf))) {
+	if (priv->cfg->is_aspeed && !(phy_interface_mode_is_rgmii(phy_intf))) {
 		netdev_warn(netdev,
 			    "Unsupported PHY mode %s !\n",
 			    phy_modes(phy_intf));
@@ -1880,16 +1886,13 @@ static int ftgmac100_probe(struct platform_device *pdev)
 		goto err_phy_connect;
 
 	np = pdev->dev.of_node;
-	if (np && (of_device_is_compatible(np, "aspeed,ast2400-mac") ||
-		   of_device_is_compatible(np, "aspeed,ast2500-mac") ||
-		   of_device_is_compatible(np, "aspeed,ast2600-mac"))) {
-		priv->rxdes0_edorr_mask = BIT(30);
-		priv->txdes0_edotr_mask = BIT(30);
-		priv->is_aspeed = true;
-	} else {
-		priv->rxdes0_edorr_mask = BIT(15);
-		priv->txdes0_edotr_mask = BIT(15);
-	}
+
+	priv->cfg = of_device_get_match_data(&pdev->dev);
+	if (priv->cfg)
+		goto err_phy_connect;
+
+	priv->txdes0_edotr_mask = priv->cfg->edor_mask;
+	priv->rxdes0_edorr_mask = priv->cfg->edor_mask;
 
 	if (np && of_get_property(np, "use-ncsi", NULL)) {
 		if (!IS_ENABLED(CONFIG_NET_NCSI)) {
@@ -1986,7 +1989,7 @@ static int ftgmac100_probe(struct platform_device *pdev)
 
 	}
 
-	if (priv->is_aspeed) {
+	if (priv->cfg->is_aspeed) {
 		err = ftgmac100_setup_clk(priv);
 		if (err)
 			goto err_phy_connect;
@@ -2081,8 +2084,21 @@ static void ftgmac100_remove(struct platform_device *pdev)
 	free_netdev(netdev);
 }
 
+static const struct ftgmac100_config faraday_conf  = {
+	.edor_mask = BIT(15),
+	.is_aspeed = false,
+};
+
+static const struct ftgmac100_config aspeed_conf  = {
+	.edor_mask = BIT(30),
+	.is_aspeed = true,
+};
+
 static const struct of_device_id ftgmac100_of_match[] = {
-	{ .compatible = "faraday,ftgmac100" },
+	{ .compatible = "faraday,ftgmac100", .data = &faraday_conf },
+	{ .compatible = "aspeed,ast2400-mac", .data = &aspeed_conf },
+	{ .compatible = "aspeed,ast2500-mac", .data = &aspeed_conf },
+	{ .compatible = "aspeed,ast2600-mac", .data = &aspeed_conf },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, ftgmac100_of_match);
