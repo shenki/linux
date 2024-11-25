@@ -2031,6 +2031,11 @@ static int ftgmac100_probe(struct platform_device *pdev)
 		netdev->hw_features &= ~(NETIF_F_HW_CSUM | NETIF_F_RXCSUM);
 	netdev->features |= netdev->hw_features;
 
+	/* Disable problematic HW arbitration */
+	if (of_device_is_compatible(np, "aspeed,ast2600-mac") ||
+			of_device_is_compatible(np, "aspeed,ast2700-mac"))
+		iowrite32(FTGMAC100_TM_DEFAULT, priv->base + FTGMAC100_OFFSET_TM);
+
 	/* register network device */
 	err = register_netdev(netdev);
 	if (err) {
