@@ -60,9 +60,16 @@ static struct fixed_phy_status ncsi_phy_status = {
 	.asym_pause = 0
 };
 
+struct ftgmac100;
+
 struct ftgmac100_config {
 	u32 edor_mask;
 	bool is_aspeed;
+	void (*set_rx_base)(struct ftgmac100 *priv);
+	void (*set_tx_base)(struct ftgmac100 *priv);
+	dma_addr_t (*read_txdes)(struct ftgmac100_txdes *txdes);
+	void (*write_txdes)(struct ftgmac100_txdes *txdes, dma_addr_t addr);
+	void (*write_rxdes)(struct ftgmac100_rxdes *rxdes, dma_addr_t addr);
 };
 
 struct ftgmac100 {
@@ -271,10 +278,10 @@ static void ftgmac100_init_hw(struct ftgmac100 *priv)
 	iowrite32(reg, priv->base + FTGMAC100_OFFSET_ISR);
 
 	/* Setup RX ring buffer base */
-	iowrite32(priv->rxdes_dma, priv->base + FTGMAC100_OFFSET_RXR_BADR);
+	priv->cfg->set_rx_base(priv);
 
 	/* Setup TX ring buffer base */
-	iowrite32(priv->txdes_dma, priv->base + FTGMAC100_OFFSET_NPTXR_BADR);
+	priv->cfg->set_tx_base(priv);
 
 	/* Configure RX buffer size */
 	iowrite32(FTGMAC100_RBSR_SIZE(RX_BUF_SIZE),
@@ -431,7 +438,7 @@ static int ftgmac100_alloc_rx_buf(struct ftgmac100 *priv, unsigned int entry,
 	priv->rx_skbs[entry] = skb;
 
 	/* Store DMA address into RX desc */
-	rxdes->rxdes3 = cpu_to_le32(map);
+	priv->cfg->write_rxdes(rxdes, map);
 
 	/* Ensure the above is ordered vs clearing the OWN bit */
 	dma_wmb();
@@ -634,7 +641,7 @@ static void ftgmac100_free_tx_packet(struct ftgmac100 *priv,
 				     struct ftgmac100_txdes *txdes,
 				     u32 ctl_stat)
 {
-	dma_addr_t map = le32_to_cpu(txdes->txdes3);
+	dma_addr_t map = priv->cfg->read_txdes(txdes);
 	size_t len;
 
 	if (ctl_stat & FTGMAC100_TXDES0_FTS) {
@@ -790,7 +797,7 @@ static netdev_tx_t ftgmac100_hard_start_xmit(struct sk_buff *skb,
 	f_ctl_stat |= FTGMAC100_TXDES0_FTS;
 	if (nfrags == 0)
 		f_ctl_stat |= FTGMAC100_TXDES0_LTS;
-	txdes->txdes3 = cpu_to_le32(map);
+	priv->cfg->write_txdes(txdes, map);
 	txdes->txdes1 = cpu_to_le32(csum_vlan);
 
 	/* Next descriptor */
@@ -818,7 +825,7 @@ static netdev_tx_t ftgmac100_hard_start_xmit(struct sk_buff *skb,
 			ctl_stat |= FTGMAC100_TXDES0_LTS;
 		txdes->txdes0 = cpu_to_le32(ctl_stat);
 		txdes->txdes1 = 0;
-		txdes->txdes3 = cpu_to_le32(map);
+		priv->cfg->write_txdes(txdes, map);
 
 		/* Next one */
 		pointer = ftgmac100_next_tx_pointer(priv, pointer);
@@ -2084,14 +2091,51 @@ static void ftgmac100_remove(struct platform_device *pdev)
 	free_netdev(netdev);
 }
 
+static void ftgmac100_set_rx_base(struct ftgmac100 *priv) {
+	iowrite32(priv->rxdes_dma, priv->base + FTGMAC100_OFFSET_RXR_BADR);
+}
+
+static void ftgmac100_set_tx_base(struct ftgmac100 *priv) {
+	iowrite32(priv->txdes_dma, priv->base + FTGMAC100_OFFSET_NPTXR_BADR);
+}
+
+static void ftgmac100_write_rxdes(struct ftgmac100_rxdes *rxdes, dma_addr_t addr) {
+	rxdes->rxdes3 = cpu_to_le32(addr);
+}
+
+static void ftgmac100_write_txdes(struct ftgmac100_txdes *txdes, dma_addr_t addr) {
+	txdes->txdes3 = cpu_to_le32(addr);
+}
+
+static dma_addr_t ftgmac100_read_txdes(struct ftgmac100_txdes *txdes) {
+	return le32_to_cpu(txdes->txdes3);
+}
+
+static void ast2700_write_rxdes(struct ftgmac100_rxdes *rxdes, dma_addr_t addr) {
+	rxdes->rxdes2 = FIELD_PREP(FTGMAC100_RXDES2_RXBUF_BADR_HI,
+				   upper_32_bits(addr));
+	rxdes->rxdes3 = lower_32_bits(addr);
+}
+
+
 static const struct ftgmac100_config faraday_conf  = {
 	.edor_mask = BIT(15),
 	.is_aspeed = false,
+	.set_rx_base = ftgmac100_set_rx_base,
+	.set_tx_base = ftgmac100_set_tx_base,
+	.read_txdes = ftgmac100_read_txdes,
+	.write_txdes = ftgmac100_write_txdes,
+	.write_rxdes = ftgmac100_write_rxdes,
 };
 
 static const struct ftgmac100_config aspeed_conf  = {
 	.edor_mask = BIT(30),
 	.is_aspeed = true,
+	.set_rx_base = ftgmac100_set_rx_base,
+	.set_tx_base = ftgmac100_set_tx_base,
+	.read_txdes = ftgmac100_read_txdes,
+	.write_txdes = ftgmac100_write_txdes,
+	.write_rxdes = ftgmac100_write_rxdes,
 };
 
 static const struct of_device_id ftgmac100_of_match[] = {
