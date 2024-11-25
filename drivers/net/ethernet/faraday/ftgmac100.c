@@ -2111,12 +2111,33 @@ static dma_addr_t ftgmac100_read_txdes(struct ftgmac100_txdes *txdes) {
 	return le32_to_cpu(txdes->txdes3);
 }
 
+static void ast2700_set_rx_base(struct ftgmac100 *priv) {
+       iowrite32(lower_32_bits(priv->rxdes_dma), priv->base + FTGMAC100_OFFSET_RXR_BADR);
+       iowrite32(upper_32_bits(priv->rxdes_dma), priv->base + FTGMAC100_OFFSET_RXR_BADR_HIGH);
+}
+
+static void ast2700_set_tx_base(struct ftgmac100 *priv) {
+	iowrite32(lower_32_bits(priv->txdes_dma), priv->base + FTGMAC100_OFFSET_NPTXR_BADR);
+	iowrite32(upper_32_bits(priv->txdes_dma), priv->base + FTGMAC100_OFFSET_TXR_BADR_HIGH);
+}
+
 static void ast2700_write_rxdes(struct ftgmac100_rxdes *rxdes, dma_addr_t addr) {
 	rxdes->rxdes2 = FIELD_PREP(FTGMAC100_RXDES2_RXBUF_BADR_HI,
 				   upper_32_bits(addr));
 	rxdes->rxdes3 = lower_32_bits(addr);
 }
 
+static void ast2700_write_txdes(struct ftgmac100_txdes *txdes, dma_addr_t addr) {
+	txdes->txdes2 = FIELD_PREP(FTGMAC100_TXDES2_TXBUF_BADR_HI,
+				   upper_32_bits(addr));
+	txdes->txdes3 = lower_32_bits(addr);
+}
+
+static dma_addr_t ast2700_read_txdes(struct ftgmac100_txdes *txdes) {
+	return le32_to_cpu(txdes->txdes3) |
+		((txdes->txdes2 & FTGMAC100_TXDES2_TXBUF_BADR_HI) << 16);
+
+}
 
 static const struct ftgmac100_config faraday_conf  = {
 	.edor_mask = BIT(15),
@@ -2138,11 +2159,22 @@ static const struct ftgmac100_config aspeed_conf  = {
 	.write_rxdes = ftgmac100_write_rxdes,
 };
 
+static const struct ftgmac100_config ast2700_conf  = {
+	.edor_mask = BIT(30),
+	.is_aspeed = true,
+	.set_rx_base = ast2700_set_rx_base,
+	.set_tx_base = ast2700_set_tx_base,
+	.read_txdes = ast2700_read_txdes,
+	.write_txdes = ast2700_write_txdes,
+	.write_rxdes = ast2700_write_rxdes,
+};
+
 static const struct of_device_id ftgmac100_of_match[] = {
 	{ .compatible = "faraday,ftgmac100", .data = &faraday_conf },
 	{ .compatible = "aspeed,ast2400-mac", .data = &aspeed_conf },
 	{ .compatible = "aspeed,ast2500-mac", .data = &aspeed_conf },
 	{ .compatible = "aspeed,ast2600-mac", .data = &aspeed_conf },
+	{ .compatible = "aspeed,ast2700-mac", .data = &ast2700_conf },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, ftgmac100_of_match);
