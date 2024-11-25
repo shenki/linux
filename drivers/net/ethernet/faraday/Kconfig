@@ -19,7 +19,6 @@ if NET_VENDOR_FARADAY
 
 config FTMAC100
 	tristate "Faraday FTMAC100 10/100 Ethernet support"
-	depends on ARM || COMPILE_TEST
 	depends on !64BIT || BROKEN
 	select MII
 	help
@@ -28,13 +27,13 @@ config FTMAC100
 
 config FTGMAC100
 	tristate "Faraday FTGMAC100 Gigabit Ethernet support"
-	depends on ARM || COMPILE_TEST
 	depends on !64BIT || BROKEN
 	select PHYLIB
 	select MDIO_ASPEED if MACH_ASPEED_G6
 	select CRC32
 	help
 	  This driver supports the FTGMAC100 Gigabit Ethernet controller
-	  from Faraday. It is used on Faraday A369 and some other ARM SoC's.
+	  from Faraday. It is used on Faraday A369, ASPEED BMCs, and some other
+	  ARM SoC's.
 
 endif # NET_VENDOR_FARADAY
