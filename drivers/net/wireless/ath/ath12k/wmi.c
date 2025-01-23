@@ -664,6 +664,12 @@ static int ath12k_pull_service_ready_tlv(struct ath12k_base *ab,
 	cap->default_dbs_hw_mode_index = le32_to_cpu(ev->default_dbs_hw_mode_index);
 	cap->num_msdu_desc = le32_to_cpu(ev->num_msdu_desc);
 
+	/* XXXX romulus hack to disable rfkill */
+	if (cap->sys_cap_info & WMI_SYS_CAP_INFO_RFKILL)  {
+		ath12k_warn(ab, "HACK: ignoring rfkill setting\n");
+		cap->sys_cap_info &= ~WMI_SYS_CAP_INFO_RFKILL;
+	}
+
 	return 0;
 }
 
