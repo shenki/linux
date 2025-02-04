@@ -638,6 +638,10 @@ static int __init platform_profile_init(void)
 	if (err)
 		return err;
 
+	/* HACK: No ACPI on the SP7 */
+	if (!acpi_kobj)
+		acpi_kobj = kobject_create_and_add("acpi", firmware_kobj);
+
 	err = sysfs_create_group(acpi_kobj, &platform_profile_group);
 	if (err)
 		class_unregister(&platform_profile_class);
